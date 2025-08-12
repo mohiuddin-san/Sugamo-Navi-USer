@@ -1,33 +1,25 @@
-import { Links, Meta, Outlet, Scripts } from "@remix-run/react";
-import { useRouteError } from "@remix-run/react";
+import {
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from "@remix-run/react";
 
 export default function App() {
   return (
-    <html>
+    <html lang="en">
       <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
       <body>
         <Outlet />
+        <ScrollRestoration />
         <Scripts />
       </body>
     </html>
-  );
-}
-
-export function ErrorBoundary() {
-  const error = useRouteError();
-  console.error(error);
-  return (
-    <div>
-      <h1>Error</h1>
-      <p>
-        {typeof error === "object" && error !== null && "message" in error
-          ? (error as { message?: string }).message
-          : "Something went wrong"}
-      </p>
-      <pre>{JSON.stringify(error, null, 2)}</pre>
-    </div>
   );
 }
