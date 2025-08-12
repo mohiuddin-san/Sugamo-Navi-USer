@@ -8,18 +8,15 @@ importers:
 
   .:
     dependencies:
-      '@remix-run/express':
-        specifier: ^2.17.0
-        version: 2.17.0(express@4.21.2)(typescript@5.9.2)
+      '@remix-run/netlify':
+        specifier: ^1.19.3
+        version: 1.19.3(@netlify/functions@1.6.0)
       '@remix-run/node':
         specifier: ^2.17.0
         version: 2.17.0(typescript@5.9.2)
       '@remix-run/react':
         specifier: ^2.17.0
         version: 2.17.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
-      '@remix-run/serve':
-        specifier: ^2.17.0
-        version: 2.17.0(typescript@5.9.2)
       isbot:
         specifier: ^4.1.0
         version: 4.4.0
@@ -30,12 +27,6 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
     devDependencies:
-      '@netlify/remix-edge-adapter':
-        specifier: ^3.4.3
-        version: 3.4.3(@remix-run/react@2.17.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2))(@remix-run/serve@2.17.0(typescript@5.9.2))(@remix-run/server-runtime@2.17.0(typescript@5.9.2))(@types/node@24.2.1)(typescript@5.9.2)(vite@5.4.19(@types/node@24.2.1))
-      '@netlify/remix-runtime':
-        specifier: ^2.3.1
-        version: 2.3.1(@remix-run/server-runtime@2.17.0(typescript@5.9.2))
       '@remix-run/dev':
         specifier: ^2.17.0
         version: 2.17.0(@remix-run/react@2.17.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2))(@remix-run/serve@2.17.0(typescript@5.9.2))(@types/node@24.2.1)(typescript@5.9.2)(vite@5.4.19(@types/node@24.2.1))
@@ -563,20 +554,9 @@ packages:
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
 
-  '@netlify/remix-edge-adapter@3.4.3':
-    resolution: {integrity: sha512-tZJOMdIzjECuZXwI2MjCoSwTUdR+JfVgAJ0N/kjcYvNfJAAox859HIwRJxIvIL/oSs7Oq55XC22L5pBy0252Zw==}
-    engines: {node: '>=16.0.0'}
-    peerDependencies:
-      vite: '>=5.0.0'
-    peerDependenciesMeta:
-      vite:
-        optional: true
-
-  '@netlify/remix-runtime@2.3.1':
-    resolution: {integrity: sha512-5gVnFavbyzUTW8U8+XeLQjh/NhktiLpauaxH0Oh6r66WOXrDYFi8/QWxdcOhb6WRomYidnxTeNrxQDUp59Vplg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      '@remix-run/server-runtime': ^2.9.2
+  '@netlify/functions@1.6.0':
+    resolution: {integrity: sha512-6G92AlcpFrQG72XU8YH8pg94eDnq7+Q0YJhb8x4qNpdGsvuzvrfHWBmqFGp/Yshmv4wex9lpsTRZOocdrA2erQ==}
+    engines: {node: '>=14.0.0'}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -644,6 +624,16 @@ packages:
       typescript:
         optional: true
 
+  '@remix-run/netlify@1.19.3':
+    resolution: {integrity: sha512-JCrcEXArP4aZKOJ5Au0QWPMnfsiSFdCqpGN1mv1f081E/NGHu0L9BPM9u94ACRGxpsEcXvRrTjKvN8+ZCdDi2g==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      '@netlify/functions': ^0.10.0 || ^0.11.0 || ^1.0.0
+
+  '@remix-run/node@1.19.3':
+    resolution: {integrity: sha512-z5qrVL65xLXIUpU4mkR4MKlMeKARLepgHAk4W5YY3IBXOreRqOGUC70POViYmY7x38c2Ia1NwqL80H+0h7jbMw==}
+    engines: {node: '>=14.0.0'}
+
   '@remix-run/node@2.17.0':
     resolution: {integrity: sha512-ISy3N4peKB+Fo8ddh+mU6ki3HzQqLXwJxUrAtqxYxrBDM4Pwc7EvISrcQ4QasB6ORBknJeEZSBu69WDRhGzrjA==}
     engines: {node: '>=18.0.0'}
@@ -668,10 +658,18 @@ packages:
     resolution: {integrity: sha512-O3rHJzAQKamUz1fvE0Qaw0xSFqsA/yafi2iqeE0pvdFtCO1viYx8QL6f3Ln/aCCTLxs68SLf0KPM9eSeM8yBnA==}
     engines: {node: '>=14.0.0'}
 
+  '@remix-run/router@1.7.2':
+    resolution: {integrity: sha512-7Lcn7IqGMV+vizMPoEl5F0XDshcdDYtMI6uJLQdQz5CfZAwy3vvGKYSUk789qndt5dEC4HfSjviSYlSoHGL2+A==}
+    engines: {node: '>=14'}
+
   '@remix-run/serve@2.17.0':
     resolution: {integrity: sha512-eq0A7A89uqg+rQiGVHoUwb1NUawmPpjAY3RWn4KG4uCp4QwhqJausML63fIxnfdp7zu2OplXhfSXCNiTekQ0rw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
+
+  '@remix-run/server-runtime@1.19.3':
+    resolution: {integrity: sha512-KzQ+htUsKqpBgKE2tWo7kIIGy3MyHP58Io/itUPvV+weDjApwr9tQr9PZDPA3yAY6rAzLax7BU0NMSYCXWFY5A==}
+    engines: {node: '>=14.0.0'}
 
   '@remix-run/server-runtime@2.17.0':
     resolution: {integrity: sha512-X0zfGLgvukhuTIL0tdWKnlvHy4xUe7Z17iQ0KMQoITK0SkTZPSud/6cJCsKhPqC8kfdYT1GNFLJKRhHz7Aapmw==}
@@ -806,6 +804,9 @@ packages:
 
   '@types/acorn@4.0.6':
     resolution: {integrity: sha512-veQTnWP+1D/xbxVrPC3zHnCZRjSrKfhbMUlEA43iMZLu7EsnTtkJklIuwrCPbOi8YkvDQAiW05VQQFvvz9oieQ==}
+
+  '@types/cookie@0.4.1':
+    resolution: {integrity: sha512-XW/Aa8APYr6jSVVA1y/DEIZX0/GMKLEVekNG727R8cs56ahETkRAy/3DR7+fJyh7oUgGwNQaRfXCun0+KbWY7Q==}
 
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
@@ -1317,6 +1318,10 @@ packages:
   cookie-signature@1.2.2:
     resolution: {integrity: sha512-D76uU73ulSXrD1UXF4KE2TMxVVwhsnCgfAyTg9k8P6KGZjlXKrOLe4dJQKI3Bxi5wjesZoFXJWElNWBjPZMbhg==}
     engines: {node: '>=6.6.0'}
+
+  cookie@0.4.2:
+    resolution: {integrity: sha512-aSWTXFzaKWkvHO1Ny/s+ePFpvKsPnjc551iI41v3ny/ow6tBG5Vd+FuqGNhh1LxOmVzOlGUriIlOaokOvhaStA==}
+    engines: {node: '>= 0.6'}
 
   cookie@0.7.1:
     resolution: {integrity: sha512-6DnInpx7SJ2AK3+CTUE/ZM0vWTUboZCegxhC2xiIydHR9jNuTAASBrfEpHhiGOZw/nX51bHt6YQl8jsGo4y/0w==}
@@ -2099,6 +2104,9 @@ packages:
     resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
     engines: {node: '>=12'}
 
+  is-promise@4.0.0:
+    resolution: {integrity: sha512-hvpoI6korhJMnej285dSg6nu1+e6uxs7zG3BYAm5byqDsgJNWwxzM6z6iZiAgQR4TJ30JmBTOwqZUw3WlyH3AQ==}
+
   is-reference@3.0.3:
     resolution: {integrity: sha512-ixkJoqQvAP88E6wLydLGGqCJsrFUnqoH6HnaczB8XmDH1oaWU+xxdptvikTgaEhtZ53Ky6YXiBuUI2WXLMCwjw==}
 
@@ -2154,10 +2162,6 @@ packages:
 
   isbot@4.4.0:
     resolution: {integrity: sha512-8ZvOWUA68kyJO4hHJdWjyreq7TYNWTS9y15IzeqVdKxR9pPr3P/3r9AHcoIv9M0Rllkao5qWz2v1lmcyKIVCzQ==}
-    engines: {node: '>=18'}
-
-  isbot@5.1.29:
-    resolution: {integrity: sha512-DelDWWoa3mBoyWTq3wjp+GIWx/yZdN7zLUE7NFhKjAiJ+uJVRkbLlwykdduCE4sPUUy8mlTYTmdhBUYu91F+sw==}
     engines: {node: '>=18'}
 
   isexe@2.0.0:
@@ -3995,38 +3999,9 @@ snapshots:
       '@tybys/wasm-util': 0.10.0
     optional: true
 
-  '@netlify/remix-edge-adapter@3.4.3(@remix-run/react@2.17.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2))(@remix-run/serve@2.17.0(typescript@5.9.2))(@remix-run/server-runtime@2.17.0(typescript@5.9.2))(@types/node@24.2.1)(typescript@5.9.2)(vite@5.4.19(@types/node@24.2.1))':
+  '@netlify/functions@1.6.0':
     dependencies:
-      '@netlify/remix-runtime': 2.3.1(@remix-run/server-runtime@2.17.0(typescript@5.9.2))
-      '@remix-run/dev': 2.17.0(@remix-run/react@2.17.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2))(@remix-run/serve@2.17.0(typescript@5.9.2))(@types/node@24.2.1)(typescript@5.9.2)(vite@5.4.19(@types/node@24.2.1))
-      '@remix-run/node': 2.17.0(typescript@5.9.2)
-      isbot: 5.1.29
-    optionalDependencies:
-      vite: 5.4.19(@types/node@24.2.1)
-    transitivePeerDependencies:
-      - '@remix-run/react'
-      - '@remix-run/serve'
-      - '@remix-run/server-runtime'
-      - '@types/node'
-      - babel-plugin-macros
-      - bluebird
-      - bufferutil
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - ts-node
-      - typescript
-      - utf-8-validate
-      - wrangler
-
-  '@netlify/remix-runtime@2.3.1(@remix-run/server-runtime@2.17.0(typescript@5.9.2))':
-    dependencies:
-      '@remix-run/server-runtime': 2.17.0(typescript@5.9.2)
+      is-promise: 4.0.0
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -4163,6 +4138,24 @@ snapshots:
       express: 4.21.2
     optionalDependencies:
       typescript: 5.9.2
+    optional: true
+
+  '@remix-run/netlify@1.19.3(@netlify/functions@1.6.0)':
+    dependencies:
+      '@netlify/functions': 1.6.0
+      '@remix-run/node': 1.19.3
+
+  '@remix-run/node@1.19.3':
+    dependencies:
+      '@remix-run/server-runtime': 1.19.3
+      '@remix-run/web-fetch': 4.4.2
+      '@remix-run/web-file': 3.1.0
+      '@remix-run/web-stream': 1.1.0
+      '@web3-storage/multipart-parser': 1.0.0
+      abort-controller: 3.0.0
+      cookie-signature: 1.2.2
+      source-map-support: 0.5.21
+      stream-slice: 0.1.2
 
   '@remix-run/node@2.17.0(typescript@5.9.2)':
     dependencies:
@@ -4190,6 +4183,8 @@ snapshots:
 
   '@remix-run/router@1.23.0': {}
 
+  '@remix-run/router@1.7.2': {}
+
   '@remix-run/serve@2.17.0(typescript@5.9.2)':
     dependencies:
       '@remix-run/express': 2.17.0(express@4.21.2)(typescript@5.9.2)
@@ -4203,6 +4198,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
+    optional: true
+
+  '@remix-run/server-runtime@1.19.3':
+    dependencies:
+      '@remix-run/router': 1.7.2
+      '@types/cookie': 0.4.1
+      '@web3-storage/multipart-parser': 1.0.0
+      cookie: 0.4.2
+      set-cookie-parser: 2.7.1
+      source-map: 0.7.6
 
   '@remix-run/server-runtime@2.17.0(typescript@5.9.2)':
     dependencies:
@@ -4314,6 +4319,8 @@ snapshots:
   '@types/acorn@4.0.6':
     dependencies:
       '@types/estree': 1.0.8
+
+  '@types/cookie@0.4.1': {}
 
   '@types/cookie@0.6.0': {}
 
@@ -4708,6 +4715,7 @@ snapshots:
   basic-auth@2.0.1:
     dependencies:
       safe-buffer: 5.1.2
+    optional: true
 
   binary-extensions@2.3.0: {}
 
@@ -4857,6 +4865,7 @@ snapshots:
   compressible@2.0.18:
     dependencies:
       mime-db: 1.54.0
+    optional: true
 
   compression@1.8.1:
     dependencies:
@@ -4869,6 +4878,7 @@ snapshots:
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   concat-map@0.0.1: {}
 
@@ -4887,6 +4897,8 @@ snapshots:
   cookie-signature@1.0.6: {}
 
   cookie-signature@1.2.2: {}
+
+  cookie@0.4.2: {}
 
   cookie@0.7.1: {}
 
@@ -5877,6 +5889,8 @@ snapshots:
 
   is-plain-obj@4.1.0: {}
 
+  is-promise@4.0.0: {}
+
   is-reference@3.0.3:
     dependencies:
       '@types/estree': 1.0.8
@@ -5929,8 +5943,6 @@ snapshots:
   isarray@2.0.5: {}
 
   isbot@4.4.0: {}
-
-  isbot@5.1.29: {}
 
   isexe@2.0.0: {}
 
@@ -6389,7 +6401,8 @@ snapshots:
 
   mime-db@1.52.0: {}
 
-  mime-db@1.54.0: {}
+  mime-db@1.54.0:
+    optional: true
 
   mime-types@2.1.35:
     dependencies:
@@ -6460,6 +6473,7 @@ snapshots:
       on-headers: 1.1.0
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   mri@1.2.0: {}
 
@@ -6477,7 +6491,8 @@ snapshots:
 
   negotiator@0.6.3: {}
 
-  negotiator@0.6.4: {}
+  negotiator@0.6.4:
+    optional: true
 
   node-releases@2.0.19: {}
 
@@ -6559,12 +6574,14 @@ snapshots:
   on-finished@2.3.0:
     dependencies:
       ee-first: 1.1.1
+    optional: true
 
   on-finished@2.4.1:
     dependencies:
       ee-first: 1.1.1
 
-  on-headers@1.1.0: {}
+  on-headers@1.1.0:
+    optional: true
 
   once@1.4.0:
     dependencies:
