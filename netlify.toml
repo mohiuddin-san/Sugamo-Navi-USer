@@ -1,14 +1,13 @@
 [build]
   command = "pnpm run build"
   publish = "build/client"
+  functions = "build/server"
+  environment = { NODE_VERSION = "18" }
 
-[dev]
-  command = "pnpm run dev"
-  framework = "vite"
-
-[[edge_functions]]
-  path = "/*"
-  function = "remix"
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/remix-server"
+  status = 200
 
 [[headers]]
   for = "/build/*"
