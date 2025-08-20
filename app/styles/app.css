@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Noto Sans JP", "Hiragino Kaku Gothic Pro", sans-serif;
+  }
+}
+/* app/styles/app.css */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid #e5e7eb; /* Tailwind's gray-200 */
+  padding: 0.5rem 1rem;
+  text-align: left;
+}
+
+.prose th {
+  background-color: #f3f4f6; /* Tailwind's gray-100 */
+  font-weight: 600;
+}
+
+.prose tr:nth-child(even) {
+  background-color: #f9fafb; /* Tailwind's gray-50 */
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: inline-flex;
+  animation: marquee 10s linear infinite;
+  white-space: nowrap;
+}
+
+.animate-marquee span {
+  display: inline-block;
+}
+
