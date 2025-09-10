@@ -1,34 +1,549 @@
-import React from 'react';
-import Header from './Header';
-import CommonCategoryTop from './CommonCategoryTop';
-import MarqueeHeader from './MarqueeHeader';
-import ProductCard from './ProductCard';
+import { Link, useLocation } from 'react-router-dom';
+import Header from '~/components/Header';
+import React, { useEffect, useState } from 'react';
+import { useUniversalFluid } from '../hooks/useUniversalFluid';
+import Footer from './Footer';
+import MarqueeHeader from "./MarqueeHeader";
+import ProductCard from '~/components/ProductCard';
+import ModelCourseItem from './ModelCourseItem';
+import TravelsTipsItem from './TravelsTipsItem';
+import { useMediaQuery } from "react-responsive";
+import InstagramVideosAll from '~/components/InstagramVideos';
+import TiktokVideosAll from '~/components/TiktokVideos';
+import { useLoaderData } from '@remix-run/react';
+import supabase from "~/supabase";
 
-
-const Layout = ({ children }: { children: React.ReactNode }) => {
-  const [searchQuery, setSearchQuery] = React.useState("");
-
-  return (
-    <div className="min-h-screen">
-      <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-      <CommonCategoryTop />
-      <MarqueeHeader />
-      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <ProductCard />
-      <ProductCard />
-      <ProductCard />
-      <ProductCard />
-       <ProductCard />
-      <ProductCard />
-      <ProductCard />
-      <ProductCard />
-       <ProductCard />
-      <ProductCard />
-      <ProductCard />
-      <ProductCard />
-    </div>
-    </div>
-  );
+type LoaderData = {
+  posts: any[];
+  error: string | null;
+  topImg: string;
+  imageUrl: string;
+  title: string;
+  details: string[];
+  letsGOimg: string;
+  
 };
 
-export default Layout;
+type Shop = {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  address: string;
+  image_url: string;
+  love_count: number;
+  review_count: number;
+  near_station: string;
+  map_embed: string;
+  other_images: JSON;
+  opening_hours: string;
+};
+
+export function loader() {
+  // Dummy posts to avoid errors (replace with real data fetch later)
+  const dummyPosts = [
+    { id: '1', media_url: './src/video1.mp4', thumbnail_url: './src/thumb1.png', like_count: 100 },
+    { id: '2', media_url: './src/video2.mp4', thumbnail_url: './src/thumb2.png', like_count: 200 },
+  ];
+  return {
+    topImg: "./src/sugamo-navi.webp",
+    imageUrl: "./src/sugamo-gate.png",
+    title: "ABOUT SUGAMO",
+    details: [
+      "「巣鴨」は、東京の中でも個性的な街のひとつです。",
+      "ここ「地蔵通り商店街」は、寺社や老舗の和菓子屋さん、薬局やグルメなお店が入り混じった賑やかな場所で、「おばあちゃんの原宿」として知られ、最近は懐かしい雰囲気が好きな若い人にも人気があります。",
+      "下町の雰囲気を味わいたい方の東京観光の際は、ぜひ巣鴨に足を運んでみてください！",
+      "また、毎月4日、14日、24日には「縁日」が開催されます。",
+      "骨董品やインテリア雑貨の露店、そして屋台グルメが並ぶ、巣鴨地蔵通り商店街での散策や食べ歩きにぴったりのイベントです。"
+    ],
+    letsGOimg: "./src/sugamo-arrow.png",
+    posts: dummyPosts,
+    error: null,
+  };
+}
+
+export default function HomePage() {
+  const data = useLoaderData<LoaderData>();
+  const posts = Array.isArray(data?.posts) ? data.posts : [];
+  const error = data?.error || null;
+  const { topImg, imageUrl, title, details, letsGOimg } = loader();  
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+  const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
+  const location = useLocation();
+  const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
+
+  const [topShops, setTopShops] = useState<Shop[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    window.dispatchEvent(new Event('resize'));
+  }, [location]);
+
+  useEffect(() => {
+    const fetchTopShops = async () => {
+      try {
+        setLoading(true);
+        setErrorMsg(null);
+
+        console.log('Fetching recommendations...');
+        const { data: recommendations, error: recError } = await supabase
+          .from('recommendations')
+          .select('*')
+          .eq('is_active', true)
+          .order('priority', { ascending: true })
+
+        if (recError) {
+          throw new Error(`Failed to fetch recommendations: ${recError.message} (Code: ${recError.code || 'unknown'})`);
+        }
+
+        console.log('Recommendations:', recommendations);
+        if (!recommendations || recommendations.length === 0) {
+          setErrorMsg('No active recommendations found.');
+          setTopShops([]);
+          return;
+        }
+
+        const shopIds = recommendations.map(rec => rec.shop_id);
+        console.log('Shop IDs:', shopIds);
+
+        const { data: shops, error: shopsError } = await supabase
+          .from('shops')
+          .select('*')
+          .in('id', shopIds);
+
+        if (shopsError) {
+          throw new Error(`Failed to fetch shops: ${shopsError.message} (Code: ${shopsError.code || 'unknown'})`);
+        }
+
+        console.log('Shops:', shops);
+        const sortedShops = recommendations
+          .map(rec => shops.find(shop => shop.id === rec.shop_id))
+          .filter(shop => shop !== undefined) as Shop[];
+
+        if (sortedShops.length === 0) {
+          setErrorMsg('No matching shops found for recommendations.');
+        }
+        setTopShops(sortedShops);
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : 'Unknown error fetching top shops';
+        setErrorMsg(errMsg);
+        console.error('Error details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopShops();
+  }, []);
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-4 text-red-600">
+        Error: {error}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-4">
+        Loading shops...
+      </div>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <div className="container mx-auto p-4 text-red-600">
+        Error: {errorMsg}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full flex flex-col items-center">
+      <Header />
+      <div className="bg-white w-full" style={{ paddingLeft: isMobile ? fsm(19) : fs(90), paddingRight: isMobile ? fsm(19) : fs(90) }}>
+        <img
+          className="w-full"
+          style={{ marginTop: autoSize(21), height: 'auto' }}
+          src={isMobile ? "./src/sugamunavi-mobile.webp" : topImg}
+          alt="Sugamo Japan"
+        />
+      </div>
+        <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), width: isMobile ? "90%" : "80%", paddingLeft: isMobile ? fsm(44) : fs(83), paddingTop: isMobile ? fsm(25) : fs(59), paddingRight: isMobile ? fsm(44) : fs(55), paddingBottom: isMobile ? fsm(36) : fs(54) }}>
+        <div className="flex flex-col w-full md:w-1/2">
+          <h1
+            className="text-center md:text-left font-cousine italic font-bold"
+            style={{ fontSize: isMobile ? fsm(32) : fs(48), lineHeight: fs(100), letterSpacing: 0 }}
+          >
+            {title}
+          </h1>
+
+          {/* Details */}
+          <div
+            className="font-semibold font-cairo text-[#313131] text-start"
+            style={{
+              fontSize: isMobile ? fsm(14) : fs(16),
+              width: '100%',
+              lineHeight: 1.6,
+              marginTop: isMobile ? fsm(10) : fs(16)
+            }}
+          >
+            {details.map((line, index) => (
+              <p key={index} className="mb-6">{line}</p>
+            ))}
+          </div>
+
+          <div className="mt-8 w-full flex justify-center md:justify-end">
+
+            <div
+              className="relative w-full flex justify-center md:justify-end"
+              style={{
+                width: isMobile ? fsm(311) : fs(319),
+                height: isMobile ? fsm(100) : fs(95),
+              }}
+            >
+              <img
+                src={letsGOimg}
+                alt="Sugamo Japan"
+                className="absolute top-0 left-0 w-full h-full object-contain"
+              />
+            </div>
+
+          </div>
+        </div>
+
+        {!isMobile && (
+          <div className="flex justify-center items-center w-full md:w-1/2 md:mt-0">
+            <div
+              className="relative w-full h-full">
+              <img
+                src={imageUrl}
+                alt="Sugamo Japan"
+                className="w-full h-full absolute top-0 left-0 object-cover rounded-[30px] "
+
+              />
+            </div>
+          </div>
+        )}
+
+      </div>
+      <MarqueeHeader
+        text="FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE!"
+        backgroundColor="#000000"
+        textColor="#FFFFFF"
+        animationDuration="40s"
+        marginBottom={0}
+        marginTop={isMobile ? 0 : 124}
+      />
+      <div className='w-full'>
+        <div className="flex md:flex-row sm:flex-col" style={{ paddingLeft: isMobile ? fsm(20) : fs(90), paddingRight: isMobile ? fsm(20) : fs(90), paddingTop: isMobile ? fsm(40) : fs(70), paddingBottom: isMobile ? fsm(40) : fs(70), gap: isMobile ? fsm(40) : fs(58) }}>
+          <div className='flex flex-row sm:justify-center md:items-center bg-slate-50' style={{ gap: isMobile ? fsm(26) : fs(24) }}>
+            <div key={posts[0]?.id || '1'} className="relative overflow-hidden rounded-lg" style={{ width: isMobile ? '45%' : fs(253), height: isMobile ? fsm(360) : fs(450), maxWidth: isMobile ? fsm(207) : fs(253) }}>
+              <video
+                src={posts[0]?.media_url || './src/video1.mp4'}
+                className="object-cover w-full h-full"
+                controls
+                preload="metadata"
+                poster={posts[0]?.thumbnail_url || './src/thumb1.png'}
+              >
+                Your browser does not support the video tag.
+              </video>
+              <div className="absolute bg-opacity-50 flex-row bottom-2 flex justify-center items-center px-3 py-2 gap-2">
+                <img src='./src/eye_white.svg' className='w-4 h-4' />
+                <p className='text-body font-cairo text-white'>{posts[0]?.like_count || 0}</p>
+              </div>
+            </div>
+            <div key={posts[1]?.id || '2'} className="relative overflow-hidden rounded-lg" style={{ width: isMobile ? '45%' : fs(253), height: isMobile ? fsm(360) : fs(450), maxWidth: isMobile ? fsm(207) : fs(253) }}>
+              <video
+                src={posts[1]?.media_url || './src/video2.mp4'}
+                className="object-cover w-full h-full"
+                controls
+                preload="metadata"
+                poster={posts[1]?.thumbnail_url || './src/thumb2.png'}
+              >
+                Your browser does not support the video tag.
+              </video>
+              <div className="absolute bg-opacity-50 flex-row bottom-2 flex justify-center items-center px-3 py-2 gap-2">
+                <img src='./src/eye_white.svg' className='w-4 h-4' />
+                <p className='text-body font-cairo text-white'>{posts[1]?.like_count || 0}</p>
+              </div>
+            </div>
+          </div>
+          <div className='flex flex-col justify-center items-center md:items-start'>
+            {!isMobile && (<img style={{ width: fs(200), height: fs(100) }} alt="SUGAMO NAVI" src="./src/sugamo-navi-text.svg" />)}
+            <div className='flex flex-col' style={{ marginTop: fs(28) }}>
+              <p className='font-cousine italic text-[#ED4548]' style={{ textDecoration: "underline", fontSize: isMobile ? fsm(80) : fs(80) }}>INSTAGRAM</p>
+              <div className='flex flex-row items-center gap-2'>
+                <p className='font-cousine italic text-black' style={{ textDecoration: "underline", fontSize: isMobile ? fsm(80) : fs(80) }}>TIKTOK</p>
+                <img style={{ width: isMobile ? fsm(58) : fs(58), height: isMobile ? fsm(58) : fs(58) }} src='./src/instragram.svg' />
+                <img style={{ width: isMobile ? fsm(58) : fs(58), height: isMobile ? fsm(58) : fs(58) }} src='./src/titok.svg' />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <MarqueeHeader
+        text="FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE!"
+        backgroundColor="#000000"
+        textColor="#FFFFFF"
+        animationDuration="40s"
+        marginBottom={0}
+      />
+      <div
+        className="flex flex-col justify-center items-center"
+        style={fluidStyle({
+          marginTop: isMobile ? fsm(90) : fs(90),
+          marginLeft: isMobile ? fsm(20) : fs(90),
+          marginRight: isMobile ? fsm(20) : fs(90)
+        })}
+      >
+        <div className="relative flex flex-col items-center border-2 border-black" style={{ borderRadius: autoSize(30) }}>
+          <span
+            className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
+            style={fluidStyle({
+              fontSize: isMobile ? fsm(25) : fs(61),
+              w: isMobile ? fsm(295) : "75%"
+            })}
+          >
+            {"SUGAMO’S BEST SHOP"}
+            <span
+              className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0"
+              style={fluidStyle({ fontSize: isMobile ? fsm(14) : fs(20) })}
+            >
+              巣鴨のおすすめのお店
+            </span>
+          </span>
+          <div
+            className="grid grid-cols-1 md:grid-cols-3 items-center"
+            style={fluidStyle({
+              paddingTop: isMobile ? fsm(90) : fs(90),
+              paddingLeft: isMobile ? fsm(35) : fs(35),
+              paddingRight: isMobile ? fsm(35) : fs(35),
+              paddingBottom: autoSize(80),
+              gap: isMobile ? fsm(32) : fs(42)
+            })}
+          >
+            {/* 1st Card */}
+            <div className="flex flex-col items-center transform order-1 md:order-2" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
+              <img
+                src="./src/first.png"
+                alt="First Place"
+                style={{ width: autoSize(116), height: autoSize(113) }}
+                className="object-cover rounded-lg"
+              />
+              <ProductCard
+                title={topShops[0]?.name || "ブーランジェリーボヌール"}
+                imageUrl={topShops[0]?.image_url || "./src/shop.png"}
+                description={topShops[0]?.description || "巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！"}
+                likes={topShops[0]?.love_count || 0}
+                views={topShops[0]?.review_count || 0}
+                shopId={topShops[0].id}
+                opening_hours={topShops[0].opening_hours}
+                near_station={topShops[0].near_station}
+                address={topShops[0].address}
+                category={topShops[0].category}
+                map_embed = {topShops[0].map_embed}
+                other_images = {topShops[0].other_images}
+                style={{ width: isMobile ? "auto" : fs(434), height: isMobile ? "auto" : fs(560) }}
+              />
+            </div>
+            {/* 2nd Card */}
+            <div className="flex flex-col items-center order-2 md:order-1" style={{ gap: isMobile ? fsm(16) : fs(26) }}>
+              <img
+                src="./src/second.png"
+                alt="Second Place"
+                style={{ width: autoSize(88), height: autoSize(88) }}
+                className="object-cover rounded-lg"
+              />
+              <ProductCard
+                title={topShops[1]?.name || "Cafe Sugamo"}
+                imageUrl={topShops[1]?.image_url || "./src/shop.png"}
+                description={topShops[1]?.description || "Cozy cafe with traditional sweets"}
+                likes={topShops[1]?.love_count || 0}
+                views={topShops[1]?.review_count || 0}
+                 shopId={topShops[1].id}
+                opening_hours={topShops[1].opening_hours}
+                near_station={topShops[1].near_station}
+                address={topShops[1].address}
+                category={topShops[1].category}
+                map_embed = {topShops[1].map_embed}
+                other_images = {topShops[1].other_images}
+                style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+              />
+            </div>
+            {/* 3rd Card */}
+            <div className="flex flex-col items-center order-3 lg:order-3" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
+              <img
+                src="./src/3r-place.png"
+                alt="Third Place"
+                style={{ width: autoSize(88), height: autoSize(88) }}
+                className="object-cover rounded-lg"
+              />
+              <ProductCard
+                title={topShops[2]?.name || "Restaurant Sugamo"}
+                imageUrl={topShops[2]?.image_url || "./src/shop.png"}
+                description={topShops[2]?.description || "Fine dining in Sugamo style"}
+                likes={topShops[2]?.love_count || 0}
+                views={topShops[2]?.review_count || 0}
+                shopId={topShops[2].id}
+                opening_hours={topShops[2].opening_hours}
+                near_station={topShops[2].near_station}
+                address={topShops[2].address}
+                category={topShops[2].category}
+                map_embed = {topShops[2].map_embed}
+                other_images = {topShops[2].other_images}
+                style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+              />
+            </div>
+          </div>
+          <div
+            className="absolute bottom-0 translate-y-1/2 flex items-center bg-white whitespace-nowrap max-w-full"
+            style={{ gap: autoSize(13), paddingLeft: autoSize(20), paddingRight: autoSize(20) }}
+          >
+            <img
+              src="./src/left-line.svg"
+              alt="Top 3 Rankings"
+              className="h-auto object-cover"
+              style={{ width: autoSize(32) }}
+            />
+            <p
+              className="text-black font-cousine italic font-bold text-center"
+              style={{
+                fontSize: isMobile ? fsm(31) : fs(48),
+              }}
+            >
+              TOP 3 RANKINGS
+            </p>
+            <img
+              src="./src/right-line.svg"
+              alt="Top 3 Rankings"
+              className="h-auto object-cover"
+              style={{ width: autoSize(32) }}
+            />
+          </div>
+        </div>
+        <Link
+          to="/Recommendation"
+          className="w-full italic text-end text-black font-cousine"
+          style={fluidStyle({
+            fontSize: isMobile ? fsm(25) : fs(25),
+            marginTop: isMobile ? fsm(40) : fs(20)
+          })}
+        >
+          more+
+        </Link>
+      </div>
+      <div className="flex flex-col justify-center items-center" style={{ marginTop: isMobile ? fsm(80) : fs(154), marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(90) }}>
+        <div className="w-full h-auto relative flex flex-col items-center bg-white border-2 border-black rounded-lg" style={{ paddingBottom: isMobile ? fsm(26) : fs(35) }}>
+          <span
+            className="absolute top-0 -translate-y-1/2 left-1/2 transform -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
+            style={{ fontSize: isMobile ? fsm(31) : fs(61), width: isMobile ? fsm(257) : fs(642) }}
+          >
+            {"MODEL COURSE"} <span className="font-cairo font-semibold" style={{ fontSize: isMobile ? fsm(16) : fs(20) }}>モデルコース</span>
+          </span>
+          <div className="grid grid-cols-1 md:grid-cols-2" style={{ paddingTop: isMobile ? fsm(50) : fs(71) }}>
+            <ModelCourseItem
+              imageUrl="./src/model-course-1.png"
+              title="食べ歩きとお守り巡り"
+              details="巣鴨地蔵通り商店街をスタート。昔ながらの和菓子や塩せんべいを片手に、ぶらり食べ歩きはいかがですか？"
+              categories={["Temple", "Tea", "History"]}
+              itemNumber={1}
+            />
+            <div className="relative flex flex-col">
+              <div className="block md:hidden mx-3">
+                <div className="w-full h-px bg-black"></div>
+              </div>
+              <div className="hidden md:block absolute top-0 bottom-0 left-0 -translate-x-1/2">
+                <div className="h-full w-px bg-black pt-8 pb-7"></div>
+              </div>
+              <ModelCourseItem
+                imageUrl="./src/model-course-2.png"
+                title="寺社巡り〜歴史と癒しの旅〜"
+                details="巣鴨地蔵通り商店街をスタート。昔ながらの和菓子や塩せんべいを片手に、ぶらり食べ歩きはいかがですか？"
+                categories={["Temple", "Tea", "History"]}
+                itemNumber={2}
+              />
+            </div>
+          </div>
+        </div>
+        <Link
+          to="/ModelCourse"
+          className="w-full italic text-end mr-5 mt-5 hover:text-blue-600"
+          style={{ fontSize: isMobile ? fsm(25) : fs(25), color: "#000000", fontFamily: 'Cousine' }}
+        >
+          more+
+        </Link>
+      </div>
+      <div
+        className="flex flex-col justify-center items-center w-full"
+        style={{
+          marginTop: isMobile ? fsm(154) : fs(224),
+          paddingLeft: isMobile ? fsm(20) : fs(90),
+          paddingRight: isMobile ? fsm(20) : fs(90)
+        }}
+      >
+        <div
+          className="w-full h-auto relative flex flex-col items-center border-2 border-black rounded-lg"
+          style={{
+            paddingBottom: autoSize(90),
+            paddingTop: autoSize(94)
+          }}
+        >
+          <span
+            className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap"
+            style={fluidStyle({
+              fontSize: isMobile ? fsm(31) : fs(61),
+              w: isMobile ? fsm(240) : "auto",
+              paddingLeft: isMobile ? fsm(0) : fs(24),
+              paddingRight: isMobile ? fsm(0) : fs(24)
+            })}
+          >
+            {"TRAVEL TIPS "}
+            <span
+              className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0"
+              style={fluidStyle({ fontSize: isMobile ? fsm(14) : fs(20) })}
+            >
+              旅の情報
+            </span>
+          </span>
+          <div className="grid grid-cols-1 md:grid-cols-3 w-full" style={{ paddingLeft: isMobile ? fsm(33) : fs(46), paddingRight: isMobile ? fsm(33) : fs(46), gap: isMobile ? fsm(16) : fsm(24) }}>
+            {Array.from({ length: 10 }).map((_, i) => (
+              <TravelsTipsItem key={i} categories={["Travel", "Tips"]} />
+            ))}
+          </div>
+        </div>
+        <Link
+          to="/BlogList"
+          className="w-full italic text-end mr-5 mt-5 hover:text-blue-600"
+          style={{
+            fontSize: fs(25),
+            color: "#000000",
+            fontFamily: "Cousine",
+          }}
+        >
+          more+
+        </Link>
+      </div>
+      <MarqueeHeader
+        text="FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE!"
+        backgroundColor="#000000"
+        textColor="#FFFFFF"
+        animationDuration="40s"
+        marginTop={131}
+        marginBottom={50}
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ marginTop: isMobile ? fsm(64) : fs(90), marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(72), marginBottom: isMobile ? fsm(56) : fs(170), gap: isMobile ? fsm(56) : fs(72) }}>
+        <div>
+          <InstagramVideosAll />
+        </div>
+        <div>
+          <InstagramVideosAll />
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+}

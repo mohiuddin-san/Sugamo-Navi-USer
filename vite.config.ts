@@ -11,4 +11,10 @@ export default defineConfig({
       "~": resolve(__dirname, "app"), // Explicitly map ~ to app directory
     },
   },
+  ssr: {
+    noExternal: ['react-responsive', 'react-markdown', 'remark-gfm'], // Bundle dependencies for SSR
+  },
+  optimizeDeps: {
+    include: ["leaflet", "react-leaflet"],
+  },
 });

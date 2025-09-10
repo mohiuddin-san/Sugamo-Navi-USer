@@ -1,10 +1,54 @@
-import React from 'react';
+import React from "react";
+import { useUniversalFluid } from "../hooks/useUniversalFluid";
+import { useMediaQuery } from "react-responsive";
+interface MarqueeHeaderProps {
+  text: string; // Dynamic text prop
+  backgroundColor?: string; // Optional background color prop
+  textColor?: string; // Optional text color prop
+  animationDuration?: string;
+  marginBottom?: number; // Optional dynamic margin bottom
+  marginTop?: number; // Optional dynamic margin top
+}
 
-const MarqueeHeader: React.FC = () => {
+const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
+  text,
+  backgroundColor = "transparent", // Default to transparent
+  textColor = "black", // Default to black
+  animationDuration = "20s", // Default animation duration
+  marginBottom = 0, 
+  marginTop = 0, 
+}) => {
+  const { fs,fsm, fluidStyle, fluidClass } = useUniversalFluid();
+  const isMobile = useMediaQuery({ maxWidth: 767 });
+
   return (
-    <div className="border-t border-b border-black py-2 overflow-hidden whitespace-nowrap">
-      <div className="inline-block animate-marquee text-lg font-bold">
-        Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!
+    <div
+      className={`w-full border-t-2 border-b-2 border-black overflow-hidden whitespace-nowrap ${fluidClass({
+        paddingBottom: 1,
+        marginBottom: marginBottom,
+        marginTop: fs(marginTop),
+      })}`}
+      style={{
+        ...fluidStyle({
+          paddingTop: 8,
+          paddingBottom: 8,
+          marginBottom: fs(marginBottom), // Dynamic fluid margin bottom
+          marginTop: fs(marginTop), // Dynamic fluid margin top
+        }),
+        backgroundColor, // Apply dynamic background color
+      }}
+    >
+      <div
+        className={`inline-block animate-marquee font-cousine italic`}
+        style={{
+          fontSize: isMobile? fsm(25):fs(25),
+          color: textColor, // Apply dynamic text color
+          animationDuration, // Apply dynamic animation duration
+          animationTimingFunction: "linear",
+          animationIterationCount: "infinite",
+        }}
+      >
+        {text.repeat(5)} {/* Repeat text 5 times for marquee effect */}
       </div>
     </div>
   );

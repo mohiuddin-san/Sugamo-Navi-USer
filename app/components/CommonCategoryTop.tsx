@@ -1,17 +1,57 @@
 import React from 'react';
+import { useUniversalFluid } from '../hooks/useUniversalFluid';
+import { useDevice } from "~/routes/contexts/DeviceContext";
 
-const FoodDrinkSection = () => {
+const CommonCategoryTop = ({ title, subtitle, imageSrc, imageAlt}) => {
+  const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
+  const isMobile  = useDevice();
+  const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   return (
-    <div className="flex items-center justify-start p-4 bg-white">
-      <div className="flex flex-col items-start">
-        <div className="text-sm text-gray-500 mb-1">食べろ</div>
-        <div className="border border-gray-300 rounded-lg p-2 flex items-center space-x-4">
-          <span className="text-lg font-bold">FOOD&DRINK</span>
-          <div className="w-64 h-40 bg-cover bg-center rounded-lg" style={{ backgroundImage: "url('/src/food.png')" }}></div>
+    <div
+      className={`flex flex-col md:flex-row items-center justify-center`}
+      style={{}}
+    >
+      <div className="md:w-1/2 w-full ">
+        <div className="flex justify-center md:justify-end   ">
+          <div
+            className={`relative flex flex-col  border-2 border-black rounded-lg w-full md:w-auto`}
+            style={{ height: autoSize(129), paddingLeft: isMobile? fsm(0): fs(48), paddingRight: isMobile? fsm(0): fs(48),marginTop: isMobile? fsm(83):0,marginLeft: isMobile? fsm(40):0, marginRight: isMobile? fsm(40):0}}
+          >
+            <span
+              className={`absolute -translate-y-1/2 left-1/2 transform -translate-x-1/2 bg-white text-center font-cairo font-semibold`}
+              style={{ fontSize: autoSize(25) }}
+            >
+              {subtitle}
+            </span>
+            <div className='h-full w-full flex justify-center items-center'>
+              <p
+                className={`text-black font-bold italic font-cousine`}
+                style={{ fontSize: isMobile? fsm(55): fs(60) }}
+              >
+                {title}
+              </p>
+            </div>
+          </div>
         </div>
+      </div>
+      <div
+        className={`md:w-1/2 w-full justify-center `}
+        style={{ paddingLeft: isMobile ? fsm(35) : fs(64), paddingRight: isMobile ? fsm(35) : fs(0), marginTop:isMobile?fsm(24):0,marginBottom: isMobile?fsm(56):0}}
+      >
+        <img
+          className="w-full h-full object-cover "
+          style={{
+            height: isMobile? fsm(380): 'auto',
+            borderRadius: isMobile
+              ? fsm(50) // mobile → সবদিক rounded
+              : `${fs(50)} 0 0 ${fs(50)}` // desktop → শুধু left side rounded
+          }}
+          src={imageSrc}
+          alt={imageAlt}
+        />
       </div>
     </div>
   );
 };
 
-export default FoodDrinkSection;
+export default CommonCategoryTop;

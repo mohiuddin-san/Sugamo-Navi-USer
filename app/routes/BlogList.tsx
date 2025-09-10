@@ -1,22 +1,33 @@
 import { useState, useEffect } from "react";
 import { Link } from "@remix-run/react";
-import supabase from "~/supabase";
-import { BookmarkIcon } from "@heroicons/react/24/outline";
-import { ResponsiveGrid, GridItem } from "~/components/ResponsiveGrid.tsx";
+import supabase from "~/supabase_blog";
+import { json } from "@remix-run/node";
+import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
 import { useMediaQuery } from "react-responsive";
-import remarkGfm from "remark-gfm";
+import { useLoaderData } from "@remix-run/react";
 import ReactMarkdown from "react-markdown";
-import ShimmerLayout from "./ShimmerLayout/SlBlogList";
+import ShimmerLayout from "../components/ShimmerLayout/SlBlogList";
+import MarqueeHeader from "~/components/MarqueeHeader";
+import { useUniversalFluid } from '../hooks/useUniversalFluid';
+import Header from "../components/Header";
+import CommonCategoryTop from "../components/CommonCategoryTop";
+import TikTokVideoSlider from "../components/TikTokVideoSlider"
+import { getTikTokVideos } from "~/components/socialMediaFetcher";
+import Footer from '../components/Footer';
 
+export const loader = async () => {
+  const videos = await getTikTokVideos();
+  return json({ videos });
+};
 export default function BlogList() {
   const [blogs, setBlogs] = useState([]);
   const [categories, setCategories] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState([]);
-
+  const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
   const isMobile = useMediaQuery({ maxWidth: 767 });
-
+  const { videos } = useLoaderData<{ videos: any[] }>();
   useEffect(() => {
     const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
     setBookmarkedBlogs(savedBookmarks);
@@ -95,21 +106,29 @@ export default function BlogList() {
         <p>Error: {error}</p>
       </div>
     );
-
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl font-extrabold text-center text-gray-900 mb-12">
-        Latest <span className="text-indigo-600">Articles</span>
-      </h1>
-
-      <div className="bg-blue-500 text-white p-4 mb-4">Test Tailwind</div>
-
+    <div className="max-w-full">
+      <Header />
+      <CommonCategoryTop
+        title="TRAVEL TIPS"
+        subtitle="旅の情報"
+        imageSrc="/src/bookmark.png"
+        imageAlt="Travel tips Image"
+      />
+      <MarqueeHeader
+        text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
+        backgroundColor="#FFFFFF"
+        textColor="#0000000"
+        animationDuration="40s"
+        marginBottom={0}
+        marginTop={98}
+      />.
       <ResponsiveGrid
         columns={isMobile ? "1fr" : "1fr 1fr"}
         rows="auto"
-        gap={32}
         isMobile={isMobile}
-        className="w-full"
+        className="flex justify-center mx-10 md:mx-[10%]"
+        style={{ gap: isMobile?fsm(64): fs(133), marginTop:isMobile? fsm(0):fsm(130)}}
       >
         {blogs.map((blog, index) => (
           <GridItem
@@ -118,10 +137,11 @@ export default function BlogList() {
             row={isMobile ? index + 1 : Math.floor(index / 2) + 1}
             columnSpan={1}
             rowSpan={1}
-            className="rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300"
+            style={{ height: isMobile ? "100%" : fs(570), padding: isMobile ? fsm(20) : fs(20) }}
+            className="w-full border-2 border-black rounded-xl hover:shadow-lg transition-all duration-300 md:min-h-[510px]"
           >
-            <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
-              <span className="text-xs text-gray-500">
+            <div className="bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
+              <span className="text-black font-courierPrime" style={{ fontSize: isMobile? fsm(20):fs(20) }}>
                 {formatDate(blog.publish_date)} | {categories[blog.category_id] || "General"}
               </span>
               <button
@@ -132,35 +152,32 @@ export default function BlogList() {
                 className="p-1 rounded-full hover:bg-gray-100 transition-colors"
                 aria-label="Toggle bookmark"
               >
-                <BookmarkIcon
-                  className={`h-5 w-5 ${
-                    bookmarkedBlogs.includes(blog.id) ? "text-indigo-600 fill-indigo-600" : "text-sky-400"
-                  }`}
-                />
               </button>
             </div>
 
             {blog.top_image && (
-              <div className="h-48 overflow-hidden">
+              <div className=" overflow-hidden" style={{ marginTop: isMobile? fsm(16):fs(16) }}>
                 <img
                   src={blog.top_image}
-                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                  className="w-full object-cover transition-transform duration-300 hover:scale-105"
+                  style={{ height: isMobile? fsm(225):fs(225) }}
                 />
               </div>
             )}
 
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-2 hover:text-indigo-600">
+            <div style={{ marginTop: isMobile? fsm(16): fs(16) }}>
+              <h2 className="font-bold font-cairo text-gray-800 hover:text-rose-400 line-clamp-1" style={{ fontSize: isMobile? fsm(30): fs(30), marginTop: isMobile?fsm(10):(10), marginBottom: isMobile?fsm(15):fs(15) }}>
                 {blog.title}
               </h2>
-              <div className="text-gray-600 text-sm mb-3 line-clamp-5">
-                <ReactMarkdown>{getExcerpt(blog.details, 5)}</ReactMarkdown>
+              <div className=" text-black mb-3  font-sawarabi line-clamp-4" style={{ maxHeight: isMobile?fsm(137):fs(137), overflow: "hidden" }}>
+                <ReactMarkdown>{getExcerpt(blog.details)}</ReactMarkdown>
               </div>
 
               <div className="flex justify-end">
                 <Link
                   to={`/blog/${blog.id}`}
-                  className="text-indigo-600 text-sm font-medium hover:text-indigo-800"
+                  className="text-black text-sm font-medium hover:text-indigo-800 font-courierPrime"
+                  style={{ fontSize: isMobile? fsm(25):fs(25), marginTop: isMobile? fsm(30):fs(30) }}
                 >
                   more+
                 </Link>
@@ -169,6 +186,23 @@ export default function BlogList() {
           </GridItem>
         ))}
       </ResponsiveGrid>
+      
+      <div style={{marginLeft: fs(90)}}>
+        <h2 className=" font-cousine text-black text-start" style={{ fontSize: isMobile?fsm(25):fs(25), marginTop: isMobile? fsm(100):fs(100) }}>
+          SNSの動画
+        </h2>
+        <h2 className=" font-cousine text-black text-start font-bold" style={{ fontSize: isMobile?fsm(60):fs(60), marginTop:isMobile? fsm(20): fs(20) }}>
+          SUGAMO NAVI
+        </h2>
+        <h2 className=" font-cousine text-[#ED4548] text-start italic" style={{ fontSize: isMobile? fsm(48):fs(48), marginTop:isMobile? fsm(20) :fs(20) }}>
+          #INSTAGRAM
+        </h2>
+        <h2 className=" font-cousine text-[#ED4548] text-start italic" style={{ fontSize: isMobile? fsm(48): fs(48), marginTop: isMobile? fsm(8):fs(8) }}>
+          #TIKTOK
+        </h2>
+      </div>
+       <TikTokVideoSlider videos={videos} />
+        <Footer />
     </div>
   );
 }

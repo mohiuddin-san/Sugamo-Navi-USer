@@ -1,6 +1,6 @@
 import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import supabase from "~/supabase";
+import supabase from "~/supabase_blog";
 import BlogDetail from "~/components/BlogDetail";
 
 export async function loader({ params }: LoaderFunctionArgs) {
