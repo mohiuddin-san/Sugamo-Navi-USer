@@ -48,6 +48,8 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState<string[]>([]);
   const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
   const isMobile = useMediaQuery({ maxWidth: 767 });
+  const tocContainerRef = useRef<HTMLDivElement>(null);
+  const tocItemRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
 
   const registerHeading = (id: string, element: HTMLElement | null, text: string, level: number) => {
     if (element && text && id) {
@@ -110,6 +112,22 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [headings]);
+
+  useEffect(() => {
+    if (activeHeading && tocItemRefs.current[activeHeading] && tocContainerRef.current) {
+      const tocItem = tocItemRefs.current[activeHeading];
+      const tocContainer = tocContainerRef.current;
+      const tocRect = tocContainer.getBoundingClientRect();
+      const itemRect = tocItem.getBoundingClientRect();
+
+      if (itemRect.bottom > tocRect.bottom || itemRect.top < tocRect.top) {
+        tocItem.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      }
+    }
+  }, [activeHeading]);
 
   const markdownComponents = {
     h1: ({ node, children, ...props }: any) => null,
@@ -285,10 +303,25 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
         marginBottom={0}
         marginTop={98}
       />
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Blog Content */}
-          <div className={`bg-white rounded-xl overflow-hidden ${headings.length > 0 ? 'lg:w-3/4 lg:order-1' : 'w-full'}`}>
+      <div className=" mx-auto py-12 bg-white">
+        <div className="flex flex-col lg:flex-row gap-10">
+          <div className="h-40 p-2 flex flex-col gap-3 justify-center items-center rounded-r-lg border-t-2 border-b-2 border-l-0 border-r-2 border-black overflow-hidden">
+            <a href="https://www.instagram.com/reel/DNfV4MozhwL/">
+              <img
+                src="/src/instagram-icon.svg"
+                alt="Instagram"
+                className="w-10 h-10"
+              />
+            </a>
+            <a href="https://www.tiktok.com/@sugamo_japan">
+              <img
+                src="/src/titok.svg"
+                alt="TikTok"
+                className="w-10 h-10"
+              />
+            </a>
+          </div>
+          <div className={`bg-white rounded-tl-xl rounded-bl-xl rounded-r-none overflow-hidden ${headings.length > 0 ? 'lg:w-3/4 lg:order-1' : 'w-full'} border-t-2 border-b-2 border-l-2 border-r-0 border-black`}>
             {blog.top_image && (
               <div className="h-96 overflow-hidden">
                 <img
@@ -323,7 +356,7 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
             <div className="p-6">
               <Link
                 to="/"
-                className="text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
+                className="text-[#ED4548] font-medium hover:text-[#ED4548] transition-colors"
               >
                 ← Back to Articles
               </Link>
@@ -332,24 +365,54 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
 
           {/* Table of Contents */}
           {headings.length > 0 && (
-            <div className="lg:w-1/4 mb-8 lg:mb-0 lg:order-2">
-              <div className="sticky top-28 bg-white p-6 rounded-xl shadow-md">
-                <h3 className="text-xl font-semibold font-cairo text-black mb-4 border-b-2 border-indigo-600 pb-2">
-                  Table of Contents
+           <div className="lg:w-1/4 mb-8 lg:mb-0 lg:order-2">
+              <div className="sticky top-28 bg-white p-6 rounded-l-xl border-t-2 border-b-2 border-l-2 border-black">
+                <h3 className="text-xl font-semibold font-cairo text-black mb-4 text-center">
+                  目次
                 </h3>
-                <ul className="space-y-2">
-                  {headings.map((heading) => (
-                    <li
-                      key={heading.id}
-                      className={`toc-item toc-level-${heading.level} hover:text-indigo-600 transition-colors cursor-pointer ${
-                        activeHeading === heading.id ? 'text-indigo-600 font-bold' : ''
-                      }`}
-                      onClick={() => scrollToHeading(heading.id)}
-                    >
-                      {heading.text}
-                    </li>
-                  ))}
-                </ul>
+                <div className="toc-container relative max-h-[calc(100vh-200px)] overflow-y-auto" ref={tocContainerRef}>
+                  <ul className="space-y-1">
+                    {headings.map((heading) => (
+                      <li
+                        key={heading.id}
+                        ref={(el) => { tocItemRefs.current[heading.id] = el; }}
+                        className={`toc-item toc-level-${heading.level} transition-colors cursor-pointer flex items-center`}
+                        onClick={() => scrollToHeading(heading.id)}
+                      >
+                        <span
+                          className={`toc-marker-wrapper flex justify-center items-center bg-white rounded-full ${
+                            heading.level === 2 ? 'w-[19px] h-[19px] pl-[2px]' : 'w-[19px] h-[9px] pl-[2px]'
+                          }`}
+                        >
+                          <span
+                            className={`toc-marker ${
+                              activeHeading === heading.id
+                                ? 'text-[#ED4548] font-bold'
+                                : 'text-gray-700'
+                            } ${heading.level === 2 ? 'triangle-marker' : 'circle-marker'}`}
+                          >
+                            {heading.level === 2
+                              ? activeHeading === heading.id
+                                ? '▼'
+                                : '▽'
+                              : activeHeading === heading.id
+                              ? '●'
+                              : '○'}
+                          </span>
+                        </span>
+                        <span
+                          className={`flex-1 ml-3 ${
+                            activeHeading === heading.id
+                              ? 'text-[#ED4548] font-bold'
+                              : 'text-gray-700 hover:text-indigo-600'
+                          } ${heading.level === 3 ? 'toc-level-3' : 'toc-level-2'}`}
+                        >
+                          {heading.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           )}
@@ -490,25 +553,62 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
           font-weight: bold;
         }
         
-        .toc-item {
-          padding-left: 1em;
-          border-left: 2px solid transparent;
-          transition: all 0.2s ease;
+        .toc-container {
+          position: relative;
         }
         
-        .toc-item:hover {
-          border-left-color: #3b82f6;
+        .toc-container::before {
+          content: '';
+          position: absolute;
+          left: 9.5px;
+          top: 0;
+          bottom: 0;
+          width: 2px;
+          background-color: #d1d5db;
+          z-index: 1;
+        }
+        
+        .toc-item {
+          display: flex;
+          align-items: center;
+          padding: 0.4em 0;
+          transition: all 0.2s ease;
+          line-height: 1.4;
+          position: relative;
+          z-index: 2;
+        }
+        
+        .toc-marker-wrapper {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background-color: white;
+          border-radius: 50%;
+          margin-left: 0;
+          margin-right: 0;
+        }
+        
+        .toc-marker {
+          line-height: 1;
+        }
+        
+        .triangle-marker {
+          font-size: 12px;
+          line-height: 1;
+        }
+        
+        .circle-marker {
+          font-size: 7px;
+          line-height: 1;
         }
         
         .toc-level-2 {
           font-weight: 600;
-          padding-left: 0.5em;
           font-size: 1.1em;
         }
         
         .toc-level-3 {
           font-weight: 500;
-          padding-left: 1.5em;
           font-size: 1em;
         }
         

@@ -9,9 +9,10 @@ import ModelCourseItem from './ModelCourseItem';
 import TravelsTipsItem from './TravelsTipsItem';
 import { useMediaQuery } from "react-responsive";
 import InstagramVideosAll from '~/components/InstagramVideos';
-import TiktokVideosAll from '~/components/TiktokVideos';
 import { useLoaderData } from '@remix-run/react';
-import supabase from "~/supabase";
+import supabaseShops from "~/supabase";  
+import supabaseBlogs from "~/supabase_blog";  
+import TikTokVideos from '~/components/TiktokVideos';
 
 type LoaderData = {
   posts: any[];
@@ -21,7 +22,7 @@ type LoaderData = {
   title: string;
   details: string[];
   letsGOimg: string;
-  
+
 };
 
 type Shop = {
@@ -66,15 +67,71 @@ export default function HomePage() {
   const data = useLoaderData<LoaderData>();
   const posts = Array.isArray(data?.posts) ? data.posts : [];
   const error = data?.error || null;
-  const { topImg, imageUrl, title, details, letsGOimg } = loader();  
+  const { topImg, imageUrl, title, details, letsGOimg } = loader();
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   const location = useLocation();
   const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
 
   const [topShops, setTopShops] = useState<Shop[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [shopsLoading, setShopsLoading] = useState(true);
+  const [shopsError, setShopsError] = useState<string | null>(null);
+  const [blogs, setBlogs] = useState([]);
+  const [categories, setCategories] = useState({});
+  const [bookmarkedBlogs, setBookmarkedBlogs] = useState([]);
+  const [blogsLoading, setBlogsLoading] = useState(true);
+  const [blogsError, setBlogsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
+    setBookmarkedBlogs(savedBookmarks);
+
+    const fetchData = async () => {
+      try {
+        console.log("Starting blogs fetch...");
+        setBlogsLoading(true);
+        setBlogsError(null);
+        const { data: blogsData, error: blogError } = await supabaseBlogs
+          .from("blogs")
+          .select("id, title, details, status, category_id, top_image, publish_date")
+          .eq("status", "publish")
+          .order("publish_date", { ascending: false });
+
+        if (blogError) throw blogError;
+
+        console.log("Blogs data fetched:", blogsData);
+
+        const categoryIds = [...new Set(blogsData.map((blog) => blog.category_id).filter(Boolean))];
+
+        if (categoryIds.length > 0) {
+          const { data: categoriesData, error: categoriesError } = await supabaseBlogs
+            .from("categories")
+            .select("id, name")
+            .in("id", categoryIds);
+
+          if (categoriesError) throw categoriesError;
+
+          const categoriesMap = categoriesData.reduce((acc, cat) => {
+            acc[cat.id] = cat.name;
+            return acc;
+          }, {});
+
+          setCategories(categoriesMap);
+          console.log("Categories map:", categoriesMap);
+        }
+
+        setBlogs(blogsData || []);
+        console.log("Blogs data loaded in state:", blogsData || []);
+      } catch (err) {
+        console.error("Error fetching blogs:", err);
+        setBlogsError(err.message || "Failed to load blogs");
+      } finally {
+        setBlogsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
@@ -83,15 +140,15 @@ export default function HomePage() {
   useEffect(() => {
     const fetchTopShops = async () => {
       try {
-        setLoading(true);
-        setErrorMsg(null);
+        setShopsLoading(true);
+        setShopsError(null);
 
         console.log('Fetching recommendations...');
-        const { data: recommendations, error: recError } = await supabase
+        const { data: recommendations, error: recError } = await supabaseShops
           .from('recommendations')
           .select('*')
           .eq('is_active', true)
-          .order('priority', { ascending: true })
+          .order('priority', { ascending: true });
 
         if (recError) {
           throw new Error(`Failed to fetch recommendations: ${recError.message} (Code: ${recError.code || 'unknown'})`);
@@ -99,7 +156,7 @@ export default function HomePage() {
 
         console.log('Recommendations:', recommendations);
         if (!recommendations || recommendations.length === 0) {
-          setErrorMsg('No active recommendations found.');
+          setShopsError('No active recommendations found.');
           setTopShops([]);
           return;
         }
@@ -107,7 +164,7 @@ export default function HomePage() {
         const shopIds = recommendations.map(rec => rec.shop_id);
         console.log('Shop IDs:', shopIds);
 
-        const { data: shops, error: shopsError } = await supabase
+        const { data: shops, error: shopsError } = await supabaseShops
           .from('shops')
           .select('*')
           .in('id', shopIds);
@@ -122,15 +179,15 @@ export default function HomePage() {
           .filter(shop => shop !== undefined) as Shop[];
 
         if (sortedShops.length === 0) {
-          setErrorMsg('No matching shops found for recommendations.');
+          setShopsError('No matching shops found for recommendations.');
         }
         setTopShops(sortedShops);
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : 'Unknown error fetching top shops';
-        setErrorMsg(errMsg);
+        setShopsError(errMsg);
         console.error('Error details:', error);
       } finally {
-        setLoading(false);
+        setShopsLoading(false);
       }
     };
 
@@ -141,22 +198,6 @@ export default function HomePage() {
     return (
       <div className="container mx-auto p-4 text-red-600">
         Error: {error}
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="container mx-auto p-4">
-        Loading shops...
-      </div>
-    );
-  }
-
-  if (errorMsg) {
-    return (
-      <div className="container mx-auto p-4 text-red-600">
-        Error: {errorMsg}
       </div>
     );
   }
@@ -172,7 +213,7 @@ export default function HomePage() {
           alt="Sugamo Japan"
         />
       </div>
-        <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), width: isMobile ? "90%" : "80%", paddingLeft: isMobile ? fsm(44) : fs(83), paddingTop: isMobile ? fsm(25) : fs(59), paddingRight: isMobile ? fsm(44) : fs(55), paddingBottom: isMobile ? fsm(36) : fs(54) }}>
+      <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), width: isMobile ? "90%" : "80%", paddingLeft: isMobile ? fsm(44) : fs(83), paddingTop: isMobile ? fsm(25) : fs(59), paddingRight: isMobile ? fsm(44) : fs(55), paddingBottom: isMobile ? fsm(36) : fs(54) }}>
         <div className="flex flex-col w-full md:w-1/2">
           <h1
             className="text-center md:text-left font-cousine italic font-bold"
@@ -300,131 +341,141 @@ export default function HomePage() {
           marginRight: isMobile ? fsm(20) : fs(90)
         })}
       >
-        <div className="relative flex flex-col items-center border-2 border-black" style={{ borderRadius: autoSize(30) }}>
-          <span
-            className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
-            style={fluidStyle({
-              fontSize: isMobile ? fsm(25) : fs(61),
-              w: isMobile ? fsm(295) : "75%"
-            })}
-          >
-            {"SUGAMO’S BEST SHOP"}
+        {shopsLoading ? (
+          <div className="container mx-auto p-4">
+            Loading shops...
+          </div>
+        ) : shopsError ? (
+          <div className="container mx-auto p-4 text-red-600">
+            Error: {shopsError}
+          </div>
+        ) : (
+          <div className="relative flex flex-col items-center border-2 border-black" style={{ borderRadius: autoSize(30) }}>
             <span
-              className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0"
-              style={fluidStyle({ fontSize: isMobile ? fsm(14) : fs(20) })}
+              className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
+              style={fluidStyle({
+                fontSize: isMobile ? fsm(25) : fs(61),
+                w: isMobile ? fsm(295) : "75%"
+              })}
             >
-              巣鴨のおすすめのお店
+              {"SUGAMO’S BEST SHOP"}
+              <span
+                className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0"
+                style={fluidStyle({ fontSize: isMobile ? fsm(14) : fs(20) })}
+              >
+                巣鴨のおすすめのお店
+              </span>
             </span>
-          </span>
-          <div
-            className="grid grid-cols-1 md:grid-cols-3 items-center"
-            style={fluidStyle({
-              paddingTop: isMobile ? fsm(90) : fs(90),
-              paddingLeft: isMobile ? fsm(35) : fs(35),
-              paddingRight: isMobile ? fsm(35) : fs(35),
-              paddingBottom: autoSize(80),
-              gap: isMobile ? fsm(32) : fs(42)
-            })}
-          >
-            {/* 1st Card */}
-            <div className="flex flex-col items-center transform order-1 md:order-2" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
-              <img
-                src="./src/first.png"
-                alt="First Place"
-                style={{ width: autoSize(116), height: autoSize(113) }}
-                className="object-cover rounded-lg"
-              />
-              <ProductCard
-                title={topShops[0]?.name || "ブーランジェリーボヌール"}
-                imageUrl={topShops[0]?.image_url || "./src/shop.png"}
-                description={topShops[0]?.description || "巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！"}
-                likes={topShops[0]?.love_count || 0}
-                views={topShops[0]?.review_count || 0}
-                shopId={topShops[0].id}
-                opening_hours={topShops[0].opening_hours}
-                near_station={topShops[0].near_station}
-                address={topShops[0].address}
-                category={topShops[0].category}
-                map_embed = {topShops[0].map_embed}
-                other_images = {topShops[0].other_images}
-                style={{ width: isMobile ? "auto" : fs(434), height: isMobile ? "auto" : fs(560) }}
-              />
-            </div>
-            {/* 2nd Card */}
-            <div className="flex flex-col items-center order-2 md:order-1" style={{ gap: isMobile ? fsm(16) : fs(26) }}>
-              <img
-                src="./src/second.png"
-                alt="Second Place"
-                style={{ width: autoSize(88), height: autoSize(88) }}
-                className="object-cover rounded-lg"
-              />
-              <ProductCard
-                title={topShops[1]?.name || "Cafe Sugamo"}
-                imageUrl={topShops[1]?.image_url || "./src/shop.png"}
-                description={topShops[1]?.description || "Cozy cafe with traditional sweets"}
-                likes={topShops[1]?.love_count || 0}
-                views={topShops[1]?.review_count || 0}
-                 shopId={topShops[1].id}
-                opening_hours={topShops[1].opening_hours}
-                near_station={topShops[1].near_station}
-                address={topShops[1].address}
-                category={topShops[1].category}
-                map_embed = {topShops[1].map_embed}
-                other_images = {topShops[1].other_images}
-                style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
-              />
-            </div>
-            {/* 3rd Card */}
-            <div className="flex flex-col items-center order-3 lg:order-3" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
-              <img
-                src="./src/3r-place.png"
-                alt="Third Place"
-                style={{ width: autoSize(88), height: autoSize(88) }}
-                className="object-cover rounded-lg"
-              />
-              <ProductCard
-                title={topShops[2]?.name || "Restaurant Sugamo"}
-                imageUrl={topShops[2]?.image_url || "./src/shop.png"}
-                description={topShops[2]?.description || "Fine dining in Sugamo style"}
-                likes={topShops[2]?.love_count || 0}
-                views={topShops[2]?.review_count || 0}
-                shopId={topShops[2].id}
-                opening_hours={topShops[2].opening_hours}
-                near_station={topShops[2].near_station}
-                address={topShops[2].address}
-                category={topShops[2].category}
-                map_embed = {topShops[2].map_embed}
-                other_images = {topShops[2].other_images}
-                style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
-              />
-            </div>
-          </div>
-          <div
-            className="absolute bottom-0 translate-y-1/2 flex items-center bg-white whitespace-nowrap max-w-full"
-            style={{ gap: autoSize(13), paddingLeft: autoSize(20), paddingRight: autoSize(20) }}
-          >
-            <img
-              src="./src/left-line.svg"
-              alt="Top 3 Rankings"
-              className="h-auto object-cover"
-              style={{ width: autoSize(32) }}
-            />
-            <p
-              className="text-black font-cousine italic font-bold text-center"
-              style={{
-                fontSize: isMobile ? fsm(31) : fs(48),
-              }}
+            <div
+              className="grid grid-cols-1 md:grid-cols-3 items-center"
+              style={fluidStyle({
+                paddingTop: isMobile ? fsm(90) : fs(90),
+                paddingLeft: isMobile ? fsm(35) : fs(35),
+                paddingRight: isMobile ? fsm(35) : fs(35),
+                paddingBottom: autoSize(80),
+                gap: isMobile ? fsm(32) : fs(42)
+              })}
             >
-              TOP 3 RANKINGS
-            </p>
-            <img
-              src="./src/right-line.svg"
-              alt="Top 3 Rankings"
-              className="h-auto object-cover"
-              style={{ width: autoSize(32) }}
-            />
+              {/* 1st Card */}
+              <div className="flex flex-col items-center transform order-1 md:order-2" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
+                <img
+                  src="./src/first.png"
+                  alt="First Place"
+                  style={{ width: autoSize(116), height: autoSize(113) }}
+                  className="object-cover rounded-lg"
+                />
+                <ProductCard
+                  title={topShops[0]?.name || "ブーランジェリーボヌール"}
+                  imageUrl={topShops[0]?.image_url || "./src/shop.png"}
+                  description={topShops[0]?.description || "巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！"}
+                  likes={topShops[0]?.love_count || 0}
+                  views={topShops[0]?.review_count || 0}
+                  shopId={topShops[0]?.id || ''}
+                  opening_hours={topShops[0]?.opening_hours || ''}
+                  near_station={topShops[0]?.near_station || ''}
+                  address={topShops[0]?.address || ''}
+                  category={topShops[0]?.category || ''}
+                  map_embed={topShops[0]?.map_embed || ''}
+                  other_images={topShops[0]?.other_images || null}
+                  style={{ width: isMobile ? "auto" : fs(434), height: isMobile ? "auto" : fs(560) }}
+                />
+              </div>
+              {/* 2nd Card */}
+              <div className="flex flex-col items-center order-2 md:order-1" style={{ gap: isMobile ? fsm(16) : fs(26) }}>
+                <img
+                  src="./src/second.png"
+                  alt="Second Place"
+                  style={{ width: autoSize(88), height: autoSize(88) }}
+                  className="object-cover rounded-lg"
+                />
+                <ProductCard
+                  title={topShops[1]?.name || "Cafe Sugamo"}
+                  imageUrl={topShops[1]?.image_url || "./src/shop.png"}
+                  description={topShops[1]?.description || "Cozy cafe with traditional sweets"}
+                  likes={topShops[1]?.love_count || 0}
+                  views={topShops[1]?.review_count || 0}
+                  shopId={topShops[1]?.id || ''}
+                  opening_hours={topShops[1]?.opening_hours || ''}
+                  near_station={topShops[1]?.near_station || ''}
+                  address={topShops[1]?.address || ''}
+                  category={topShops[1]?.category || ''}
+                  map_embed={topShops[1]?.map_embed || ''}
+                  other_images={topShops[1]?.other_images || null}
+                  style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                />
+              </div>
+              {/* 3rd Card */}
+              <div className="flex flex-col items-center order-3 lg:order-3" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
+                <img
+                  src="./src/3r-place.png"
+                  alt="Third Place"
+                  style={{ width: autoSize(88), height: autoSize(88) }}
+                  className="object-cover rounded-lg"
+                />
+                <ProductCard
+                  title={topShops[2]?.name || "Restaurant Sugamo"}
+                  imageUrl={topShops[2]?.image_url || "./src/shop.png"}
+                  description={topShops[2]?.description || "Fine dining in Sugamo style"}
+                  likes={topShops[2]?.love_count || 0}
+                  views={topShops[2]?.review_count || 0}
+                  shopId={topShops[2]?.id || ''}
+                  opening_hours={topShops[2]?.opening_hours || ''}
+                  near_station={topShops[2]?.near_station || ''}
+                  address={topShops[2]?.address || ''}
+                  category={topShops[2]?.category || ''}
+                  map_embed={topShops[2]?.map_embed || ''}
+                  other_images={topShops[2]?.other_images || null}
+                  style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                />
+              </div>
+            </div>
+            <div
+              className="absolute bottom-0 translate-y-1/2 flex items-center bg-white whitespace-nowrap max-w-full"
+              style={{ gap: autoSize(13), paddingLeft: autoSize(20), paddingRight: autoSize(20) }}
+            >
+              <img
+                src="./src/left-line.svg"
+                alt="Top 3 Rankings"
+                className="h-auto object-cover"
+                style={{ width: autoSize(32) }}
+              />
+              <p
+                className="text-black font-cousine italic font-bold text-center"
+                style={{
+                  fontSize: isMobile ? fsm(31) : fs(48),
+                }}
+              >
+                TOP 3 RANKINGS
+              </p>
+              <img
+                src="./src/right-line.svg"
+                alt="Top 3 Rankings"
+                className="h-auto object-cover"
+                style={{ width: autoSize(32) }}
+              />
+            </div>
           </div>
-        </div>
+        )}
         <Link
           to="/Recommendation"
           className="w-full italic text-end text-black font-cousine"
@@ -510,16 +561,30 @@ export default function HomePage() {
             </span>
           </span>
           <div className="grid grid-cols-1 md:grid-cols-3 w-full" style={{ paddingLeft: isMobile ? fsm(33) : fs(46), paddingRight: isMobile ? fsm(33) : fs(46), gap: isMobile ? fsm(16) : fsm(24) }}>
-            {Array.from({ length: 10 }).map((_, i) => (
-              <TravelsTipsItem key={i} categories={["Travel", "Tips"]} />
-            ))}
+            {blogsLoading ? (
+              <div className="col-span-full text-center p-4">Loading tips...</div>
+            ) : blogsError ? (
+              <div className="col-span-full text-red-600 text-center p-4">Error loading tips: {blogsError}</div>
+            ) : blogs.length > 0 ? (
+              blogs.slice(0, 3).map((blog) => (
+                <TravelsTipsItem
+                  key={blog.id}
+                  categories={categories[blog.category_id] || ["General"]}
+                  blog={blog}  // New: Single blog data pass
+                />
+              ))
+            ) : (
+              Array.from({ length: 3 }).map((_, index) => (
+                <TravelsTipsItem key={index} categories={["Travel", "Tips"]} />  // Fallback without blog
+              ))
+            )}
           </div>
         </div>
         <Link
           to="/BlogList"
           className="w-full italic text-end mr-5 mt-5 hover:text-blue-600"
           style={{
-            fontSize: fs(25),
+            fontSize: isMobile ? fsm(25) : fs(25),
             color: "#000000",
             fontFamily: "Cousine",
           }}
@@ -540,7 +605,7 @@ export default function HomePage() {
           <InstagramVideosAll />
         </div>
         <div>
-          <InstagramVideosAll />
+          <TikTokVideos />
         </div>
       </div>
       <Footer />

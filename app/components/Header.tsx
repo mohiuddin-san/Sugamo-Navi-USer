@@ -24,10 +24,10 @@ const Header: React.FC = () => {
 
   const menuRoutes: Record<string, string> = {
     食べる: "/ShopPage",
-    "観る・遊ぶ": "/Recomondation",
+    "観る・遊ぶ": "/SeeAndDo",
     モデルコース: "/ModelCourse",
     旅の情報: "/BlogList",
-    おすすめの店: "/SeeAndDo",
+    おすすめの店: "/Recomondation",
   };
 
   const headerStyle = fluidStyle({

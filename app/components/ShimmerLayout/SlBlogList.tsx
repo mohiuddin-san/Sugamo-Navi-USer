@@ -1,68 +1,118 @@
-import { ResponsiveGrid, GridItem } from "~/components/ResponsiveGrid.tsx";
+import React from "react";
+import { ResponsiveGrid, GridItem } from "../ResponsiveGrid";
 import { useMediaQuery } from "react-responsive";
+import { useUniversalFluid } from "../../hooks/useUniversalFluid";
 
-export default function ShimmerLayout() {
+const ShimmerLayout: React.FC = () => {
   const isMobile = useMediaQuery({ maxWidth: 767 });
+  const { fs, fsm } = useUniversalFluid();
 
-  // Define shimmer animation with Tailwind CSS
-  const shimmerCard = (
-    <GridItem
-      className="rounded-xl overflow-hidden shadow-md bg-white"
-      column={1}
-      row={1}
-      columnSpan={1}
-      rowSpan={1}
-    >
-      {/* Header Section */}
-      <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
-        <div className="h-4 w-1/3 bg-gray-200 rounded animate-pulse"></div>
-        <div className="h-5 w-5 bg-gray-200 rounded-full animate-pulse"></div>
-      </div>
+  const shimmerStyle = {
+    background: "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)",
+    backgroundSize: "200% 100%",
+    animation: "shimmer 1.5s infinite",
+  };
 
-      {/* Image Placeholder */}
-      <div className="h-48 w-full bg-gray-200 animate-pulse"></div>
-
-      {/* Content Section */}
-      <div className="p-6 space-y-3">
-        <div className="h-6 w-3/4 bg-gray-200 rounded animate-pulse"></div>
-        <div className="space-y-2">
-          <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-4 w-5/6 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-4 w-4/5 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-        <div className="flex justify-end">
-          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-      </div>
-    </GridItem>
-  );
+  const shimmerAnimation = `
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  `;
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl font-extrabold text-center text-gray-900 mb-12">
-        Latest <span className="text-indigo-600">Articles</span>
-      </h1>
-
+    <div>
+      <style>{shimmerAnimation}</style>
       <ResponsiveGrid
         columns={isMobile ? "1fr" : "1fr 1fr"}
         rows="auto"
-        gap={32}
         isMobile={isMobile}
-        className="w-full"
+        className="flex justify-center mx-10 md:mx-[10%]"
+        style={{ gap: isMobile ? fsm(64) : fs(133), maxWidth: "100%", width: "100%" }}
       >
-        {/* Render multiple shimmer cards to simulate loading multiple blog posts */}
-        {Array.from({ length: isMobile ? 3 : 4 }).map((_, index) => (
+        {[...Array(isMobile ? 4 : 6)].map((_, index) => (
           <GridItem
             key={index}
             column={isMobile ? 1 : (index % 2) + 1}
             row={isMobile ? index + 1 : Math.floor(index / 2) + 1}
             columnSpan={1}
             rowSpan={1}
+            style={{
+              height: isMobile ? "100%" : fs(570),
+              padding: isMobile ? fsm(20) : fs(20),
+              border: "2px solid #000",
+              borderRadius: isMobile ? fsm(10) : fs(10),
+              backgroundColor: "#fff",
+              maxWidth: "100%", // Ensure width doesn't exceed container
+              width: "100%", // Full width within GridItem
+            }}
+            className="w-full rounded-xl overflow-hidden"
           >
-            {shimmerCard}
+            <div className="flex items-center justify-between p-2">
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: isMobile ? fsm(150) : fs(150),
+                  height: isMobile ? fsm(20) : fs(20),
+                  borderRadius: isMobile ? fsm(4) : fs(4),
+                }}
+              />
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: isMobile ? fsm(20) : fs(20),
+                  height: isMobile ? fsm(20) : fs(20),
+                  borderRadius: "50%",
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                ...shimmerStyle,
+                marginTop: isMobile ? fsm(16) : fs(16),
+                width: "100%",
+                height: isMobile ? fsm(225) : fs(225),
+                borderRadius: isMobile ? fsm(4) : fs(4),
+              }}
+            />
+
+            <div style={{ marginTop: isMobile ? fsm(16) : fs(16) }}>
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: "80%",
+                  height: isMobile ? fsm(30) : fs(30),
+                  marginTop: isMobile ? fsm(10) : fs(10),
+                  marginBottom: isMobile ? fsm(15) : fs(15),
+                  borderRadius: isMobile ? fsm(4) : fs(4),
+                }}
+              />
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: "100%",
+                  height: isMobile ? fsm(137) : fs(137),
+                  marginBottom: isMobile ? fsm(15) : fs(15),
+                  borderRadius: isMobile ? fsm(4) : fs(4),
+                }}
+              />
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: isMobile ? fsm(80) : fs(80),
+                  height: isMobile ? fsm(25) : fs(25),
+                  marginTop: isMobile ? fsm(30) : fs(30),
+                  borderRadius: isMobile ? fsm(4) : fs(4),
+                }}
+                className="ml-auto"
+              />
+            </div>
           </GridItem>
         ))}
       </ResponsiveGrid>
     </div>
   );
-}
+};
+
+export default ShimmerLayout;
