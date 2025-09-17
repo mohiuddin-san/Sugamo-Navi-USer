@@ -5,7 +5,10 @@ import ProductCard from '~/components/ProductCard';
 import MarqueeHeader from '~/components/MarqueeHeader';
 import CommonCategoryTop from '~/components/CommonCategoryTop';
 import Footer from '../components/Footer';
-import supabaseShops from "~/supabase";  
+import supabaseShops from "~/supabase";
+import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
+import { useDevice } from "~/routes/contexts/DeviceContext";
+import { useUniversalFluid } from '../hooks/useUniversalFluid';
 
 type Shop = {
   id: string;
@@ -22,15 +25,16 @@ type Shop = {
   opening_hours: string;
 };
 export default function ShopDetails() {
-  const [searchQuery, setSearchQuery] = React.useState("");
   const location = useLocation();
   const [topShops, setTopShops] = useState<Shop[]>([]);
   const [shopsLoading, setShopsLoading] = useState(true);
   const [shopsError, setShopsError] = useState<string | null>(null);
+  const { fs, fsm } = useUniversalFluid();
+  const isMobile = useDevice();
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
   }, [location]);
-    useEffect(() => {
+  useEffect(() => {
     const fetchTopShops = async () => {
       try {
         setShopsLoading(true);
@@ -103,31 +107,51 @@ export default function ShopDetails() {
         marginBottom={120}
         marginTop={98}
       />
-  
-      <div className="p-4 flex justify-center">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-8">
-           {topShops.map((shop, index) => (
-          <ProductCard
-                  key={shop.id}
-                  title={shop.name || "ブーランジェリーボヌール"}
-                  imageUrl={shop.image_url || "./src/shop.png"}
-                  description={shop.description || "巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！"}
-                  likes={shop.love_count || 0}
-                  views={shop.review_count || 0}
-                  shopId={shop.id || ''}
-                  opening_hours={shop.opening_hours || ''}
-                  near_station={shop.near_station || ''}
-                  address={shop.address || ''}
-                  category={shop.category || ''}
-                  map_embed={shop.map_embed || ''}
-                  other_images={shop.other_images || null}
-                />
-                ))}
-        
-        </div>
-      </div>
-      {/* Footer */}
-      <Footer />
+
+      <ResponsiveGrid
+        columns={isMobile ? "1fr" : "1fr 1fr 1fr"}
+        isMobile={isMobile}
+        className="flex justify-center"
+        style={{
+          gap: isMobile ? fsm(19) : fs(32),
+          marginTop: isMobile ? fsm(0) : fsm(120),
+          marginLeft: isMobile ? fsm(20) : fs(161),
+          marginRight: isMobile ? fsm(20) : fs(161),
+        }}
+      >
+        {topShops.map((shop, index) => (
+          <GridItem
+            key={index}
+            column={isMobile ? (index % 2) + 1 : (index % 3) + 1}
+            row={
+              isMobile
+                ? Math.floor(index / 2) + 1
+                : Math.floor(index / 3) + 1
+            }
+            columnSpan={1}
+            rowSpan={1}
+            style={{ minHeight: isMobile ? "auto" : "auto", height: "auto", marginTop: isMobile ? fsm(0) : fs(8) }}
+            className="w-full"
+          >
+             <ProductCard
+              key={shop.id}
+              title={shop.name || "ブーランジェリーボヌール"}
+              imageUrl={shop.image_url || "./src/shop.png"}
+              description={shop.description || "巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！"}
+              likes={shop.love_count || 0}
+              views={shop.review_count || 0}
+              shopId={shop.id || ''}
+              opening_hours={shop.opening_hours || ''}
+              near_station={shop.near_station || ''}
+              address={shop.address || ''}
+              category={shop.category || ''}
+              map_embed={shop.map_embed || ''}
+              other_images={shop.other_images || null}
+            />
+          </GridItem>
+        ))}
+      </ResponsiveGrid>
+      <Footer marginTop={64} />
     </div>
   );
 }

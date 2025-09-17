@@ -10,15 +10,15 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
             <div className="w-full bg-white overflow-hidden">
                 <div className="flex flex-col justify-between">
                     <div className="flex space-x-3 justify-between">
-                        <span className="flex items-center space-x-3">
-                            <p className="italic font-cairo" style={{ fontSize: isMobile ? fsm(25) : fs(25), color: "#111827" }}>
+                        <span className="flex items-center " style={{ gap: isMobile ? fsm(16) : fs(16) }}>
+                            <p className="italic font-bold font-cairo" style={{ fontSize: isMobile ? fsm(25) : fs(25), color: "#111827" }}>
                                 COURSE
                             </p>
                             <img src="/src/bookmark.svg" alt="Bookmark" style={{ width: isMobile ? fsm(18) : fs(18), height: isMobile ? fsm(24) : fs(24) }} />
                             <img src="/src/love.svg" alt="Love" style={{ width: isMobile ? fsm(26) : fs(26), height: isMobile ? fsm(22) : fs(22) }} />
 
                         </span>
-                        <p className="italic font-cairo pr-2" style={{ fontSize: isMobile ? fsm(31) : fs(31), color: "#111827" }}>
+                        <p className="italic font-bold font-cousine pr-2" style={{ fontSize: isMobile ? fsm(31) : fs(31), color: "#111827" }}>
                             #{itemNumber}
                         </p>
                     </div>
@@ -40,7 +40,7 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
                                 style={{ marginTop: fs(10), width: "58%", paddingLeft: fs(25) }}
                             >
                                 <p
-                                    className="text-lg font-cairo"
+                                    className="text-lg font-cairo leading-loose"
                                     style={{
                                         fontSize: isMobile ? fsm(16) : fs(16),
                                         color: "#313131",
@@ -57,12 +57,12 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
                                     {categories.map((category, index) => (
                                         <button
                                             key={index}
-                                            className="bg-red-500 text-white rounded-full italic font-cairo"
+                                            className="bg-red-500 text-white rounded-full italic font-cousine font-bold"
                                             style={{
                                                 width: fs(90),
                                                 height: fs(24),
                                                 padding: `0 ${fs(5)}`,
-                                                fontSize: fs(16),
+                                                fontSize: fs(12),
                                             }}
                                         >
                                             #{category}

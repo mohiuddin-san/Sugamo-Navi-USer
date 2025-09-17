@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "@remix-run/react";
 import { useUniversalFluid } from "../hooks/useUniversalFluid";
 import { useMediaQuery } from "react-responsive";
+import supabaseShops from "~/supabase";  
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -9,10 +10,15 @@ const Header: React.FC = () => {
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("JA");
   const [pageTransition, setPageTransition] = useState(false);
-  const { fs, fsm, fluidStyle } = useUniversalFluid();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [shops, setShops] = useState<{ id: string; name: string }[]>([]);
+  const [loadingShops, setLoadingShops] = useState(true);
+  const [shopsError, setShopsError] = useState<string | null>(null);
+  const { fs, fsm } = useUniversalFluid();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery({ maxWidth: 767 });
+
 
   const menuItems = [
     "食べる",
@@ -30,20 +36,6 @@ const Header: React.FC = () => {
     おすすめの店: "/Recomondation",
   };
 
-  const headerStyle = fluidStyle({
-    paddingTop: fs(33),
-    h: fs(90),
-  });
-
-  const navStyle = fluidStyle({
-    gap: fs(20),
-  });
-
-  const worldImageStyle = fluidStyle({
-    h: fsm(30),
-    w: fsm(30),
-  });
-
   const handleSearchClick = () => setIsSearchOpen(true);
   const handleBookmarkClick = () => navigate("/BookMark");
   const handleHomeClick = () => navigate("/");
@@ -53,24 +45,61 @@ const Header: React.FC = () => {
     setIsLanguageDropdownOpen(false);
   };
 
+  // Fetch shops data from Supabase
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        setLoadingShops(true);
+        setShopsError(null);
+        const { data: shopsData, error } = await supabaseShops
+          .from('shops')
+          .select('id, name'); // Select only id and name for search functionality
+
+        if (error) {
+          console.error('Error fetching shops:', error);
+          setShopsError('Failed to load shops');
+          return;
+        }
+
+        if (shopsData) {
+          setShops(shopsData);
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching shops:', err);
+        setShopsError('An unexpected error occurred');
+      } finally {
+        setLoadingShops(false);
+      }
+    };
+
+    fetchShops();
+  }, []);
+
+  // Filter shops based on search query
+  const filteredShops = shops.filter((shop) =>
+    shop.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+
+  const handleShopClick = (shopId: string, shopName: string) => {
+    navigate("/ShopDetails", {
+      state: {
+        shop: {
+          id: shopId,
+          title: shopName,
+        },
+      },
+    });
+    setIsSearchOpen(false);
+    setSearchQuery("");
+  };
+
   useEffect(() => {
     setPageTransition(true);
     const timer = setTimeout(() => setPageTransition(false), 500);
     return () => clearTimeout(timer);
   }, [location.pathname]);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const searchData = [
-    { key: "#食べる", value: "フーランジェリー" },
-    { key: "#観る・遊ぶ", value: "スポット" },
-    { key: "#モデルコース", value: "プラン" },
-    { key: "#旅の情報", value: "ブログ" },
-    { key: "#おすすめの店", value: "レストラン" },
-  ];
-  const filteredResults = searchData.filter(
-    (item) =>
-      item.key.includes(searchQuery) || item.value.includes(searchQuery)
-  );
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -84,11 +113,12 @@ const Header: React.FC = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-    if (isMenuOpen || isSearchOpen) {
+  }, []);
 
+  useEffect(() => {
+    if (isMenuOpen || isSearchOpen) {
       document.body.style.overflow = "hidden";
     } else {
-
       document.body.style.overflow = "auto";
     }
     return () => {
@@ -98,9 +128,11 @@ const Header: React.FC = () => {
 
   return (
     <div
-      className={`bg-white w-full transition-opacity duration-500 ${pageTransition ? "opacity-0" : "opacity-100 sm:z-10"
-        }`}
-      style={headerStyle}
+      className={` w-full transition-opacity duration-500 ${
+        pageTransition ? "opacity-0" : "opacity-100 sm:z-10"
+      }`}
+      style={{ paddingTop: fs(33),
+           height: fs(90)}}
     >
       {/* Desktop Header */}
       <div
@@ -115,72 +147,67 @@ const Header: React.FC = () => {
           SUGAMO NAVI
         </div>
         <div className="flex flex-row justify-between items-center">
-          <nav className="flex flex-nowrap items-center space-x-1" style={navStyle}>
+          <nav
+            className="flex flex-nowrap items-center justify-center"
+            style={{ gap: isMobile ? fsm(48) : fs(17) }}
+          >
             {menuItems.map((item) => (
               <Link
                 key={item}
                 to={menuRoutes[item]}
-                className="relative px-3 py-1 font-bold font-cousine transition duration-300 ease-in-out rounded-full cursor-pointer group whitespace-nowrap"
-                style={{ fontSize: fs(16) }}
+                className=" relative py-1 pt-2 font-bold font-cousine transition duration-300 ease-in-out rounded-full cursor-pointer group whitespace-nowrap"
+                style={{ fontSize: fs(16), paddingLeft:fs(15), paddingRight: fs(15) }}
               >
-                {/* Text always stays on top */}
-                <span className="relative z-10 text-black group-hover:text-white transition-colors duration-300">
+                <span className="relative text-center z-10 text-black group-hover:text-white transition-colors duration-300">
                   {item}
                 </span>
-
-                {/* Background hover effect */}
-                <span className="absolute inset-0 rounded-full bg-black scale-0 group-hover:scale-100 transition-transform duration-300 ease-in-out z-0"></span>
+                <span className="absolute inset-0 rounded-full bg-black scale-0 group-hover:scale-100 transition-shadow duration-300 ease-linear z-0"></span>
               </Link>
             ))}
           </nav>
 
           {/* Icons */}
-          <div className="flex items-center space-x-2 ml-2">
-            {/* Search */}
+          <div className="flex items-center" style={{ gap: fs(32), marginLeft: fs(28) }}>
             <div
-              className="flex items-center px-2 py-1 cursor-pointer transition-transform duration-300 hover:scale-110 hover:text-black"
+              className="flex items-center py-1 cursor-pointer transition-transform duration-300 hover:scale-105 hover:text-black"
               onClick={handleSearchClick}
             >
               <img
                 src="/src/search.svg"
                 alt="Search Icon"
-                className="transition-transform duration-300 hover:scale-125"
-                style={fluidStyle({ h: fs(20), w: fs(20) })}
+                className="transition-transform duration-300 hover:scale-105"
+                style={{width: fs(19), height: fs(19)}}
               />
               <span
-                className="font-cousine font-bold italic"
+                className="font-cousine font-bold italic whitespace-nowrap"
                 style={{ fontSize: fs(16) }}
               >
                 Search
               </span>
             </div>
-
-            {/* Bookmark */}
             <button
-              className="px-2 py-1 transition-transform duration-300 hover:scale-125"
+              className="py-1 transition-transform duration-300 hover:scale-125"
               onClick={handleBookmarkClick}
             >
               <img
                 src="/src/bookmark.svg"
                 alt="Bookmark Icon"
-                style={fluidStyle({ h: fs(20), w: fs(20) })}
+                style={{ height: isMobile ? fsm(21) : fs(21), width: isMobile ? fsm(26) : fs(26) }}
               />
             </button>
             <div className="relative flex items-center justify-center">
               <div
                 className="flex items-center justify-center bg-white cursor-pointer transition-transform duration-300 hover:scale-125"
-                style={worldImageStyle}
-                onClick={() =>
-                  setIsLanguageDropdownOpen(!isLanguageDropdownOpen)
-                }
+                style={{ width: fs(27), height: fs(27) }}
+                onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
               >
                 <img
+                className="w-full j-full object-cover"
                   src="/src/world.svg"
                   alt="World Icon"
-                  style={{ width: fs(27), height: fs(27) }}
+                  
                 />
               </div>
-
               {isLanguageDropdownOpen && (
                 <div
                   className="absolute inset-0 flex flex-col items-center justify-start bg-white border rounded-full shadow-md"
@@ -194,17 +221,17 @@ const Header: React.FC = () => {
                     className="flex justify-center rounded-full cursor-pointer"
                     onClick={() => setIsLanguageDropdownOpen(false)}
                   >
-                    <img src="/src/world.svg" alt="World Icon" />
+                  <img src="/src/world.svg" alt="World Icon" />
                   </div>
-
                   {["JA", "EN", "ZH"].map((lang) => (
                     <div
                       key={lang}
                       onClick={() => handleLanguageSelect(lang)}
-                      className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${selectedLanguage === lang
-                        ? "bg-black text-white"
-                        : "border border-black text-black"
-                        } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
+                      className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${
+                        selectedLanguage === lang
+                          ? "bg-black text-white"
+                          : "border border-black text-black"
+                      } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
                       style={{
                         width: fs(28),
                         height: fs(28),
@@ -226,18 +253,16 @@ const Header: React.FC = () => {
         <div className="relative flex items-center justify-center">
           <div
             className="flex items-center justify-center bg-white cursor-pointer transition-transform duration-300 hover:scale-125"
-            style={worldImageStyle}
-            onClick={() =>
-              setIsLanguageDropdownOpen(!isLanguageDropdownOpen)
-            }
+            style={{ width: fsm(27), height: fsm(27) }}
+            onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
           >
             <img
               src="/src/world.svg"
               alt="World Icon"
-              style={fluidStyle({ h: fsm(27), w: fsm(27), marginLeft: fsm(6) })}
+              className="w-full h-full object-cover"
+              style={{ marginLeft: fsm(6) }}
             />
           </div>
-
           {isLanguageDropdownOpen && (
             <div
               className="absolute inset-0 flex flex-col items-center justify-start bg-white border rounded-full shadow-md"
@@ -251,18 +276,26 @@ const Header: React.FC = () => {
                 className="flex justify-center rounded-full cursor-pointer"
                 onClick={() => setIsLanguageDropdownOpen(false)}
               >
-                <img src="/src/world.svg" alt="World Icon" style={fluidStyle({ h: fsm(28), w: fsm(28) })} />
+                <img
+                  src="/src/world.svg"
+                  alt="World Icon"
+                  style={{ height: fsm(28), width: fsm(28) }}
+                />
               </div>
-
               {["JA", "EN", "ZH"].map((lang) => (
                 <div
                   key={lang}
                   onClick={() => handleLanguageSelect(lang)}
-                  className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${selectedLanguage === lang
-                    ? "bg-black text-white"
-                    : "border border-black text-black"
-                    } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
-                  style={fluidStyle({ h: fsm(27), w: fsm(27), fontSize: fsm(12) })}
+                  className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${
+                    selectedLanguage === lang
+                      ? "bg-black text-white"
+                      : "border border-black text-black"
+                  } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
+                  style={{
+                    height: fsm(27),
+                    width: fsm(27),
+                    fontSize: fsm(12),
+                  }}
                 >
                   {lang}
                 </div>
@@ -270,16 +303,13 @@ const Header: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Centered "SUGAMO NAVI" Text */}
         <div
           className="flex justify-center font-cousine font-bold absolute left-1/2 transform -translate-x-1/2"
-          style={fluidStyle({ fontSize: fsm(25) })}
+          style={{ fontSize: fsm(25) }}
           onClick={handleHomeClick}
         >
           SUGAMO NAVI
         </div>
-
         <div className="flex items-center space-x-4">
           <div
             className="flex items-center py-1 cursor-pointer transition-transform duration-300 hover:scale-110 hover:text-black"
@@ -289,14 +319,14 @@ const Header: React.FC = () => {
               src="/src/search.svg"
               alt="Search Icon"
               className="transition-transform duration-300 hover:scale-125"
-              style={fluidStyle({ h: fsm(20), w: fsm(20) })}
+              style={{ height: fsm(20), width: fsm(20) }}
             />
           </div>
           <button
             onClick={() => setIsMenuOpen(true)}
             className="transition-transform duration-300 hover:scale-125"
           >
-            <img src="./src/menu.svg"></img>
+            <img src="./src/menu.svg" alt="Menu Icon" />
           </button>
         </div>
       </div>
@@ -304,7 +334,6 @@ const Header: React.FC = () => {
       {/* Mobile Menu Fullscreen Modal */}
       {isMenuOpen && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col items-center p-6">
-          {/* Header */}
           <div className="flex justify-between items-center w-full">
             <div
               className="font-cousine font-bold cursor-pointer transition-transform duration-300 hover:scale-110"
@@ -321,7 +350,10 @@ const Header: React.FC = () => {
             />
           </div>
           <div className="w-full h-full left-0 bg-white flex flex-row">
-            <nav className="flex flex-col items-center w-full h-full justify-center" style={{ gap: fsm(38) }}>
+            <nav
+              className="flex flex-col items-center w-full h-full justify-center"
+              style={{ gap: fsm(38) }}
+            >
               {menuItems.map((item) => (
                 <div key={item} className="flex justify-between items-center">
                   <Link
@@ -335,8 +367,19 @@ const Header: React.FC = () => {
               ))}
             </nav>
             <div>
-              <button className=" transition-transform duration-300 hover:scale-125" onClick={handleBookmarkClick}>
-                <img src="/src/bookmark.svg" alt="Bookmark Icon" style={{ height: fsm(20), width: fsm(20), marginTop: fsm(75) }} />
+              <button
+                className="transition-transform duration-300 hover:scale-125"
+                onClick={handleBookmarkClick}
+              >
+                <img
+                  src="/src/bookmark.svg"
+                  alt="Bookmark Icon"
+                  style={{
+                    height: fsm(20),
+                    width: fsm(20),
+                    marginTop: fsm(75),
+                  }}
+                />
               </button>
             </div>
           </div>
@@ -347,7 +390,6 @@ const Header: React.FC = () => {
       {isSearchOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white w-full h-full flex flex-col items-center justify-center p-6">
-            {/* Title */}
             <div
               className="font-bold font-cousine cursor-pointer mb-6"
               style={{ fontSize: isMobile ? fsm(25) : fs(25) }}
@@ -355,8 +397,6 @@ const Header: React.FC = () => {
             >
               SUGAMO NAVI
             </div>
-
-            {/* Search Box */}
             <div className="flex justify-center mb-6">
               <div
                 className="flex items-center justify-center rounded-full border-2 border-black overflow-hidden"
@@ -368,17 +408,17 @@ const Header: React.FC = () => {
                 <img
                   src="/src/icons8-search.gif"
                   alt="Search Icon"
-                  style={fluidStyle({
-                    h: isMobile ? fsm(19) : fs(25),
-                    w: isMobile ? fsm(19) : fs(25),
+                  style={{
+                    height: isMobile ? fsm(19) : fs(25),
+                    width: isMobile ? fsm(19) : fs(25),
                     marginLeft: isMobile ? fsm(20) : fs(30),
-                  })}
+                  }}
                 />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="SEARCH"
+                  placeholder="Search shops..."
                   className="w-full h-full bg-transparent border-none focus:outline-none font-cousine font-bold pl-3"
                   style={{
                     fontSize: isMobile ? fsm(18) : fs(20),
@@ -386,20 +426,30 @@ const Header: React.FC = () => {
                 />
               </div>
             </div>
-
-            {/* Results */}
             <ul
               className="space-y-2 bg-[#F7F7F7] text-center p-4 rounded-lg"
               style={{ width: isMobile ? fsm(300) : fs(500) }}
             >
-              {filteredResults.map((item, index) => (
-                <li key={index} className="text-gray-700">
-                  {item.key} - {item.value}
+              {loadingShops ? (
+                <li className="text-gray-700">Loading shops...</li>
+              ) : shopsError ? (
+                <li className="text-red-500">{shopsError}</li>
+              ) : filteredShops.length > 0 ? (
+                filteredShops.map((shop) => (
+                  <li
+                    key={shop.id}
+                    className="text-gray-700 cursor-pointer hover:bg-gray-200 p-2 rounded"
+                    onClick={() => handleShopClick(shop.id, shop.name)}
+                  >
+                    {shop.name}
+                  </li>
+                ))
+              ) : (
+                <li className="text-gray-700">
+                  {searchQuery ? 'No shops found' : 'Start typing to search shops...'}
                 </li>
-              ))}
+              )}
             </ul>
-
-            {/* Close Button */}
             <div className="mt-6">
               <button
                 className="w-auto px-12 py-2 bg-black text-white rounded-3xl hover:bg-black transition-transform duration-300 hover:scale-105"

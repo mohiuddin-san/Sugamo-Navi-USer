@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from '@remix-run/react';
+import { Link, useNavigate } from '@remix-run/react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
-import { useNavigate } from '@remix-run/react';
 import { useMediaQuery } from 'react-responsive';
+import { createClient } from '@supabase/supabase-js'; // Import Supabase client
+import { useDevice } from "~/routes/contexts/DeviceContext";
+// Initialize Supabase client (replace with your actual URL and key)
+const supabaseUrl = 'https://your-project.supabase.co'; // Replace with your Supabase URL
+const supabaseKey = 'your-anon-key'; // Replace with your Supabase anon key
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface ProductCardProps {
   title: string;
@@ -19,6 +24,8 @@ interface ProductCardProps {
   address: string;
   map_embed: string;
   other_images: JSON;
+  imageHeight?: number | 210;
+  paddingText?: number | 38;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -32,17 +39,22 @@ const ProductCard: React.FC<ProductCardProps> = ({
   category,
   description,
   opening_hours,
-  likes,
+  likes: initialLikes, // Rename prop to initialLikes
   views,
   linkTo = '/ShopDetails',
   style,
+  imageHeight,
+  paddingText = 38,
 }) => {
   const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
   const navigate = useNavigate();
-  const isMobile = useMediaQuery({ maxWidth: 767 });
+  const isMobile = useDevice();
 
   // State to track bookmark status
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
+
+  // State to track local likes count
+  const [likes, setLikes] = useState<number>(initialLikes);
 
   // Check local storage on component mount to set initial bookmark state
   useEffect(() => {
@@ -52,7 +64,27 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   }, [category, shopId]);
 
-  // Handle bookmark click
+  // Handle love (like) click - increments love_count in Supabase and updates local state
+  const handleLoveClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the card's onClick
+
+    if (!shopId) return; // Guard clause if no shopId
+
+    try {
+      const { error } = await supabase.rpc('increment_love_count', {
+        shop_id: shopId
+      });
+
+      if (error) {
+        console.error('Error incrementing love count:', error);
+      } else {
+        setLikes(likes + 1);
+        console.log('Love count incremented successfully');
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+    }
+  };
   const handleBookmarkClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the card's onClick
 
@@ -61,7 +93,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       title,
       imageUrl,
       description,
-      likes,
+      likes: likes, // Use local likes
       views,
       near_station,
       address,
@@ -75,7 +107,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
     const savedBookmarks = JSON.parse(localStorage.getItem(category) || '{}');
 
     if (isBookmarked) {
-      // Remove from local storage
       delete savedBookmarks[shopId || ''];
       localStorage.setItem(category, JSON.stringify(savedBookmarks));
       setIsBookmarked(false);
@@ -95,7 +126,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           title,
           imageUrl,
           description,
-          likes,
+          likes: likes, // Use local likes
           views,
           near_station,
           address,
@@ -129,7 +160,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         src={imageUrl || '/src/shop.png'}
         alt={title}
         className="w-full object-cover"
-        style={{ height: isMobile ? fsm(210) : fs(210) }}
+        style={{ height: isMobile ? fsm(210) : fs(imageHeight) }}
       />
 
       {/* Buttons + Stats */}
@@ -142,13 +173,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
         }}
       >
         <button
-          className="bg-[#ED4548] text-white rounded-full italic font-cairo text-center"
+          className="bg-[#ED4548] text-white font-bold rounded-full italic font-cairo text-center"
           style={{
             width: isMobile ? fsm(92) : fs(92),
             minWidth: isMobile ? fsm(72) : fs(72),
             height: isMobile ? fsm(22) : fs(22),
             minHeight: isMobile ? fsm(17) : fs(17),
-            fontSize: isMobile ? fsm(12) : fs(12),
+            fontSize: isMobile ? fsm(13) : fs(13),
           }}
         >
           {category}
@@ -159,13 +190,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <img
               src="/src/love.svg"
               alt="Love"
-              style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
+              onClick={handleLoveClick} // Add onClick to the love icon
+              style={{
+                width: isMobile ? fsm(20) : fs(20),
+                height: isMobile ? fsm(20) : fs(20),
+                cursor: 'pointer' // Make it clickable
+              }}
             />
             <p
               className="font-bold font-cairo"
               style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
             >
-              {likes}
+              {likes} {/* Use local state */}
             </p>
           </span>
 
@@ -200,11 +236,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
       <div className="flex flex-col flex-grow" style={{ marginTop: isMobile ? fs(32) : fs(24) }}>
         <p
-          className="px-5 font-medium font-cairo text-start line-clamp-5"
-          style={{ fontSize: isMobile ? fsm(16) : fs(16), color: '#313131', fontWeight: fs(500) }}
+          className="font-normal font-cairo text-[color: #313131] text-start line-clamp-3 leading-loose overflow-hidden"
+          style={{
+            fontSize: isMobile ? fsm(16) : fs(16),
+            fontWeight: fs(500),
+            paddingRight: isMobile ? fsm(paddingText) : fs(paddingText),
+            paddingLeft: isMobile ? fsm(paddingText) : fs(paddingText),
+          }}
         >
           {description}
         </p>
+
         <Link
           to={linkTo}
           className="font-bold mt-6 text-end mr-5 hover:text-blue-600"

@@ -5,7 +5,7 @@ import { useUniversalFluid } from '../hooks/useUniversalFluid';
 interface GridProps {
   columns: string; // e.g., "1fr 1fr" or "150 300 150"
   rows: string; // e.g., "auto" or "80 200 80"
-  gap?: number;
+  gapAll?: number;
   isMobile?: boolean;
   className?: string;
   children?: React.ReactNode;
@@ -15,7 +15,7 @@ interface GridProps {
 export const ResponsiveGrid: React.FC<GridProps> = ({
   columns,
   rows,
-  gap = 16,
+  gapAll = 0,
   isMobile = false,
   className = '',
   children,
@@ -31,15 +31,15 @@ export const ResponsiveGrid: React.FC<GridProps> = ({
   const gridStyles = isClient
     ? {
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : columns,
+        gridTemplateColumns: columns,
         gridTemplateRows: rows,
-        ...fluidStyle({ gap }), // Use fluidStyle for responsive gap
+        gap: gapAll
       }
     : {
         display: 'grid',
-        gridTemplateColumns: '1fr', // Fallback for SSR
+        gridTemplateColumns: columns,
         gridTemplateRows: rows,
-        gap: fs(gap), // Static fallback for SSR
+        gap: gapAll
       };
 
   return (

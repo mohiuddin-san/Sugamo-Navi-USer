@@ -33,7 +33,7 @@ export default {
         cairo: ["'Cairo'", "sans-serif"],
         courierPrime: ["'Courier Prime'", "monospace"],
         courier: ["Courier", "monospace"],
-        cousine: ["Cousine", "monospace"]
+        cousine: ['Cousine', 'monospace'],
       },
     },
   },

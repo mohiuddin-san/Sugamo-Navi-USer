@@ -27,18 +27,6 @@ export async function loader({ params }: { params: { id: string } }) {
   let { id } = params;
   id = '1ea7ae99-de53-4c3d-ac87-d2a47203cc64'; // Hardcode a valid ID from your data for testing
 
-  console.log('Loader: URL params id (hardcoded for test):', id); // Debug log
-
-  // Comment out the invalid ID check temporarily
-  // if (!id || id === 'undefined' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
-  //   console.log('Loader: Invalid shop ID detected:', id); // Debug log
-  //   return {
-  //     menu: null,
-  //     products: [],
-  //     error: 'Invalid shop ID provided',
-  //   };
-  // }
-
   try {
     const { data: shopData, error: shopError } = await supabase
       .from('shops')
@@ -142,7 +130,7 @@ export async function loader({ params }: { params: { id: string } }) {
 
 export default function ShopDetails() {
   const { menu, products, error: loaderError } = useLoaderData();
-  const { id } = useParams();
+  const { id, category } = useParams();
   const location = useLocation();
   const shopFromState = location.state?.shop as Shop | undefined;
   const [shop, setShop] = useState<Shop | null>(shopFromState || (menu ? {
@@ -161,33 +149,16 @@ export default function ShopDetails() {
   } : null));
   const [loading, setLoading] = useState(!shopFromState && !menu);
   const [error, setError] = useState<string | null>(loaderError);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(1);
   const { fs, fsm, fluidStyle } = useUniversalFluid();
   const isMobile = useDevice();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   const visibleCards = 1;
 
-  // Log data for debugging
-  console.log('ShopDetails: Shop from state:', shopFromState);
-  console.log('ShopDetails: Menu from loader:', menu);
-  console.log('ShopDetails: Final shop state:', shop);
-  console.log('ShopDetails: URL params id:', id);
-  console.log('ShopDetails: Loader error:', loaderError);
+
 
   useEffect(() => {
     let effectiveId = id;  // Use params id, but override for testing
-    effectiveId = '1ea7ae99-de53-4c3d-ac87-d2a47203cc64';  // Hardcode same ID
-
-    console.log('useEffect: Checking for shop fetch with id (hardcoded for test):', effectiveId, 'shopFromState:', !!shopFromState, 'menu:', !!menu); // Debug log
-
-    // Comment out the invalid ID check temporarily
-    // if (id && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
-    //   console.log('useEffect: Invalid shop ID detected:', id); // Debug log
-    //   setError('Invalid shop ID provided');
-    //   setLoading(false);
-    //   return;
-    // }
-
     if (!shopFromState && !menu && effectiveId) {
       const fetchShop = async () => {
         try {
@@ -237,12 +208,14 @@ export default function ShopDetails() {
     }
   }, [id, shopFromState, menu]);
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % products.length);
+  const handlePrev = () => {
+    setCurrentIndex((prev) => Math.max(prev - 1, 0));
   };
 
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + products.length) % products.length);
+  const handleNext = () => {
+    setCurrentIndex((prev) =>
+      Math.min(prev + 1, products.length - 4) // max = last 4 items visible
+    );
   };
 
   if (loading) {
@@ -265,7 +238,7 @@ export default function ShopDetails() {
         marginTop={100}
       />
       <div
-        className="flex flex-col md:flex-row items-center justify-center bg-white"
+        className="flex flex-col md:flex-row items-center justify-center overflow-hidden"
         style={{ paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}
       >
         <div className="md:w-3/6 w-full mb-4 md:mb-0">
@@ -274,7 +247,7 @@ export default function ShopDetails() {
               <div className="flex space-x-2 ml-auto">
 
                 <button
-                  className="bg-[#ED4548] text-white rounded-full italic font-cairo text-center"
+                  className="bg-[#ED4548] text-white rounded-full italic font-cousine font-bold text-center"
                   style={{
                     width: isMobile ? fsm(92) : fs(92),
                     minWidth: isMobile ? fsm(72) : fs(72),
@@ -283,7 +256,7 @@ export default function ShopDetails() {
                     fontSize: isMobile ? fsm(12) : fs(12),
                   }}
                 >
-                  {shop.category}
+                  {"SHOP"}
                 </button>
 
                 <span className="flex items-center gap-1">
@@ -326,7 +299,7 @@ export default function ShopDetails() {
             src={shop.imageUrl}
             alt={shop.title}
             className="w-full h-auto"
-            style={{ height: isMobile ? fsm(401) : fs(540) }}
+            style={{ width: isMobile ? "100%" : fs(540), height: isMobile ? fsm(401) : fs(540) }}
           />
           {isMobile && (<div
             style={{
@@ -337,30 +310,30 @@ export default function ShopDetails() {
               {(shop.other_images || []).map((image, index) => (
                 <div
                   key={index}
-                  style={{ minWidth: isMobile ? fsm(117) : fs(358) }}
+                  style={{ minWidth: isMobile ? fsm(117) : fs(358), height: isMobile ? fsm(88) : fs(270) }}
                 >
-                  <img src={image} alt={`Related Item ${index + 1}`} className="rounded-lg shadow-lg w-full h-auto" style={{ maxHeight: isMobile ? fsm(88) : fs(270) }} />
+                  <img src={image} alt={`Related Item ${index + 1}`} className="w-full h-auto" style={{ maxHeight: isMobile ? fsm(88) : fs(270) }} />
                 </div>
               ))}
             </div>
           </div>)}
         </div>
-        <div className="md:w-3/6 w-full" style={{ paddingLeft: isMobile ? fsm(0) : fs(90) }}>
+        <div className="md:w-auto w-full " style={{ paddingLeft: isMobile ? fsm(0) : fs(90), height: isMobile ? fsm(401) : fs(540), paddingTop: fs(63) }}>
           {!isMobile && (<div className="flex flex-row justify-between">
             <div className="flex flex-row">
               <div className="flex space-x-2 ml-auto">
 
                 <button
-                  className="bg-[#ED4548] text-white rounded-full italic font-cairo text-center"
+                  className="bg-[#ED4548] text-white rounded-full italic font-bold font-cairo text-center"
                   style={{
                     width: isMobile ? fsm(92) : fs(92),
                     minWidth: isMobile ? fsm(72) : fs(72),
                     height: isMobile ? fsm(22) : fs(22),
                     minHeight: isMobile ? fsm(17) : fs(17),
-                    fontSize: isMobile ? fsm(12) : fs(12),
+                    fontSize: isMobile ? fsm(13) : fs(13),
                   }}
                 >
-                  {shop.category}
+                  {"shop"}
                 </button>
 
                 <span className="flex items-center gap-1">
@@ -399,32 +372,34 @@ export default function ShopDetails() {
               />
             </button>
           </div>)}
-          <div className="bg-white">
-            <h2
-              className="font-semibold font-cairo text-brown-700"
-              style={{ marginTop: isMobile ? fsm(8) : fs(35), fontSize: autoSize(22) }}
-            >
-              {shop.title}
-            </h2>
-            <p
-              className="text-gray-600 font-medium font-cairo"
-              style={{ marginTop: isMobile ? fsm(16) : fs(19), fontSize: autoSize(16) }}
-            >
-              {shop.description}
-            </p>
+          <div className=" h-full flex flex-col justify-between">
+            <div>
+              <h2
+                className="font-semibold font-cairo text-brown-700"
+                style={{ marginTop: isMobile ? fsm(8) : fs(35), fontSize: autoSize(22) }}
+              >
+                {shop.title}
+              </h2>
+              <p
+                className=" font-normal font-cairo leading-loose"
+                style={{ marginTop: isMobile ? fsm(16) : fs(19), fontSize: autoSize(16) }}
+              >
+                {shop.description}
+              </p>
+            </div>
             <div
               className="flex items-center justify-between"
-              style={{ marginTop: isMobile ? fsm(72) : fs(30) }}
+              style={{ paddingBottom: isMobile ? fsm(0) : fs(61) }}
             >
-              <div className="text">
-                <p className="text-black">
-                  <strong>Hours:</strong> {shop.opening_hours}
+              <div>
+                <p className="text-[#313131] font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
+                  OPEN {shop.opening_hours}
                 </p>
-                <p className="text-black mt-2">
-                  <strong>Address:</strong> {shop.address}
+                <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
+                  Address {shop.address}
                 </p>
-                <p className="text-black mt-2">
-                  <strong>Near:</strong> {shop.near_station}
+                <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
+                  {shop.near_station}
                 </p>
               </div>
               <a href={menu.link} target="_blank" rel="noopener noreferrer">
@@ -436,6 +411,7 @@ export default function ShopDetails() {
               </a>
             </div>
           </div>
+
         </div>
       </div>
       {!isMobile && (<div
@@ -451,12 +427,13 @@ export default function ShopDetails() {
               key={index}
               style={{ minWidth: isMobile ? fsm(117) : fs(358) }}
             >
-              <img src={image} alt={`Related Item ${index + 1}`} className="rounded-lg shadow-lg w-full h-auto" style={{ maxHeight: isMobile ? fsm(88) : fs(270) }} />
+              <img src={image} alt={`Related Item ${index + 1}`} className="w-full h-auto" style={{ maxHeight: isMobile ? fsm(88) : fs(270) }} />
             </div>
           ))}
         </div>
       </div>)}
-      <div className="mt-10 mx-auto mb-12 border-2 border-black rounded-lg overflow-hidden" style={{ height: isMobile ? fsm(332) : fs(591), marginLeft: isMobile ? fsm(20) : fs(160), marginRight: isMobile ? fsm(20) : fs(160) }}>
+      <div className='text-[#ED4548] italic underline w-full text-center font-cousine' style={{ fontSize: autoSize(25), marginTop: isMobile ? fsm(138) : fs(90), marginBottom: isMobile ? fsm(24) : fs(0) }}>Google Map</div>
+      <div className="mx-auto border-2 border-black rounded-lg overflow-hidden" style={{ height: isMobile ? fsm(332) : fs(591), marginLeft: isMobile ? fsm(20) : fs(160), marginRight: isMobile ? fsm(20) : fs(160) }}>
         <iframe
           src={shop.map_embed}
           width="100%"
@@ -465,43 +442,69 @@ export default function ShopDetails() {
           referrerPolicy="no-referrer-when-downgrade"></iframe>
       </div>
       <div
-        className="mt-10 relative"
+        className="relative "
         style={{
+          paddingTop: isMobile ? fsm(40) : fs(90),
           paddingLeft: isMobile ? fsm(40) : fs(90),
           paddingRight: isMobile ? fsm(40) : fs(90),
           marginBottom: isMobile ? fsm(144) : fs(130),
         }}
       >
-        <div className="border rounded-lg overflow-hidden" style={{ paddingTop: isMobile ? fsm(70) : fs(76) }}>
-          <div className="absolute top-0 -translate-y-1/2 left-1/2 transform -translate-x-1/2 bg-white px-4 text-center text-black font-bold">
+        <div className="border border-black rounded-[10px] overflow-visible relative" style={{ paddingTop: fs(76)}}>
+          {/* SEE MORE label */}
+          <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap" style={{ paddingLeft: isMobile ? fsm(20) : fs(45), paddingRight: isMobile ? fsm(20) : fs(45), fontSize: autoSize(31) }}>
             SEE MORE
           </div>
-          <div
-            className="flex transition-transform duration-300 ease-in-out"
-            style={{ transform: `translateX(-${currentIndex * 100}%)`, width: `${products.length * 100}%` }}
-          >
-            {products.map((product, index) => (
-              <div key={index} className=" flex-shrink-0 p-2" style={{ boxSizing: 'border-box' }}>
-                <ShopItem
-                  title={product.title}
-                  imageUrl={"./src/shop.png"}
-                  description={product.description}
-                  likes={product.likes}
-                  views={product.views}
-                />
-              </div>
-            ))}
+          <div className="overflow-hidden">
+            <div
+              className="flex transition-transform duration-300 ease-in-out px-[25%]"
+              style={{
+                transform: `translateX(-${currentIndex * 25}%)`,
+                width: `${products.length * 25}%`,
+              }}
+            >
+              {products.map((product, index) => (
+                <div
+                  key={index}
+                  className="flex-shrink-0 p-2"
+                  style={{
+                    width: isMobile ? fsm(210) : fs(350),
+                    height: isMobile ? fsm(301) : fs(496),
+                  }}
+                >
+                  <ShopItem
+                    title={product.title}
+                    imageUrl={"./src/shop.png"}
+                    description={product.description}
+                    likes={product.likes}
+                    views={product.views}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
+
+
+          {/* Navigation buttons */}
           <div className="flex justify-between px-4" style={{ height: autoSize(76) }}>
-            <button onClick={handlePrev} className="text-2xl">
+            <button
+              onClick={handlePrev}
+              className="text-2xl disabled:opacity-30"
+              disabled={currentIndex === 0}
+            >
               ←
             </button>
-            <button onClick={handleNext} className="text-2xl">
+            <button
+              onClick={handleNext}
+              className="text-2xl disabled:opacity-30"
+              disabled={currentIndex >= products.length - 4} // keep 4 slots visible
+            >
               →
             </button>
           </div>
         </div>
       </div>
+
       <Footer />
     </div>
   );

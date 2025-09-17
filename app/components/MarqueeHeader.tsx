@@ -39,7 +39,7 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
       }}
     >
       <div
-        className={`inline-block animate-marquee font-cousine italic`}
+        className={`inline-block animate-marquee font-bold font-cousine italic`}
         style={{
           fontSize: isMobile? fsm(25):fs(25),
           color: textColor, // Apply dynamic text color
@@ -48,7 +48,7 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
           animationIterationCount: "infinite",
         }}
       >
-        {text.repeat(5)} {/* Repeat text 5 times for marquee effect */}
+        {text.repeat(4)} {/* Repeat text 5 times for marquee effect */}
       </div>
     </div>
   );

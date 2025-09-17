@@ -1,17 +1,31 @@
 import { Link } from "@remix-run/react";
+
 import ReactMarkdown from "react-markdown";
+
 import remarkGfm from "remark-gfm";
+
 import { BookmarkIcon } from "@heroicons/react/24/outline";
+
 import { useState, useRef, useEffect } from "react";
+
 import rehypeHighlight from "rehype-highlight";
+
 import rehypeRaw from "rehype-raw";
+
 import rehypeSlug from "rehype-slug";
+
 import CommonCategoryTop from "../components/CommonCategoryTop";
+
 import { useUniversalFluid } from "../hooks/useUniversalFluid";
+
 import Header from "../components/Header";
+
 import OGPPreview from "~/components/OGPPreview";
+
 import { useMediaQuery } from "react-responsive";
+
 import MarqueeHeader from "../components/MarqueeHeader";
+
 
 interface BlogDetailProps {
   blog: {
@@ -24,11 +38,13 @@ interface BlogDetailProps {
   categoryName: string;
 }
 
+
 interface Heading {
   id: string;
   text: string;
   level: number;
 }
+
 
 export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -49,7 +65,9 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
   const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
   const isMobile = useMediaQuery({ maxWidth: 767 });
   const tocContainerRef = useRef<HTMLDivElement>(null);
-  const tocItemRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
+  const tocItemRefs = useRef<Record<string, HTMLLIElement | null>>({});
+  const ulRef = useRef<HTMLUListElement>(null);
+
 
   const registerHeading = (id: string, element: HTMLElement | null, text: string, level: number) => {
     if (element && text && id) {
@@ -60,6 +78,7 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
       }
     }
   };
+
 
   const scrollToHeading = (id: string) => {
     const element = headingElements.current[id];
@@ -81,12 +100,14 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     }
   };
 
+
   const extractText = (children: any): string => {
     if (typeof children === 'string') return children;
     if (Array.isArray(children)) return children.map(extractText).join('');
     if (children?.props?.children) return extractText(children.props.children);
     return '';
   };
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -113,6 +134,7 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [headings]);
 
+
   useEffect(() => {
     if (activeHeading && tocItemRefs.current[activeHeading] && tocContainerRef.current) {
       const tocItem = tocItemRefs.current[activeHeading];
@@ -129,16 +151,34 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     }
   }, [activeHeading]);
 
-  const markdownComponents = {
+
+  useEffect(() => {
+    if (ulRef.current && headings.length > 0) {
+      const firstLi = ulRef.current.querySelector('li');
+      const lastLi = ulRef.current.querySelector('li:last-child');
+      if (firstLi && lastLi) {
+        const firstRect = firstLi.getBoundingClientRect();
+        const lastRect = lastLi.getBoundingClientRect();
+        const lineHeight = lastRect.bottom - firstRect.top;
+        const line = ulRef.current.querySelector('.toc-line');
+        if (line) {
+          (line as HTMLElement).style.height = `${Math.max(lineHeight, 20)}px`;
+        }
+      }
+    }
+  }, [headings, tocKey]);
+
+
+  const markdownComponents: any = {
     h1: ({ node, children, ...props }: any) => null,
     h2: ({ node, children, ...props }: any) => {
       const text = extractText(children);
       return (
-        <h2 
-          id={props.id} 
-          ref={(el) => registerHeading(props.id || "", el, text, 2)} 
-          {...props} 
-          className="markdown-heading markdown-h2" 
+        <h2
+          id={props.id}
+          ref={(el) => registerHeading(props.id || "", el, text, 2)}
+          {...props}
+          className="markdown-heading markdown-h2"
         >
           {children}
         </h2>
@@ -147,11 +187,11 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     h3: ({ node, children, ...props }: any) => {
       const text = extractText(children);
       return (
-        <h3 
-          id={props.id} 
-          ref={(el) => registerHeading(props.id || "", el, text, 3)} 
-          {...props} 
-          className="markdown-heading markdown-h3" 
+        <h3
+          id={props.id}
+          ref={(el) => registerHeading(props.id || "", el, text, 3)}
+          {...props}
+          className="markdown-heading markdown-h3"
         >
           {children}
         </h3>
@@ -160,11 +200,11 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     h4: ({ node, children, ...props }: any) => {
       const text = extractText(children);
       return (
-        <h4 
-          id={props.id} 
-          ref={(el) => registerHeading(props.id || "", el, text, 4)} 
-          {...props} 
-          className="markdown-heading markdown-h4" 
+        <h4
+          id={props.id}
+          ref={(el) => registerHeading(props.id || "", el, text, 4)}
+          {...props}
+          className="markdown-heading markdown-h4"
         >
           {children}
         </h4>
@@ -173,11 +213,11 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     h5: ({ node, children, ...props }: any) => {
       const text = extractText(children);
       return (
-        <h5 
-          id={props.id} 
-          ref={(el) => registerHeading(props.id || "", el, text, 5)} 
-          {...props} 
-          className="markdown-heading markdown-h5" 
+        <h5
+          id={props.id}
+          ref={(el) => registerHeading(props.id || "", el, text, 5)}
+          {...props}
+          className="markdown-heading markdown-h5"
         >
           {children}
         </h5>
@@ -186,11 +226,11 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     h6: ({ node, children, ...props }: any) => {
       const text = extractText(children);
       return (
-        <h6 
-          id={props.id} 
-          ref={(el) => registerHeading(props.id || "", el, text, 6)} 
-          {...props} 
-          className="markdown-heading markdown-h6" 
+        <h6
+          id={props.id}
+          ref={(el) => registerHeading(props.id || "", el, text, 6)}
+          {...props}
+          className="markdown-heading markdown-h6"
         >
           {children}
         </h6>
@@ -202,24 +242,39 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
       </div>
     ),
     p: ({ node, children, ...props }: any) => {
-      if (typeof children === "string" && children.startsWith("[side-by-side:")) {
-        const images = children.match(/!\[.*?\]\(.*?\)/g) || [];
-        return (
-          <div className="side-by-side-container">
-            {images.map((imgMd: string, index: number) => (
-              <div key={index} className="side-by-side-image">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeSlug, rehypeHighlight, rehypeRaw]}
-                  components={markdownComponents}
-                >
-                  {imgMd}
-                </ReactMarkdown>
+      // Robustly detect a special [side-by-side: ...] paragraph.
+      // We inspect the raw AST node children to find if the paragraph starts with the marker
+      const nodeChildren = node?.children || [];
+      const combinedText = nodeChildren.map((c: any) => {
+        if (c.type === 'text') return c.value || '';
+        if (c.type === 'image') return `![](${c.url})`;
+        if (c.type === 'link' && c.children) return (c.children.map((ch: any) => ch.value || '').join(''));
+        return '';
+      }).join('');
+
+      const startsWithSideBySide = combinedText.trim().startsWith('[side-by-side:');
+
+      if (startsWithSideBySide) {
+        // collect image nodes inside this paragraph
+        const images = nodeChildren.filter((c: any) => c.type === 'image').map((img: any) => ({ url: img.url, alt: img.alt }));
+        if (images.length === 2) {
+          // render two images side-by-side, left and right
+          return (
+            <div className="image-pair-container" {...props}>
+              <div className={`image-pair-item image-left`}>
+                <img src={images[0].url} alt={images[0].alt || ''} className="markdown-image" />
               </div>
-            ))}
-          </div>
-        );
+              <div className={`image-pair-item image-right`}>
+                <img src={images[1].url} alt={images[1].alt || ''} className="markdown-image" />
+              </div>
+            </div>
+          );
+        }
+        // if marker present but images not exactly 2 — don't render the marker text, just skip
+        return null;
       }
+
+      // default paragraph rendering
       return (
         <p {...props}>
           {cursorNode && cursorNode.parentElement === node && typeof children === "string" ? (
@@ -234,6 +289,10 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
         </p>
       );
     },
+    img: ({ node, ...props }: any) => (
+      // Outside of the special side-by-side block, images render full width
+      <img {...props} className="markdown-image" />
+    ),
     span: ({ node, ...props }: any) => <span {...props} style={props.style} />,
     a: ({ node, href, children, ...props }: any) => {
       if (href?.startsWith("ogp:")) {
@@ -263,10 +322,34 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     },
   };
 
+
   useEffect(() => {
     const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
     setBookmarkedBlogs(savedBookmarks);
   }, []);
+
+const [linePosition, setLinePosition] = useState({ top: 0, height: 0 });
+
+useEffect(() => {
+  if (!headings.length) return;
+
+  // Find first and last item (based on refs)
+  const firstId = headings[0].id;
+  const lastId = headings[headings.length - 1].id;
+  const firstEl = tocItemRefs.current[firstId];
+  const lastEl = tocItemRefs.current[lastId];
+
+  if (firstEl && lastEl) {
+    const containerTop = ulRef.current?.getBoundingClientRect().top ?? 0;
+    const firstTop = firstEl.offsetTop + firstEl.offsetHeight / 2;
+    const lastTop = lastEl.offsetTop + lastEl.offsetHeight / 2;
+
+    setLinePosition({
+      top: firstTop,
+      height: lastTop - firstTop,
+    });
+  }
+}, [headings]);
 
   const toggleBookmark = (blogId: string) => {
     const updatedBookmarks = bookmarkedBlogs.includes(blogId)
@@ -275,6 +358,7 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     setBookmarkedBlogs(updatedBookmarks);
     localStorage.setItem("bookmarkedBlogs", JSON.stringify(updatedBookmarks));
   };
+
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
@@ -285,6 +369,7 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
       day: "numeric",
     });
   };
+
 
   return (
     <div>
@@ -303,39 +388,31 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
         marginBottom={0}
         marginTop={98}
       />
-      <div className=" mx-auto py-12 bg-white">
+
+      <div className="mx-auto py-12 bg-white">
         <div className="flex flex-col lg:flex-row gap-10">
           <div className="h-40 p-2 flex flex-col gap-3 justify-center items-center rounded-r-lg border-t-2 border-b-2 border-l-0 border-r-2 border-black overflow-hidden">
             <a href="https://www.instagram.com/reel/DNfV4MozhwL/">
-              <img
-                src="/src/instagram-icon.svg"
-                alt="Instagram"
-                className="w-10 h-10"
-              />
+              <img src="/src/instagram-icon.svg" alt="Instagram" className="w-10 h-10" />
             </a>
             <a href="https://www.tiktok.com/@sugamo_japan">
-              <img
-                src="/src/titok.svg"
-                alt="TikTok"
-                className="w-10 h-10"
-              />
+              <img src="/src/titok.svg" alt="TikTok" className="w-10 h-10" />
             </a>
           </div>
-          <div className={`bg-white rounded-tl-xl rounded-bl-xl rounded-r-none overflow-hidden ${headings.length > 0 ? 'lg:w-3/4 lg:order-1' : 'w-full'} border-t-2 border-b-2 border-l-2 border-r-0 border-black`}>
+
+          <div className={`bg-white overflow-hidden ${headings.length > 0 ? 'lg:w-3/4 lg:order-1' : 'w-full'}`}>
             {blog.top_image && (
               <div className="h-96 overflow-hidden">
-                <img
-                  src={blog.top_image}
-                  alt={blog.title}
-                  className="w-full h-full object-cover"
-                />
+                <img src={blog.top_image} alt={blog.title} className="w-full h-full object-cover" />
               </div>
             )}
-            <div className="p-6">
+
+            <div className="pt-2">
               <h1 className="text-3xl font-semibold font-cairo text-black mb-2">{blog.title}</h1>
               <span className="font-courierPrime text-gray-500">
                 {formatDate(blog.publish_date)} | {categoryName}
               </span>
+
               <div
                 className="prose prose-lg text-black font-cairo font-semibold markdown-content"
                 style={{
@@ -353,59 +430,67 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
                 </ReactMarkdown>
               </div>
             </div>
+
             <div className="p-6">
-              <Link
-                to="/"
-                className="text-[#ED4548] font-medium hover:text-[#ED4548] transition-colors"
-              >
-                ← Back to Articles
-              </Link>
+              <Link to="/BlogList" className="text-[#ED4548] font-medium hover:text-[#ED4548] transition-colors">← Back to Articles</Link>
             </div>
           </div>
 
-          {/* Table of Contents */}
+
           {headings.length > 0 && (
-           <div className="lg:w-1/4 mb-8 lg:mb-0 lg:order-2">
-              <div className="sticky top-28 bg-white p-6 rounded-l-xl border-t-2 border-b-2 border-l-2 border-black">
-                <h3 className="text-xl font-semibold font-cairo text-black mb-4 text-center">
-                  目次
-                </h3>
-                <div className="toc-container relative max-h-[calc(100vh-200px)] overflow-y-auto" ref={tocContainerRef}>
-                  <ul className="space-y-1">
+            <div className="lg:w-1/4 mb-8 lg:mb-0 lg:order-2">
+              <div className="sticky top-28 bg-transparent p-6 rounded-l-[30px] border-t-2 border-b-2 border-l-2 border-black">
+                <h3 className="text-xl font-semibold font-cairo text-black mb-4 text-center">目次</h3>
+                <div
+                  className="toc-container relative max-h-[calc(100vh-200px)] overflow-y-auto"
+                  ref={tocContainerRef}
+                >
+                  <ul className="space-y-1 relative" ref={ulRef}>
+                    {/* Dynamic Line */}
+                    <div
+                      className="toc-line absolute left-[9px] w-[2px] bg-black"
+                      style={{ top: linePosition.top, height: linePosition.height }}
+                    />
+
                     {headings.map((heading) => (
                       <li
                         key={heading.id}
-                        ref={(el) => { tocItemRefs.current[heading.id] = el; }}
-                        className={`toc-item toc-level-${heading.level} transition-colors cursor-pointer flex items-center`}
+                        ref={(el) => {
+                          tocItemRefs.current[heading.id] = el;
+                        }}
+                        className={`toc-item toc-level-${heading.level} cursor-pointer flex items-center`}
                         onClick={() => scrollToHeading(heading.id)}
                       >
                         <span
-                          className={`toc-marker-wrapper flex justify-center items-center bg-white rounded-full ${
-                            heading.level === 2 ? 'w-[19px] h-[19px] pl-[2px]' : 'w-[19px] h-[9px] pl-[2px]'
-                          }`}
+                          className={`toc-marker-wrapper flex justify-center items-center bg-transparent rounded-full ${heading.level === 2
+                              ? "w-[19px] h-[19px] pl-[2px]"
+                              : "w-[19px] h-[9px] pl-[2px]"
+                            }`}
                         >
                           <span
-                            className={`toc-marker ${
-                              activeHeading === heading.id
-                                ? 'text-[#ED4548] font-bold'
-                                : 'text-gray-700'
-                            } ${heading.level === 2 ? 'triangle-marker' : 'circle-marker'}`}
+                            className={`toc-marker ${activeHeading === heading.id
+                                ? "text-[#ED4548] font-bold"
+                                : "text-black"
+                              } ${heading.level === 2 ? "triangle-marker" : "circle-marker"
+                              }`}
+                            style={{
+                              fontSize: heading.level === 2 ? fs(15) : fs(9),
+                            }}
                           >
                             {heading.level === 2
                               ? activeHeading === heading.id
-                                ? '▼'
-                                : '▽'
+                                ? "▼"
+                                : "▽"
                               : activeHeading === heading.id
-                              ? '●'
-                              : '○'}
+                                ? "●"
+                                : "○"}
                           </span>
                         </span>
                         <span
-                          className={`flex-1 ml-3 ${
-                            activeHeading === heading.id
-                              ? 'text-[#ED4548] font-bold'
-                              : 'text-gray-700 hover:text-indigo-600'
-                          } ${heading.level === 3 ? 'toc-level-3' : 'toc-level-2'}`}
+                          className={`flex-1 ml-3 ${activeHeading === heading.id
+                              ? "text-[#ED4548] font-bold"
+                              : "text-black"
+                            } ${heading.level === 3 ? "toc-level-3" : "toc-level-2"}`}
                         >
                           {heading.text}
                         </span>
@@ -418,206 +503,6 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
           )}
         </div>
       </div>
-
-      <style>{`
-        .markdown-heading {
-          font-weight: bold;
-          margin-top: 1.5em;
-          margin-bottom: 0.5em;
-          color: #000;
-          border-bottom: 1px solid #e5e7eb;
-          padding-bottom: 0.3em;
-          scroll-margin-top: 120px;
-        }
-        
-        .markdown-h2 {
-          font-size: 1.875em !important;
-          border-bottom-width: 2px;
-          border-color: #60a5fa;
-        }
-        
-        .markdown-h3 {
-          font-size: 1.5em !important;
-          border-bottom-width: 2px;
-          border-color: #93c5fd;
-        }
-        
-        .markdown-h4 {
-          font-size: 1.25em !important;
-          border-bottom-width: 1px;
-          border-style: dashed;
-        }
-        
-        .markdown-h5 {
-          font-size: 1.125em !important;
-          border-bottom-width: 1px;
-          border-style: dotted;
-        }
-        
-        .markdown-h6 {
-          font-size: 1em !important;
-          color: #6b7280;
-          border-bottom-width: 1px;
-          border-style: dotted;
-          border-color: #d1d5db;
-        }
-        
-        .highlighted-heading {
-          background-color: rgba(255, 237, 213, 0.8);
-          transition: background-color 2s ease;
-        }
-        
-        .markdown-content {
-          line-height: 1.8;
-        }
-        
-        .markdown-content p {
-          margin-bottom: 1.2em;
-        }
-        
-        .table-container {
-          overflow-x: auto;
-          margin: 1.5em 0;
-        }
-        
-        .table-container table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        
-        .table-container th, .table-container td {
-          border: 1px solid #e5e7eb;
-          padding: 0.75em;
-          text-align: left;
-        }
-        
-        .table-container th {
-          background-color: #f9fafb;
-          font-weight: bold;
-        }
-        
-        .table-container tr:nth-child(even) {
-          background-color: #f3f4f6;
-        }
-        
-        .code-block {
-          position: relative;
-          margin: 1.5em 0;
-          border-radius: 0.5em;
-          overflow: hidden;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        
-        .code-language {
-          position: absolute;
-          top: 0;
-          right: 0;
-          background-color: #3b82f6;
-          color: white;
-          padding: 0.25em 0.75em;
-          font-size: 0.75em;
-          border-bottom-left-radius: 0.5em;
-          font-family: monospace;
-        }
-        
-        .code-block code {
-          display: block;
-          padding: 1.5em 1em 1em 1em;
-          overflow-x: auto;
-          background-color: #1f2937;
-          color: #f3f4f6;
-        }
-        
-        .side-by-side-container {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 1em;
-          margin: 1.5em 0;
-        }
-        
-        .side-by-side-image {
-          flex: 1;
-          min-width: 250px;
-        }
-        
-        .side-by-side-image img {
-          width: 100%;
-          height: auto;
-          border-radius: 0.5em;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        
-        .blinking-cursor {
-          animation: blink 1s steps(2, start) infinite;
-          color: #3b82f6;
-          font-weight: bold;
-        }
-        
-        .toc-container {
-          position: relative;
-        }
-        
-        .toc-container::before {
-          content: '';
-          position: absolute;
-          left: 9.5px;
-          top: 0;
-          bottom: 0;
-          width: 2px;
-          background-color: #d1d5db;
-          z-index: 1;
-        }
-        
-        .toc-item {
-          display: flex;
-          align-items: center;
-          padding: 0.4em 0;
-          transition: all 0.2s ease;
-          line-height: 1.4;
-          position: relative;
-          z-index: 2;
-        }
-        
-        .toc-marker-wrapper {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          background-color: white;
-          border-radius: 50%;
-          margin-left: 0;
-          margin-right: 0;
-        }
-        
-        .toc-marker {
-          line-height: 1;
-        }
-        
-        .triangle-marker {
-          font-size: 12px;
-          line-height: 1;
-        }
-        
-        .circle-marker {
-          font-size: 7px;
-          line-height: 1;
-        }
-        
-        .toc-level-2 {
-          font-weight: 600;
-          font-size: 1.1em;
-        }
-        
-        .toc-level-3 {
-          font-weight: 500;
-          font-size: 1em;
-        }
-        
-        @keyframes blink {
-          to {
-            visibility: hidden;
-          }
-        }
-      `}</style>
     </div>
   );
 }

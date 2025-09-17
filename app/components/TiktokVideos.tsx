@@ -24,9 +24,9 @@ export default function TikTokVideos() {
   }
 
   return (
-    <div className="bg-white border-2 border-black text-black rounded-md" style={{paddingBottom: autoSize(51)}}>
-      <div className="container">
-        <div className="flex items-center justify-center" style={{height: autoSize(90),paddingTop: autoSize(40), paddingBottom: autoSize(40)}}>
+    <div className="bg-white border-2 border-black text-black rounded-[10px]" style={{paddingBottom: autoSize(53)}}>
+      <div>
+        <div className="flex items-center justify-center" style={{ height: autoSize(138), gap: autoSize(16) }}>
           <img
             className="m-1"
             style={{ width: autoSize(58), height: autoSize(58) }}

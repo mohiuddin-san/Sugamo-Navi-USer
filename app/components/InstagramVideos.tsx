@@ -24,16 +24,16 @@ export default function InstagramVideos() {
   }
 
   return (
-    <div className="bg-black text-white rounded-md" style={{paddingBottom: autoSize(51)}}>
-      <div className="container">
-        <div className="flex items-center justify-center" style={{height: autoSize(90),paddingTop: autoSize(40), paddingBottom: autoSize(40)}}>
+    <div className="bg-black text-white rounded-[10px]" style={{paddingBottom: autoSize(53)}}>
+      <div>
+        <div className="flex items-center justify-center" style={{ height: autoSize(138), gap: autoSize(16) }}>
           <img
             className="m-1"
             style={{ width: autoSize(58), height: autoSize(58) }}
             src="./src/instagram-whitering.svg"
             alt="Camera Icon"
           />
-          <h1 className="italic font-cousine font-bold" style={{ fontSize: fs(25) }}>
+          <h1 className="italic font-cousine font-bold" style={{ fontSize: isMobile ? fsm(25) : fs(25) }}>
             INSTAGRAM
           </h1>
         </div>

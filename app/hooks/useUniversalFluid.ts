@@ -2,16 +2,26 @@ import { useMemo } from "react";
 
 export const useUniversalFluid = () => {
   // fs → Desktop → Tablet scaling (responsive, aligned with Figma 480px to 1440px)
-  const fs = useMemo(
-    () => (designSize: number, minVw = 480, maxVw = 1440, minSizeRatio = 0.33) => {
-      if (typeof designSize !== 'number' || designSize <= 0) return '0px';
-      const minSize = designSize * minSizeRatio;
-      const result = `clamp(${minSize}px, calc(${minSize}px + ${(designSize - minSize)} * ((100vw - ${minVw}px) / ${maxVw - minVw})), ${designSize}px)`;
+const fs = useMemo(
+  () => (
+    designSize: number,
+    baseVw = 1440,
+    minVw = 320,
+    minSizeRatio = 0.33,
+    maxMultiplier = 2 // কতটা বড় হতে পারবে (design size এর কত গুণ)
+  ) => {
+    if (typeof designSize !== "number" || designSize <= 0) return "0px";
 
-      return result;
-    },
-    []
-  );
+    const minSize = designSize * minSizeRatio;
+    const vw = (designSize / baseVw) * 100;
+
+    // এখন clamp এ max bound designSize নয়, বরং একটা বড় cap
+    return `clamp(${minSize}px, ${vw}vw, ${designSize * maxMultiplier}px)`;
+  },
+  []
+);
+
+
 
   // fsm → Mobile → Small Tablet (480px base, aligned with Figma 480px max)
   const fsm = useMemo(
