@@ -43,7 +43,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   views,
   linkTo = '/ShopDetails',
   style,
-  imageHeight,
+  imageHeight=210,
   paddingText = 38,
 }) => {
   const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
@@ -148,12 +148,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
       }}
     >
       {/* Title */}
-      <h1
-        className="text-center font-bold my-5 font-cairo"
-        style={{ fontSize: isMobile ? fsm(25) : fs(25), color: '#313131' }}
-      >
-        {title}
-      </h1>
+<h1
+  className="text-center font-bold font-cairo flex items-center justify-center"
+  style={{
+    fontSize: isMobile ? fsm(25) : fs(25),
+    color: '#313131',
+    height: isMobile ? fsm(87) : fs(87),
+  }}
+>
+  {title || 'No Title Available'}
+</h1>
 
       {/* Image */}
       <img

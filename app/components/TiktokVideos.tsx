@@ -2,26 +2,16 @@ import { useLoaderData } from '@remix-run/react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useMediaQuery } from "react-responsive";
 
-type LoaderData = {
-  posts: any[];
-  error: string | null;
+type TikTokVideosProps = {
+  videos: any[];
 };
 
-export default function TikTokVideos() {
-  const data = useLoaderData<LoaderData>();
-  const posts = Array.isArray(data?.posts) ? data.posts : [];
-  const error = data?.error || null;
+
+export default function TikTokVideos({ videos }: TikTokVideosProps) {
   const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
 
-  if (error) {
-    return (
-      <div className="container mx-auto p-4 text-red-600">
-        Error: {error}
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white border-2 border-black text-black rounded-[10px]" style={{paddingBottom: autoSize(53)}}>
@@ -38,21 +28,34 @@ export default function TikTokVideos() {
           </h1>
         </div>
         <div className="grid grid-cols-3 gap-1">
-          {posts.length > 0 ? (
-            posts.slice(0, 6).map((post: any) => (
+          {videos.length > 0 ? (
+            videos.slice(0, 6).map((video: any) => (
               <div
-                key={post.id}
-                className="rounded-sm"
+                key={`${video.id}`}
+                className="relative flex-shrink-0 overflow-hidden shadow-md snap-center transition-transform duration-300"
               >
-                <video
-                  src={post.media_url}
-                  controls
-                  muted
-                  poster={post.thumbnail_url}
-                  className="w-full h-auto"
-                >
-                  Your browser does not support the video tag.
-                </video>
+                <img
+                  src={video.videoMeta.coverUrl}
+                  alt={video.text || "TikTok thumbnail"}
+                  className="w-full h-auto object-cover"
+                />
+                {/* Overlay Play Button */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => window.open(video.webVideoUrl, "_blank", "noopener,noreferrer")}
+                    className="text-white text-4xl"
+                  >
+                    ▶️
+                  </button>
+                </div>
+                {/* Top-left text */}
+                <div className="absolute top-2 left-2 text-white text-sm font-semibold bg-black bg-opacity-50 px-2 py-1 rounded">
+                  {video.text.slice(0, 20)}...
+                </div>
+                {/* Bottom-right play count */}
+                <div className="absolute bottom-2 right-2 text-white text-sm font-bold bg-black bg-opacity-50 px-2 py-1 rounded flex items-center">
+                  ▶️ {video.playCount.toLocaleString()}
+                </div>
               </div>
             ))
           ) : (

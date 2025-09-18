@@ -22,7 +22,7 @@ import Header from "../components/Header";
 
 import OGPPreview from "~/components/OGPPreview";
 
-import { useMediaQuery } from "react-responsive";
+import { useDevice } from "~/routes/contexts/DeviceContext";
 
 import MarqueeHeader from "../components/MarqueeHeader";
 
@@ -63,7 +63,7 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
   const [activeHeading, setActiveHeading] = useState<string | null>(null);
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState<string[]>([]);
   const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
-  const isMobile = useMediaQuery({ maxWidth: 767 });
+   const isMobile = useDevice();
   const tocContainerRef = useRef<HTMLDivElement>(null);
   const tocItemRefs = useRef<Record<string, HTMLLIElement | null>>({});
   const ulRef = useRef<HTMLUListElement>(null);
@@ -389,16 +389,18 @@ useEffect(() => {
         marginTop={98}
       />
 
-      <div className="mx-auto py-12 bg-white">
+      <div className="mx-auto" style={{marginTop: isMobile? fsm(134): fs(155), paddingLeft: isMobile? fsm(20):fs(0),paddingRight:isMobile? fsm(20):fs(0)}}>
         <div className="flex flex-col lg:flex-row gap-10">
-          <div className="h-40 p-2 flex flex-col gap-3 justify-center items-center rounded-r-lg border-t-2 border-b-2 border-l-0 border-r-2 border-black overflow-hidden">
+
+          {!isMobile && ( <div className="h-40 p-2 flex flex-col gap-3 justify-center items-center rounded-r-lg border-t-2 border-b-2 border-l-0 border-r-2 border-black overflow-hidden">
             <a href="https://www.instagram.com/reel/DNfV4MozhwL/">
               <img src="/src/instagram-icon.svg" alt="Instagram" className="w-10 h-10" />
             </a>
             <a href="https://www.tiktok.com/@sugamo_japan">
               <img src="/src/titok.svg" alt="TikTok" className="w-10 h-10" />
             </a>
-          </div>
+          </div>)}
+         
 
           <div className={`bg-white overflow-hidden ${headings.length > 0 ? 'lg:w-3/4 lg:order-1' : 'w-full'}`}>
             {blog.top_image && (
@@ -437,7 +439,8 @@ useEffect(() => {
           </div>
 
 
-          {headings.length > 0 && (
+          {headings.length > 0 && !isMobile &&(
+            
             <div className="lg:w-1/4 mb-8 lg:mb-0 lg:order-2">
               <div className="sticky top-28 bg-transparent p-6 rounded-l-[30px] border-t-2 border-b-2 border-l-2 border-black">
                 <h3 className="text-xl font-semibold font-cairo text-black mb-4 text-center">目次</h3>

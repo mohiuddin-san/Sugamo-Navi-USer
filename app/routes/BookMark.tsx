@@ -11,7 +11,7 @@ import supabase  from '~/supabase'; // Adjust import based on your setup
 
 interface Shop {
   id: string;
-  title: string;
+  name: string;
   imageUrl: string;
   description: string;
   likes: number;
@@ -34,94 +34,86 @@ export default function Home() {
   const { fs, fsm } = useUniversalFluid();
   const isMobile = useDevice();
 
-  // Fetch categories and bookmarked shop IDs from local storage, then fetch shop details from Supabase
-  useEffect(() => {
-    const fetchBookmarksAndShops = async () => {
-      try {
-        setLoading(true);
-        setErrorMsg(null);
+useEffect(() => {
+  const fetchBookmarksAndShops = async () => {
+    try {
+      setLoading(true);
+      setErrorMsg(null);
+      const localCategories = [];
+      const shopIds = [];
 
-        // Step 1: Get all categories and shop IDs from local storage
-        const localCategories: string[] = [];
-        const shopIds: string[] = [];
-        Object.keys(localStorage).forEach((key) => {
+      // Step 1: Extract categories and shop IDs from localStorage
+      Object.keys(localStorage).forEach((key) => {
+        if (!key.startsWith('sb-')) {
           const bookmarks = JSON.parse(localStorage.getItem(key) || '{}');
-          // Only consider keys with bookmark objects and filter out tokens or invalid keys
-          if (Object.keys(bookmarks).length > 0 && !key.startsWith('sb-')) {
+          if (Object.keys(bookmarks).length > 0) {
             localCategories.push(key);
             Object.keys(bookmarks).forEach((shopId) => {
-              // Validate shopId as a UUID (basic check)
               const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
               if (uuidRegex.test(shopId) && !shopIds.includes(shopId)) {
                 shopIds.push(shopId);
               }
             });
           }
-        });
-
-        if (localCategories.length === 0) {
-          setCategories([]);
-          setBookmarkedProducts([]);
-          setErrorMsg('No bookmarked items found.');
-          setLoading(false);
-          return;
         }
+      });
 
-        // Set default category if none selected
-        if (!selectedCategory && localCategories.length > 0) {
-          setSelectedCategory(localCategories[0]);
-        }
-        setCategories(localCategories);
-
-        if (shopIds.length === 0) {
-          setBookmarkedProducts([]);
-          setErrorMsg('No valid bookmarked shops found.');
-          setLoading(false);
-          return;
-        }
-
-        console.log('Categories:', localCategories); // Debug
-        console.log('Shop IDs:', shopIds); // Debug
-
-        // Step 2: Fetch shop details from Supabase
-        const { data: shops, error: shopsError } = await supabase
-          .from('shops')
-          .select('*')
-          .in('id', shopIds);
-
-        if (shopsError) {
-          throw new Error(`Failed to fetch shops: ${shopsError.message}`);
-        }
-
-        if (!shops || shops.length === 0) {
-          setBookmarkedProducts([]);
-          setErrorMsg('No matching shops found in database.');
-          setLoading(false);
-          return;
-        }
-
-        console.log('Fetched Shops:', shops); // Debug
-
-        // Step 3: Filter shops by selected category based on local storage
-        const filteredShops = shops.filter((shop) => {
-          const categoryBookmarks = JSON.parse(localStorage.getItem(shop.category) || '{}');
-          return categoryBookmarks[shop.id];
-        });
-
-        setBookmarkedProducts(filteredShops);
-      } catch (error) {
-        const errMsg = error instanceof Error ? error.message : 'Unknown error fetching bookmarked shops';
-        setErrorMsg(errMsg);
-        console.error('Error details:', error);
-      } finally {
+      if (localCategories.length === 0) {
+        setCategories([]);
+        setBookmarkedProducts([]);
+        setErrorMsg('No bookmarked items found.');
         setLoading(false);
+        return;
       }
-    };
 
-    fetchBookmarksAndShops();
-  }, [selectedCategory]);
+      // Set default category
+      if (!selectedCategory && localCategories.length > 0) {
+        setSelectedCategory(localCategories[0]);
+      }
+      setCategories(localCategories);
 
-  // Trigger resize event
+      if (shopIds.length === 0) {
+        setBookmarkedProducts([]);
+        setErrorMsg('No valid bookmarked shops found.');
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Fetch shop details from Supabase
+      const { data: shops, error: shopsError } = await supabase
+        .from('shops')
+        .select('*')
+        .in('id', shopIds);
+
+      if (shopsError) {
+        throw new Error(`Failed to fetch shops: ${shopsError.message}`);
+      }
+
+      if (!shops || shops.length === 0) {
+        setBookmarkedProducts([]);
+        setErrorMsg('No matching shops found in database.');
+        setLoading(false);
+        return;
+      }
+
+      // Step 3: Filter shops by selected category
+      const filteredShops = shops.filter((shop) => {
+        const categoryBookmarks = JSON.parse(localStorage.getItem(shop.category) || '{}');
+        return selectedCategory ? shop.category === selectedCategory && categoryBookmarks[shop.id] : categoryBookmarks[shop.id];
+      });
+
+      setBookmarkedProducts(filteredShops);
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : 'Unknown error fetching bookmarked shops';
+      setErrorMsg(errMsg);
+      console.error('Error details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchBookmarksAndShops();
+}, [selectedCategory]);
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
   }, [location]);
@@ -206,7 +198,7 @@ export default function Home() {
             {bookmarkedProducts.map((product) => (
               <ProductCard
                 key={product.id}
-                title={product.title}
+                title={product.name}
                 imageUrl={product.imageUrl}
                 description={product.description}
                 likes={product.likes}

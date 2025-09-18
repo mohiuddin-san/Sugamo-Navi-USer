@@ -1,6 +1,6 @@
 import React from "react";
 import { useUniversalFluid } from "../hooks/useUniversalFluid";
-import { useMediaQuery } from "react-responsive";
+import { useDevice } from "~/routes/contexts/DeviceContext";
 interface MarqueeHeaderProps {
   text: string; // Dynamic text prop
   backgroundColor?: string; // Optional background color prop
@@ -19,7 +19,7 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
   marginTop = 0, 
 }) => {
   const { fs,fsm, fluidStyle, fluidClass } = useUniversalFluid();
-  const isMobile = useMediaQuery({ maxWidth: 767 });
+  const isMobile =  useDevice();
 
   return (
     <div

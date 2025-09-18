@@ -57,7 +57,7 @@ export function loader() {
       "また、毎月4日、14日、24日には「縁日」が開催されます。",
       "骨董品やインテリア雑貨の露店、そして屋台グルメが並ぶ、巣鴨地蔵通り商店街での散策や食べ歩きにぴったりのイベントです。"
     ],
-    letsGOimg: "./src/sugamo-arrow.png",
+    letsGOimg: "./src/lets-g.svg",
     posts: dummyPosts,
     error: null,
   };
@@ -65,7 +65,11 @@ export function loader() {
 
 export default function HomePage() {
   const data = useLoaderData<LoaderData>();
-  const posts = Array.isArray(data?.posts) ? data.posts : [];
+  const { posts, tiktokVideos } = useLoaderData<{
+    posts: any[];
+    tiktokVideos: any[];
+    error: string | null;
+  }>();
   const error = data?.error || null;
   const { topImg, imageUrl, title, details, letsGOimg } = loader();
   const isMobile = useMediaQuery({ maxWidth: 768 });
@@ -201,7 +205,7 @@ export default function HomePage() {
   return (
     <div className="w-full flex flex-col items-center">
       <Header />
-      <div className="bg-white w-full" style={{ paddingLeft: isMobile ? fsm(19) : fs(90), paddingRight: isMobile ? fsm(19) : fs(90) }}>
+      <div className=" md:bg-white w-full" style={{ paddingLeft: isMobile ? fsm(19) : fs(90), paddingRight: isMobile ? fsm(19) : fs(90) }}>
         <img
           className="w-full"
           style={{ marginTop: autoSize(21), height: 'auto' }}
@@ -209,18 +213,18 @@ export default function HomePage() {
           alt="Sugamo Japan"
         />
       </div>
-      <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), width: isMobile ? "90%" : "80%", paddingLeft: isMobile ? fsm(44) : fs(83), paddingTop: isMobile ? fsm(25) : fs(59), paddingRight: isMobile ? fsm(44) : fs(55), paddingBottom: isMobile ? fsm(36) : fs(54) }}>
+      <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), marginLeft: isMobile ? fsm(20) : fs(130),marginRight: isMobile ? fsm(20) : fs(130), paddingTop: isMobile ? fsm(25) : fs(59),paddingLeft:isMobile? fsm(40):fs(83), paddingRight: isMobile ? fsm(40) : fs(55), paddingBottom: isMobile ? fsm(36) : fs(54) }}>
         <div className="flex flex-col w-full md:w-1/2">
           <p
-            className="text-center md:text-left font-cousine italic font-bold"
-            style={{ fontSize: isMobile ? fsm(32) : fs(48), lineHeight: fs(100), letterSpacing: 0, fontWeight: 700 }}
+            className="text-center md:text-left font-cousine italic font-bold "
+            style={{ fontSize: isMobile ? fsm(44) : fs(48), letterSpacing: isMobile ? fsm(0) : fs(0) }}
           >
             {title}
           </p>
           <div
             className="font-semibold font-cairo text-[#313131] text-start"
             style={{
-              fontSize: isMobile ? fsm(14) : fs(16),
+              fontSize: isMobile ? fsm(16) : fs(16),
               width: '100%',
               lineHeight: 1.6,
               marginTop: isMobile ? fsm(10) : fs(16)
@@ -384,15 +388,15 @@ export default function HomePage() {
             <span
               className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
               style={fluidStyle({
-                fontSize: isMobile ? fsm(25) : fs(61),
-                w: isMobile ? fsm(295) : "75%"
+                fontSize: isMobile ? fsm(28) : fs(61),
+                w: isMobile ? fsm(338) : "75%"
               })}
             >
               {"SUGAMO’S BEST SHOP"}
               <span
-                className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0 not-italic"
+                className="w-auto font-cairo font-semibold block md:inline md:mt-0 not-italic"
                 style={fluidStyle({
-                  fontSize: isMobile ? fsm(14) : fs(20),
+                  fontSize: isMobile ? fsm(16) : fs(20),
                   paddingLeft: isMobile ? fsm(0) : fs(32)
                 })}
               >
@@ -413,7 +417,7 @@ export default function HomePage() {
               {/* 1st Card */}
               <div className="flex flex-col items-center transform order-1 md:order-2" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
                 <img
-                  src="./src/first.png"
+                  src="./src/first.svg"
                   alt="First Place"
                   style={{ width: autoSize(116), height: autoSize(113) }}
                   className="object-cover rounded-lg"
@@ -439,7 +443,7 @@ export default function HomePage() {
               {/* 2nd Card */}
               <div className="flex flex-col items-center order-2 md:order-1" style={{ gap: isMobile ? fsm(16) : fs(26) }}>
                 <img
-                  src="./src/second.png"
+                  src="./src/second.svg"
                   alt="Second Place"
                   style={{ width: autoSize(88), height: autoSize(88) }}
                   className="object-cover rounded-lg"
@@ -464,7 +468,7 @@ export default function HomePage() {
               {/* 3rd Card */}
               <div className="flex flex-col items-center order-3 lg:order-3" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
                 <img
-                  src="./src/3r-place.png"
+                  src="./src/third.svg"
                   alt="Third Place"
                   style={{ width: autoSize(88), height: autoSize(88) }}
                   className="object-cover rounded-lg"
@@ -517,10 +521,11 @@ export default function HomePage() {
         )}
         <Link
           to="/Recommendation"
-          className="w-full italic text-end text-black font-cousine"
+         className="w-full italic font-bold text-end text-black font-cousine"
           style={fluidStyle({
             fontSize: isMobile ? fsm(25) : fs(25),
-            marginTop: isMobile ? fsm(40) : fs(20)
+            marginTop: isMobile ? fsm(40) : fs(20),
+            marginRight: isMobile ? fsm(20) : fs(0)
           })}
         >
           more+
@@ -529,8 +534,8 @@ export default function HomePage() {
       <div className="flex flex-col justify-center items-center" style={{ marginTop: isMobile ? fsm(80) : fs(154), marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(90) }}>
         <div className="w-full h-auto relative flex flex-col items-center bg-white border-2 border-black rounded-[30px]" style={{ paddingBottom: isMobile ? fsm(26) : fs(35) }}>
           <span
-            className="absolute top-0 -translate-y-1/2 left-1/2 transform -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
-            style={{ fontSize: isMobile ? fsm(31) : fs(61), width: isMobile ? fsm(257) : fs(642) }}
+            className="absolute p-0 -translate-y-1/2 left-1/2 transform -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
+            style={{ lineHeight: 1, fontSize: isMobile ? fsm(31) : fs(61), width: isMobile ? fsm(257) : fs(642) }}
           >
             {"MODEL COURSE"} <span className="font-cairo font-semibold not-italic" style={{ fontSize: isMobile ? fsm(16) : fs(20) }}>モデルコース</span>
           </span>
@@ -561,8 +566,12 @@ export default function HomePage() {
         </div>
         <Link
           to="/ModelCourse"
-          className="w-full italic text-end mr-5 mt-5 hover:text-blue-600"
-          style={{ fontSize: isMobile ? fsm(25) : fs(25), color: "#000000", fontFamily: 'Cousine' }}
+         className="w-full italic font-bold text-end text-black font-cousine"
+          style={fluidStyle({
+            fontSize: isMobile ? fsm(25) : fs(25),
+            marginTop: isMobile ? fsm(40) : fs(20),
+            marginRight: isMobile ? fsm(20) : fs(0)
+          })}
         >
           more+
         </Link>
@@ -594,7 +603,7 @@ export default function HomePage() {
             {"TRAVEL TIPS "}
             <span
               className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0 not-italic"
-              style={fluidStyle({ fontSize: isMobile ? fsm(14) : fs(20) })}
+              style={fluidStyle({ fontSize: isMobile ? fsm(16) : fs(20) })}
             >
               旅の情報
             </span>
@@ -621,12 +630,12 @@ export default function HomePage() {
         </div>
         <Link
           to="/BlogList"
-          className="w-full italic text-end mr-5 mt-5 hover:text-blue-600"
-          style={{
+        className="w-full italic font-bold text-end text-black font-cousine"
+          style={fluidStyle({
             fontSize: isMobile ? fsm(25) : fs(25),
-            color: "#000000",
-            fontFamily: "Cousine",
-          }}
+            marginTop: isMobile ? fsm(40) : fs(20),
+            marginRight: isMobile ? fsm(20) : fs(0)
+          })}
         >
           more+
         </Link>
@@ -644,7 +653,7 @@ export default function HomePage() {
           <InstagramVideosAll />
         </div>
         <div>
-          <TikTokVideos />
+         <TikTokVideos videos={tiktokVideos} />
         </div>
       </div>
       <Footer />

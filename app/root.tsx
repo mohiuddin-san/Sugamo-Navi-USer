@@ -11,7 +11,7 @@ import '~/styles/app.css';
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" },
-  { href: "https://fonts.googleapis.com/css2?family=Sawarabi+Gothic&family=Cairo:wght@400;500;600;700&family=Courier+Prime&family=Cousine&display=swap", rel: "stylesheet" },
+  { href: "https://fonts.googleapis.com/css2?family=Sawarabi+Gothic&family=Cairo:wght@400;500;600;700&family=Courier+Prime&family=Cousine:ital,wght@0,700;1,700&display=swap", rel: "stylesheet" },
 ];
 
 export const meta: MetaFunction = () => [

@@ -20,45 +20,49 @@ export default function TikTokVideoSlider({ videos, error }: Props) {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [centerSlot, setCenterSlot] = useState(2);
+  const [gap, setGap] = useState(48); // Default gap for desktop
 
   const videoWidth = 283;
-  const gap = 47;
   const itemWidth = videoWidth + gap;
 
-  // duplicate list for infinite scroll
+  // Duplicate list for infinite scroll
   const extendedVideos = videos.length >= 5 ? [...videos, ...videos, ...videos] : videos;
 
-  const recalcCenter = () => {
+  // Recalculate center slot and dynamic gap based on screen size
+  const recalcCenterAndGap = () => {
     if (!sliderRef.current) return;
     const containerWidth = sliderRef.current.offsetWidth;
-    const visibleCount = Math.floor(containerWidth / itemWidth);
+    const isMobile = window.innerWidth < 768;
+    const newGap =  48;
+    setGap(newGap);
+    const visibleCount = Math.floor(containerWidth / (videoWidth + newGap));
     const center = Math.floor(visibleCount / 2);
     setCenterSlot(center);
   };
 
   useEffect(() => {
-    recalcCenter();
-    window.addEventListener("resize", recalcCenter);
-    return () => window.removeEventListener("resize", recalcCenter);
+    recalcCenterAndGap();
+    window.addEventListener("resize", recalcCenterAndGap);
+    return () => window.removeEventListener("resize", recalcCenterAndGap);
   }, []);
 
-  // initialize in middle cycle
+  // Initialize in middle cycle
   useEffect(() => {
     if (sliderRef.current && videos.length >= 5) {
       const videosPerCycle = videos.length;
-      sliderRef.current.scrollLeft = videosPerCycle * itemWidth;
+      sliderRef.current.scrollLeft = videosPerCycle * (videoWidth + gap);
       setActiveIndex(videosPerCycle);
     }
-  }, [videos]);
+  }, [videos, gap]);
 
-  // scroll handler
+  // Scroll handler
   const handleScroll = () => {
     if (!sliderRef.current || videos.length < 1) return;
-    const index = Math.round(sliderRef.current.scrollLeft / itemWidth);
+    const index = Math.round(sliderRef.current.scrollLeft / (videoWidth + gap));
     setActiveIndex(index);
 
     const videosPerCycle = videos.length;
-    const cycleWidth = videosPerCycle * itemWidth;
+    const cycleWidth = videosPerCycle * (videoWidth + gap);
 
     if (sliderRef.current.scrollLeft >= cycleWidth * 2) {
       sliderRef.current.scrollLeft -= cycleWidth;
@@ -69,17 +73,17 @@ export default function TikTokVideoSlider({ videos, error }: Props) {
     }
   };
 
-  // error / empty
+  // Error / empty states
   if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
   if (videos.length === 0) return <div className="p-4 text-white">No TikTok videos available.</div>;
 
   return (
-    <div className="bg-white text-white w-full flex justify-center items-center ">
-      <div className="overflow-hidden w-full max-w-[1415px]">
+    <div className="bg-white text-white w-full h-auto flex justify-center items-center overflow-hidden">
+      <div className="w-full max-w-max h-auto">
         <div
           ref={sliderRef}
           onScroll={handleScroll}
-          className="flex overflow-x-scroll scrollbar-hide snap-x snap-mandatory"
+          className="flex overflow-x-scroll overflow-y-hidden scrollbar-hide snap-x snap-mandatory"
           style={{ scrollBehavior: "smooth", gap: `${gap}px`, padding: "20px" }}
         >
           {extendedVideos.map((video, index) => {

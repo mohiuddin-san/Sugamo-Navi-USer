@@ -6,7 +6,7 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
     const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
     const isMobile = useMediaQuery({ maxWidth: 767 });
     return (
-        <div className="flex flex-col items-center justify-center" style={{ paddingTop: isMobile ? fsm(21) : fs(38), paddingLeft: isMobile ? fsm(22) : fs(43), paddingRight: isMobile ? fsm(21) : fs(43) }}>
+        <div className="flex flex-colitems-center justify-center" style={{ paddingTop: isMobile ? fsm(21) : fs(38), paddingLeft: isMobile ? fsm(42) : fs(43), paddingRight: isMobile ? fsm(42) : fs(43) }}>
             <div className="w-full bg-white overflow-hidden">
                 <div className="flex flex-col justify-between">
                     <div className="flex space-x-3 justify-between">

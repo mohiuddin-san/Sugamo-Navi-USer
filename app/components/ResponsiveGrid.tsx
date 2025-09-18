@@ -6,7 +6,6 @@ interface GridProps {
   columns: string; // e.g., "1fr 1fr" or "150 300 150"
   rows: string; // e.g., "auto" or "80 200 80"
   gapAll?: number;
-  isMobile?: boolean;
   className?: string;
   children?: React.ReactNode;
   style?: React.CSSProperties;
@@ -16,7 +15,6 @@ export const ResponsiveGrid: React.FC<GridProps> = ({
   columns,
   rows,
   gapAll = 0,
-  isMobile = false,
   className = '',
   children,
   style = {},

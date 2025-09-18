@@ -238,11 +238,11 @@ export default function ShopDetails() {
         marginTop={100}
       />
       <div
-        className="flex flex-col md:flex-row items-center justify-center overflow-hidden"
+        className=" flex flex-col md:flex-row items-center justify-center"
         style={{ paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}
       >
-        <div className="md:w-3/6 w-full mb-4 md:mb-0">
-          {isMobile && (<div className="flex flex-row justify-between">
+        <div className="md:auto w-full">
+          {isMobile && (<div className="flex flex-row justify-between items-center" style={{marginBottom: fsm(20)}}>
             <div className="flex flex-row">
               <div className="flex space-x-2 ml-auto">
 
@@ -298,7 +298,7 @@ export default function ShopDetails() {
           <img
             src={shop.imageUrl}
             alt={shop.title}
-            className="w-full h-auto"
+            className="w-full h-auto "
             style={{ width: isMobile ? "100%" : fs(540), height: isMobile ? fsm(401) : fs(540) }}
           />
           {isMobile && (<div
@@ -306,7 +306,7 @@ export default function ShopDetails() {
               marginTop: isMobile ? fsm(16) : fs(90),
             }}
           >
-            <div className="flex space-x-4 overflow-x-auto">
+            <div className="flex space-x-2 overflow-x-auto">
               {(shop.other_images || []).map((image, index) => (
                 <div
                   key={index}
@@ -318,8 +318,8 @@ export default function ShopDetails() {
             </div>
           </div>)}
         </div>
-        <div className="md:w-auto w-full " style={{ paddingLeft: isMobile ? fsm(0) : fs(90), height: isMobile ? fsm(401) : fs(540), paddingTop: fs(63) }}>
-          {!isMobile && (<div className="flex flex-row justify-between">
+        <div className="md:auto  w-full max-h-max " style={{ paddingLeft: isMobile ? fsm(0) : fs(20), height: isMobile ? "auto" : fs(540), paddingTop: fs(63) }}>
+          {!isMobile && (<div className="flex flex-row justify-between items-center">
             <div className="flex flex-row">
               <div className="flex space-x-2 ml-auto">
 
@@ -372,24 +372,24 @@ export default function ShopDetails() {
               />
             </button>
           </div>)}
-          <div className=" h-full flex flex-col justify-between">
+          <div className="flex-col  justify-between ">
             <div>
               <h2
                 className="font-semibold font-cairo text-brown-700"
-                style={{ marginTop: isMobile ? fsm(8) : fs(35), fontSize: autoSize(22) }}
+                style={{ marginTop: isMobile ? fsm(34) : fs(35), fontSize: autoSize(22) }}
               >
                 {shop.title}
               </h2>
               <p
-                className=" font-normal font-cairo leading-loose"
-                style={{ marginTop: isMobile ? fsm(16) : fs(19), fontSize: autoSize(16) }}
+                className="text-[#313131] font-normal font-cairo leading-loose"
+                style={{ marginTop: isMobile ? fsm(16) : fs(19), fontSize: autoSize(16),height:isMobile? "auto":fs(210) }}
               >
                 {shop.description}
               </p>
             </div>
             <div
               className="flex items-center justify-between"
-              style={{ paddingBottom: isMobile ? fsm(0) : fs(61) }}
+              style={{marginTop:isMobile? fsm(54):fs(30), paddingBottom: isMobile ? fsm(0) : fs(61) }}
             >
               <div>
                 <p className="text-[#313131] font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
@@ -411,7 +411,6 @@ export default function ShopDetails() {
               </a>
             </div>
           </div>
-
         </div>
       </div>
       {!isMobile && (<div
@@ -432,6 +431,7 @@ export default function ShopDetails() {
           ))}
         </div>
       </div>)}
+
       <div className='text-[#ED4548] italic underline w-full text-center font-cousine' style={{ fontSize: autoSize(25), marginTop: isMobile ? fsm(138) : fs(90), marginBottom: isMobile ? fsm(24) : fs(0) }}>Google Map</div>
       <div className="mx-auto border-2 border-black rounded-lg overflow-hidden" style={{ height: isMobile ? fsm(332) : fs(591), marginLeft: isMobile ? fsm(20) : fs(160), marginRight: isMobile ? fsm(20) : fs(160) }}>
         <iframe
@@ -444,20 +444,20 @@ export default function ShopDetails() {
       <div
         className="relative "
         style={{
-          paddingTop: isMobile ? fsm(40) : fs(90),
-          paddingLeft: isMobile ? fsm(40) : fs(90),
-          paddingRight: isMobile ? fsm(40) : fs(90),
+          paddingTop: isMobile ? fsm(141) : fs(180),
+          paddingLeft: isMobile ? fsm(20) : fs(90),
+          paddingRight: isMobile ? fsm(20) : fs(90),
           marginBottom: isMobile ? fsm(144) : fs(130),
         }}
       >
-        <div className="border border-black rounded-[10px] overflow-visible relative" style={{ paddingTop: fs(76)}}>
+        <div className="border-2 border-black rounded-[30px] overflow-visible relative" style={{ paddingTop:isMobile?fsm(70): fs(76)}}>
           {/* SEE MORE label */}
           <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap" style={{ paddingLeft: isMobile ? fsm(20) : fs(45), paddingRight: isMobile ? fsm(20) : fs(45), fontSize: autoSize(31) }}>
             SEE MORE
           </div>
           <div className="overflow-hidden">
             <div
-              className="flex transition-transform duration-300 ease-in-out px-[25%]"
+              className="flex transition-transform duration-300 ease-in-out px-[25%] overflow-x-auto"
               style={{
                 transform: `translateX(-${currentIndex * 25}%)`,
                 width: `${products.length * 25}%`,
@@ -486,17 +486,17 @@ export default function ShopDetails() {
 
 
           {/* Navigation buttons */}
-          <div className="flex justify-between px-4" style={{ height: autoSize(76) }}>
+          <div className="flex justify-between px-4" style={{ height: isMobile?fsm(106):fs(76) }}>
             <button
               onClick={handlePrev}
-              className="text-2xl disabled:opacity-30"
+              className="text-4xl disabled:opacity-30"
               disabled={currentIndex === 0}
             >
               ←
             </button>
             <button
               onClick={handleNext}
-              className="text-2xl disabled:opacity-30"
+              className="text-4xl disabled:opacity-30"
               disabled={currentIndex >= products.length - 4} // keep 4 slots visible
             >
               →

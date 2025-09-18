@@ -27,7 +27,7 @@ export default function BlogList() {
   const [error, setError] = useState(null);
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState([]);
   const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
-  const isMobile =  useDevice();
+  const isMobile = useDevice();
   const { videos } = useLoaderData<{ videos: any[] }>();
   useEffect(() => {
     const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
@@ -127,9 +127,14 @@ export default function BlogList() {
       <ResponsiveGrid
         columns={isMobile ? "1fr" : "1fr 1fr"}
         rows="auto"
-        isMobile={isMobile}
-        className="flex justify-center mx-10 md:mx-[10%]"
-        style={{ gap: isMobile ? fsm(64) : fs(133), marginTop: isMobile ? fsm(0) : fsm(120)}}
+        className="justify-center items-center"
+        style={{
+          gap: isMobile ? fsm(64) : fs(133),
+          marginTop: isMobile ? fsm(0) : fsm(120),
+          paddingLeft: isMobile ? fsm(20) : fs(163), // Reduced padding
+          paddingRight: isMobile ? fsm(20) : fs(161), // Reduced padding
+          overflowX: "hidden", // Prevent overflow
+        }}
       >
         {blogs.map((blog, index) => (
           <GridItem
@@ -138,14 +143,15 @@ export default function BlogList() {
             row={isMobile ? index + 1 : Math.floor(index / 2) + 1}
             columnSpan={1}
             rowSpan={1}
-            style={{ minHeight: isMobile ? "auto" : "auto",height: "auto", padding: isMobile ? fsm(21) : fs(21) }}
-            className="w-full border-2 border-black rounded-xl  transition-all"
+            style={{
+              width: isMobile ? "70%" : fs(492), // Full width in mobile
+              height: isMobile ? fsm(613) : fs(613),
+              padding: isMobile ? fsm(21) : fs(21),
+              margin: isMobile ? "0 auto" : "0",
+            }}
+            className="border-2 border-black rounded-lg"
           >
-            <Link
-              to={`/blog/${blog.id}`}
-              className="block"
-
-            >
+            <Link to={`/blog/${blog.id}`} className="block">
               <div className="bg-gradient-to-r flex items-center justify-between">
                 <span className="text-black font-courierPrime" style={{ fontSize: isMobile ? fsm(20) : fs(20) }}>
                   {formatDate(blog.publish_date)} | {categories[blog.category_id] || "General"}
@@ -162,7 +168,7 @@ export default function BlogList() {
               </div>
 
               {blog.top_image && (
-                <div className=" overflow-hidden" style={{ marginTop: isMobile ? fsm(16) : fs(16) }}>
+                <div className="overflow-hidden" style={{ marginTop: isMobile ? fsm(16) : fs(16) }}>
                   <img
                     src={blog.top_image}
                     className="w-full object-cover transition-transform duration-300 hover:scale-105"
@@ -172,17 +178,26 @@ export default function BlogList() {
               )}
 
               <div style={{ marginTop: isMobile ? fsm(16) : fs(16) }}>
-                <h2 className="font-bold font-cairo text-gray-800 line-clamp-1" style={{ fontSize: isMobile ? fsm(30) : fs(30), marginTop: isMobile ? fsm(10) : (10), marginBottom: isMobile ? fsm(15) : fs(15) }}>
+                <h2
+                  className="font-bold font-cairo text-gray-800 line-clamp-1"
+                  style={{
+                    fontSize: isMobile ? fsm(30) : fs(30),
+                    marginTop: isMobile ? fsm(10) : 10,
+                    marginBottom: isMobile ? fsm(15) : fs(15),
+                  }}
+                >
                   {blog.title}
                 </h2>
-                <div className=" font-medium mb-3 font-sawarabi overflow-hidden" style={{ fontSize: isMobile ? fsm(16) : fs(16)}}>
-                 <MarkdownClamp content={blog.details} />
+                <div
+                  className="font-medium mb-3 font-sawarabi overflow-hidden"
+                  style={{ fontSize: isMobile ? fsm(16) : fs(16) }}
+                >
+                  <MarkdownClamp content={blog.details} />
                 </div>
-
-
-
-                <div className="flex justify-end text-black font-medium font-courierPrime"
-                  style={{ fontSize: isMobile ? fsm(25) : fs(25), marginTop: isMobile ? fsm(51) : fs(51) }}>
+                <div
+                  className="flex justify-end text-black font-medium font-courierPrime"
+                  style={{ fontSize: isMobile ? fsm(25) : fs(25) }}
+                >
                   more+
                 </div>
               </div>
@@ -191,7 +206,7 @@ export default function BlogList() {
         ))}
       </ResponsiveGrid>
 
-      <div style={{ marginLeft: fs(90) }}>
+      <div style={{ marginLeft: isMobile? fsm(20):fs(90), marginBottom: isMobile? fsm(60):fs(100)  }}>
         <h2 className=" font-cousine text-black text-start" style={{ fontSize: isMobile ? fsm(25) : fs(25), marginTop: isMobile ? fsm(100) : fs(100) }}>
           SNSの動画
         </h2>
@@ -206,7 +221,7 @@ export default function BlogList() {
         </h2>
       </div>
       <TikTokVideoSlider videos={videos} />
-      <Footer />
+      <Footer marginTop={200} />
     </div>
   );
 }

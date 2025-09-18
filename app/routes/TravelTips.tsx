@@ -34,7 +34,7 @@ export default function ShopDetails() {
         </div>
       </div>
       {/* Footer */}
-      <Footer />
+      <Footer marginTop={200} />
     </div>
   );
 }

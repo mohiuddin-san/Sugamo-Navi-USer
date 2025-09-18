@@ -65,7 +65,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ title, imageUrl, description,
           Shop
         </button>
 
-        <div className="flex" style={{ marginTop: isMobile ? fsm(10) : fs(0), gap: isMobile ? fsm(16) : fs(16) }}>
+        <div className="flex" style={{ marginTop: isMobile ? fsm(15) : fs(0), gap: isMobile ? fsm(16) : fs(16) }}>
           <span className="flex items-center" style={{ gap: isMobile ? fsm(5) : fs(5) }}>
             <img src="/src/love.svg" alt="Love" style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }} />
             <p className="font-bold font-cairo" style={{ fontSize: isMobile ? fsm(14) : fs(14), color: "#111827" }}>
@@ -81,7 +81,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ title, imageUrl, description,
           </span>
 
           <span className="flex items-center">
-            <img src="/src/bookmark.svg" alt="Bookmark" style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }} />
+            <img src="/src/bookmark.svg" alt="Bookmark" style={{ width: isMobile ? fsm(17) : fs(17), height: isMobile ? fsm(21) : fs(21) }} />
           </span>
         </div>
       </div>
@@ -95,7 +95,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ title, imageUrl, description,
         <Link
           to={linkTo}
           className="italic font-bold font-cousine text-center md:text-end"
-          style={{ fontSize: isMobile ? fsm(16) : fs(16), color: "#000000", paddingRight: isMobile ? fsm(0) : fs(18) }}
+          style={{ marginTop: isMobile? fsm(15): fs(0), fontSize: isMobile ? fsm(16) : fs(16), color: "#000000", paddingRight: isMobile ? fsm(0) : fs(18) }}
         >
           more+
         </Link>
