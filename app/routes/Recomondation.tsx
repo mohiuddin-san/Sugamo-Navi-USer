@@ -1,7 +1,6 @@
 import { useLocation } from '@remix-run/react';
 import Header from '~/components/Header';
 import React, { useEffect, useState } from 'react';
-import "react-router-dom"
 import ProductCard from '~/components/ProductCard';
 import MarqueeHeader from '~/components/MarqueeHeader';
 import CommonCategoryTop from '~/components/CommonCategoryTop';
