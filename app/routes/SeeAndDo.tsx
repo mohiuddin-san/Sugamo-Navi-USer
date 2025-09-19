@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation } from '@remix-run/react';
 import Header from '~/components/Header';
 import React, { useEffect, useState } from 'react';
 import ProductCard from '~/components/ShopItem';

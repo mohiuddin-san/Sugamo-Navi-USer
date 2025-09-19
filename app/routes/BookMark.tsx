@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from '@remix-run/react';
 import Header from '~/components/Header';
 import ProductCard from '~/components/ProductCard';
 import MarqueeHeader from '~/components/MarqueeHeader';
