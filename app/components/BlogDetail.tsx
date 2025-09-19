@@ -392,26 +392,26 @@ useEffect(() => {
       <div className="mx-auto" style={{marginTop: isMobile? fsm(134): fs(155), paddingLeft: isMobile? fsm(20):fs(0),paddingRight:isMobile? fsm(20):fs(0)}}>
         <div className="flex flex-col lg:flex-row gap-10">
 
-          {!isMobile && ( <div className="h-40 p-2 flex flex-col gap-3 justify-center items-center rounded-r-lg border-t-2 border-b-2 border-l-0 border-r-2 border-black overflow-hidden">
+          {!isMobile && ( <div className="p-2 flex flex-col gap-[31px] justify-center items-center rounded-r-lg border-t-2 border-b-2 border-l-0 border-r-2 border-black overflow-hidden" style={{width: fs(114),height: fs(205) }}>
             <a href="https://www.instagram.com/reel/DNfV4MozhwL/">
-              <img src="/src/instagram-icon.svg" alt="Instagram" className="w-10 h-10" />
+              <img src="/src/instagram-icon.svg" alt="Instagram" style={{width: fs(40), height: fs(39)}}/>
             </a>
             <a href="https://www.tiktok.com/@sugamo_japan">
-              <img src="/src/titok.svg" alt="TikTok" className="w-10 h-10" />
+              <img src="/src/titok.svg" alt="TikTok" style={{width: fs(40), height: fs(39)}} />
             </a>
           </div>)}
          
 
           <div className={`bg-white overflow-hidden ${headings.length > 0 ? 'lg:w-3/4 lg:order-1' : 'w-full'}`}>
             {blog.top_image && (
-              <div className="h-96 overflow-hidden">
+              <div className=" overflow-hidden" style={{width: isMobile? "100%": fs(900), height: isMobile? fsm(309):fs(630)}}>
                 <img src={blog.top_image} alt={blog.title} className="w-full h-full object-cover" />
               </div>
             )}
 
             <div className="pt-2">
-              <h1 className="text-3xl font-semibold font-cairo text-black mb-2">{blog.title}</h1>
-              <span className="font-courierPrime text-gray-500">
+              <h1 className="font-semibold font-cairo text-black mb-2" style={{fontSize: isMobile? fsm(31): fs(61)}}>{blog.title}</h1>
+              <span className="font-courierPrime text-gray-500" style={{font: isMobile? fsm(16): fs(20)}}>
                 {formatDate(blog.publish_date)} | {categoryName}
               </span>
 

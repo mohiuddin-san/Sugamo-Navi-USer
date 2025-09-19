@@ -1,12 +1,14 @@
 /** @type {import('@remix-run/dev').AppConfig} */
 export default {
-  // ... other configurations
-  // server: './server.ts',
+  ignoredRouteFiles: ['.*'],
   serverBuildPath: 'build/server/index.js',
-  appDirectory: "app",
+  appDirectory: 'app',
   serverDependenciesToBundle: [
-    // This is the important part!
     '@remix-run/server-build',
+    '@supabase/supabase-js',
   ],
-  // ... other configurations
+  routes: {
+    'shops/:id': 'routes/ShopDetails.tsx',
+    'places/:id': 'routes/ShopDetails.tsx',
+  },
 };

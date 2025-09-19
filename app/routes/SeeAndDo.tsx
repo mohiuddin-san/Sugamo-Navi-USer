@@ -8,14 +8,46 @@ import Footer from '../components/Footer';
 import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
 import { useDevice } from "~/routes/contexts/DeviceContext";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
+import supabase from '~/supabase'; // আপনার Supabase client
 
 export default function Shoppage() {
   const location = useLocation();
-  const { fs, fsm} = useUniversalFluid();
+  const { fs, fsm } = useUniversalFluid();
+  const isMobile = useDevice();
+  const [places, setPlaces] = useState([]); // State for tourist_places data
+  const [loading, setLoading] = useState(false); // Loading state
+
+  // Fetch tourist_places data from Supabase
+  useEffect(() => {
+    async function fetchPlaces() {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('tourist_places')
+          .select('*')
+          .order('name', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching tourist places:', error.message);
+          throw error;
+        }
+
+        setPlaces(data);
+      } catch (error) {
+        console.error('Error fetching tourist places:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPlaces();
+  }, []);
+
+  // Handle window resize
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
   }, [location]);
-  const isMobile = useDevice();
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -34,41 +66,53 @@ export default function Shoppage() {
         marginTop={98}
       />
 
-      <ResponsiveGrid
-        columns={isMobile ? "1fr 1fr" : "1fr 1fr 1fr"}
-        isMobile={isMobile}
-        className="flex justify-center"
-        style={{
-          gap: isMobile ? fsm(19) : fs(32),
-          marginTop: isMobile ? fsm(0) : fsm(120),
-          marginLeft: isMobile ? fsm(20) : fs(161),
-          marginRight: isMobile ? fsm(20) : fs(161),
-        }}
-      >
-        {Array.from({ length: 10 }).map((_, index) => (
-          <GridItem
-            key={index}
-            column={isMobile ? (index % 2) + 1 : (index % 3) + 1}
-            row={
-              isMobile
-                ? Math.floor(index / 2) + 1 
-                : Math.floor(index / 3) + 1 
-            }
-            columnSpan={1}
-            rowSpan={1}
-            style={{ minHeight: isMobile ? "auto" : "auto", height: "auto",marginTop: isMobile? fsm(0):fs(8)}}
-            className="w-full"
-          >
-            <ProductCard
-              title='ボストール・ボストール'
-              imageUrl='./src/food-item.png'
-              description='巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！'
-              likes={1500}
-              views={1200}
-            />
-          </GridItem>
-        ))}
-      </ResponsiveGrid>
+      {loading ? (
+        <div className="flex justify-center items-center py-16">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500"></div>
+        </div>
+      ) : (
+        <ResponsiveGrid
+          columns={isMobile ? "1fr 1fr" : "1fr 1fr 1fr"}
+          isMobile={isMobile}
+          className="flex justify-center"
+          style={{
+            gap: isMobile ? fsm(19) : fs(32),
+            marginTop: isMobile ? fsm(0) : fsm(120),
+            marginLeft: isMobile ? fsm(20) : fs(161),
+            marginRight: isMobile ? fsm(20) : fs(161),
+          }}
+        >
+          {places.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-gray-400 text-lg">No tourist places found.</p>
+            </div>
+          ) : (
+            places.map((place, index) => (
+              <GridItem
+                key={place.id}
+                column={isMobile ? (index % 2) + 1 : (index % 3) + 1}
+                row={isMobile ? Math.floor(index / 2) + 1 : Math.floor(index / 3) + 1}
+                columnSpan={1}
+                rowSpan={1}
+                style={{ minHeight: isMobile ? "auto" : "auto", height: "auto", marginTop: isMobile ? fsm(0) : fs(8) }}
+                className="w-full"
+              >
+            
+                <ProductCard
+                  id={place.id}
+                  title={place.name}
+                  imageUrl={place.image_url || '/src/shop.png'}
+                  description={place.description || 'No description available'}
+                  likes={place.love_count || 0}
+                  views={place.review_count || 0}
+                  type={'place'}
+                  linkTo={`/shops/${place.id}`}
+                />
+              </GridItem>
+            ))
+          )}
+        </ResponsiveGrid>
+      )}
       <Footer marginTop={64} />
     </div>
   );
