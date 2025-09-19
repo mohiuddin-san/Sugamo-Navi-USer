@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from '@remix-run/react';
 import Header from '~/components/Header';
 import React, { useEffect, useState } from 'react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
@@ -74,7 +74,6 @@ export default function HomePage() {
   const { topImg, imageUrl, title, details, letsGOimg } = loader();
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
-  const location = useLocation();
   const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
 
   const [topShops, setTopShops] = useState<Shop[]>([]);
@@ -136,10 +135,6 @@ export default function HomePage() {
 
     fetchData();
   }, []);
-
-  useEffect(() => {
-    window.dispatchEvent(new Event('resize'));
-  }, [location]);
 
   useEffect(() => {
     const fetchTopShops = async () => {
