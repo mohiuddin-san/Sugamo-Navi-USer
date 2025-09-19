@@ -29,7 +29,7 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
                     />
                 </div>
                 <div className="w-full text-center md:text-start" style={{ paddingTop: isMobile ? fsm(12) : fs(16) }}>
-                    <h1 className="font-semibold font-cairo" style={{ fontSize: isMobile ? fsm(25) : fs(39), color: "#313131", paddingLeft: fs(25), fontWeight: fs(600) }}>
+                    <h1 className="font-semibold font-cairo" style={{fontSize: isMobile ? fsm(25) : fs(39), color: "#313131", paddingLeft: fs(25), fontWeight: fs(600) }}>
                         {title}
                     </h1>
                     {!isMobile && (

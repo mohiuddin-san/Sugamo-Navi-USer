@@ -1,7 +1,7 @@
 import { useLocation } from '@remix-run/react';
 import Header from '~/components/Header';
 import React, { useEffect, useState } from 'react';
-import ProductCard from '~/components/ProductCard';
+import ProductCard from '~/components/ShopItem';
 import MarqueeHeader from '~/components/MarqueeHeader';
 import CommonCategoryTop from '~/components/CommonCategoryTop';
 import Footer from '../components/Footer';
@@ -109,7 +109,7 @@ export default function ShopDetails() {
       />
 
       <ResponsiveGrid
-        columns={isMobile ? "1fr" : "1fr 1fr 1fr"}
+        columns={isMobile ? "1fr 1fr" : "1fr 1fr 1fr"}
         isMobile={isMobile}
         className="flex justify-center"
         style={{

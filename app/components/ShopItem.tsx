@@ -30,17 +30,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ title, imageUrl, description,
       }}
     >
       {/* Title */}
-      <div
-        className="flex items-center justify-center"
-        style={{ height: isMobile ? fsm(64) : fs(87) }}
-      >
-        <h1
-          className="text-center font-bold font-cairo text-black line-clamp-2 h-fu"
-          style={{ fontSize: isMobile ? fsm(16) : fs(25) }}
-        >
-          {title}
-        </h1>
-      </div>
+    <div
+  className="flex items-center justify-center w-full"
+  style={{ height: isMobile ? fsm(64) : fs(87) }}
+>
+  <h1
+    className="text-center font-bold font-cairo text-black line-clamp-2 w-full"
+    style={{
+      fontSize: isMobile ? fsm(16) : fs(25),
+      maxWidth: '100%', // Prevent overflow
+      height: isMobile ? fsm(32) : fs(50), // Fixed height for h1
+      display: 'flex',
+      alignItems: 'center', // Vertical centering
+      justifyContent: 'center', // Horizontal centering
+      lineHeight: '1.2', // Control line spacing for consistency
+    }}
+  >
+    {title}
+  </h1>
+</div>
 
 
       {/* Image */}
@@ -85,9 +93,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ title, imageUrl, description,
           </span>
         </div>
       </div>
-      <div className="flex flex-col justify-between" style={{ paddingBottom: isMobile ? fsm(10) : fs(16), marginTop:fs(29),height: fs(132)}}>
+      <div className="flex flex-col justify-between" style={{ paddingBottom: isMobile ? fsm(10) : fs(16), marginTop: fs(29), height: fs(132) }}>
         {!isMobile && (<p
-          className="font-medium text-[#313131] font-cairo text-start"
+          className="font-medium text-[#313131] font-cairo text-start line-clamp-3"
           style={{ fontSize: fs(16), paddingLeft: fs(38), paddingRight: fs(38), letterSpacing: 0 }}
         >
           {description}
@@ -95,7 +103,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ title, imageUrl, description,
         <Link
           to={linkTo}
           className="italic font-bold font-cousine text-center md:text-end"
-          style={{ marginTop: isMobile? fsm(15): fs(0), fontSize: isMobile ? fsm(16) : fs(16), color: "#000000", paddingRight: isMobile ? fsm(0) : fs(18) }}
+          style={{ marginTop: isMobile ? fsm(15) : fs(0), fontSize: isMobile ? fsm(16) : fs(16), color: "#000000", paddingRight: isMobile ? fsm(0) : fs(18) }}
         >
           more+
         </Link>
