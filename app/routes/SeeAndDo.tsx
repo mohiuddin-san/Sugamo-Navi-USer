@@ -9,12 +9,26 @@ import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
 import { useDevice } from "~/routes/contexts/DeviceContext";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import supabase from '~/supabase'; // আপনার Supabase client
+type place= {
+  id: string;
+  name: string;
+  category_id: string;
+  description: string;
+  address: string;
+  image_url: string;
+  love_count: number;
+  review_count: number;
+  near_station: string;
+  map_embed: string;
+  other_images: JSON;
+  opening_hours: string;
+};
 
 export default function Shoppage() {
   const location = useLocation();
   const { fs, fsm } = useUniversalFluid();
   const isMobile = useDevice();
-  const [places, setPlaces] = useState([]); // State for tourist_places data
+  const [places, setPlaces] =  useState<place[]>([]);
   const [loading, setLoading] = useState(false); // Loading state
 
   // Fetch tourist_places data from Supabase
@@ -106,6 +120,7 @@ export default function Shoppage() {
                   likes={place.love_count || 0}
                   views={place.review_count || 0}
                   type={'place'}
+                  category_id={place.category_id}
                   linkTo={`/shops/${place.id}`}
                 />
               </GridItem>

@@ -2,12 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from '@remix-run/react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useDevice } from "~/routes/contexts/DeviceContext";
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client (replace with your actual URL and key)
-const supabaseUrl = 'https://ipoyqpdhkjaabrgwmfak.supabase.co'; // Your Supabase URL
-const supabaseKey = 'your-anon-key'; // Replace with your Supabase anon key
-const supabase = createClient(supabaseUrl, supabaseKey);
+import supabase from '~/supabase';
 
 interface ProductCardProps {
   title: string;
@@ -17,6 +12,7 @@ interface ProductCardProps {
   views: number;
   linkTo?: string;
   category: string;
+  category_id: string;
   opening_hours: string;
   style?: React.CSSProperties;
   shopId?: string;
@@ -37,6 +33,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   map_embed,
   other_images,
   category,
+  category_id,
   description,
   opening_hours,
   likes: initialLikes,
@@ -51,13 +48,33 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const isMobile = useDevice();
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
   const [likes, setLikes] = useState<number>(initialLikes);
+  const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
 
   useEffect(() => {
     const savedBookmarks = JSON.parse(localStorage.getItem(category) || '{}');
     if (savedBookmarks[shopId || '']) {
       setIsBookmarked(true);
     }
+    
+   const fetchData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setCategoriesShop(data);
+    } catch (error) {
+      console.error('Error fetching categories:', error.message);
+    }
+  }
+  fetchData();
   }, [category, shopId]);
+const getCategoryName = (categoryId: string) => {
+  const category = categoriesShop?.find(cat => cat.id === categoryId);
+  return category ? category.name : 'No Category';
+};
 
   const handleLoveClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -94,6 +111,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       near_station,
       address,
       map_embed,
+      category_id,
       other_images,
       opening_hours,
       category,
@@ -130,6 +148,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           other_images,
           opening_hours,
           category,
+          category_id
         },
         type: 'shops',
       },
@@ -179,7 +198,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             fontSize: isMobile ? fsm(13) : fs(13),
           }}
         >
-          {category || 'Shop'}
+          {getCategoryName(category_id) || 'Shop'}
         </button>
         <div className="flex space-x-3">
           <span className="flex items-center gap-1">

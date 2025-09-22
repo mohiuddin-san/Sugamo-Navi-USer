@@ -28,7 +28,7 @@ type LoaderData = {
 type Shop = {
   id: string;
   name: string;
-  category: string;
+  category_id: string;
   description: string;
   address: string;
   image_url: string;
@@ -81,6 +81,7 @@ export default function HomePage() {
   const [shopsError, setShopsError] = useState<string | null>(null);
   const [blogs, setBlogs] = useState([]);
   const [categories, setCategories] = useState({});
+  const [categoriesShop, setCategoriesShop] = useState({});
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [blogsError, setBlogsError] = useState<string | null>(null);
@@ -161,6 +162,17 @@ export default function HomePage() {
 
         const shopIds = recommendations.map(rec => rec.shop_id);
 
+        try {
+          const { data, error } = await supabaseShops
+            .from('categories')
+            .select('id, name')
+            .order('name');
+
+          if (error) throw error;
+          setCategoriesShop(data);
+        } catch (error) {
+          console.error('Error fetching categories:', error.message);
+        }
         const { data: shops, error: shopsError } = await supabaseShops
           .from('shops')
           .select('*')
@@ -196,6 +208,10 @@ export default function HomePage() {
       </div>
     );
   }
+  const getCategoryName = (categoryId) => {
+    const category = categoriesShop.find(cat => cat.id === categoryId);
+    return category ? category.name : 'No Category';
+  };
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -208,7 +224,7 @@ export default function HomePage() {
           alt="Sugamo Japan"
         />
       </div>
-      <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), marginLeft: isMobile ? fsm(20) : fs(130),marginRight: isMobile ? fsm(20) : fs(130), paddingTop: isMobile ? fsm(25) : fs(59),paddingLeft:isMobile? fsm(40):fs(83), paddingRight: isMobile ? fsm(40) : fs(55), paddingBottom: isMobile ? fsm(36) : fs(54) }}>
+      <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), marginLeft: isMobile ? fsm(20) : fs(130), marginRight: isMobile ? fsm(20) : fs(130), paddingTop: isMobile ? fsm(25) : fs(59), paddingLeft: isMobile ? fsm(40) : fs(83), paddingRight: isMobile ? fsm(40) : fs(55), paddingBottom: isMobile ? fsm(36) : fs(54) }}>
         <div className="flex flex-col w-full md:w-1/2">
           <p
             className="text-center md:text-left font-cousine italic font-bold "
@@ -427,7 +443,8 @@ export default function HomePage() {
                   opening_hours={topShops[0]?.opening_hours || ''}
                   near_station={topShops[0]?.near_station || ''}
                   address={topShops[0]?.address || ''}
-                  category={topShops[0]?.category || ''}
+                  category={getCategoryName(topShops[0]?.category_id )|| ''}
+                  category_id= {topShops[0]?.category_id}
                   map_embed={topShops[0]?.map_embed || ''}
                   other_images={topShops[0]?.other_images || null}
                   style={{ width: isMobile ? "auto" : fs(434), height: isMobile ? "auto" : fs(560) }}
@@ -453,7 +470,8 @@ export default function HomePage() {
                   opening_hours={topShops[1]?.opening_hours || ''}
                   near_station={topShops[1]?.near_station || ''}
                   address={topShops[1]?.address || ''}
-                  category={topShops[1]?.category || ''}
+                  category={(getCategoryName( topShops[1]?.category_id )) || ''}
+                  category_id= {(topShops[1]?.category_id ) || ''}
                   map_embed={topShops[1]?.map_embed || ''}
                   other_images={topShops[1]?.other_images || null}
                   style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
@@ -478,7 +496,8 @@ export default function HomePage() {
                   opening_hours={topShops[2]?.opening_hours || ''}
                   near_station={topShops[2]?.near_station || ''}
                   address={topShops[2]?.address || ''}
-                  category={topShops[2]?.category || ''}
+                  category={getCategoryName(topShops[2]?.category_id ) || ''}
+                  category_id= {topShops[2]?.category_id }
                   map_embed={topShops[2]?.map_embed || ''}
                   other_images={topShops[2]?.other_images || null}
                   style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
@@ -516,7 +535,7 @@ export default function HomePage() {
         )}
         <Link
           to="/Recommendation"
-         className="w-full italic font-bold text-end text-black font-cousine"
+          className="w-full italic font-bold text-end text-black font-cousine"
           style={fluidStyle({
             fontSize: isMobile ? fsm(25) : fs(25),
             marginTop: isMobile ? fsm(40) : fs(20),
@@ -561,7 +580,7 @@ export default function HomePage() {
         </div>
         <Link
           to="/ModelCourse"
-         className="w-full italic font-bold text-end text-black font-cousine"
+          className="w-full italic font-bold text-end text-black font-cousine"
           style={fluidStyle({
             fontSize: isMobile ? fsm(25) : fs(25),
             marginTop: isMobile ? fsm(40) : fs(20),
@@ -625,7 +644,7 @@ export default function HomePage() {
         </div>
         <Link
           to="/BlogList"
-        className="w-full italic font-bold text-end text-black font-cousine"
+          className="w-full italic font-bold text-end text-black font-cousine"
           style={fluidStyle({
             fontSize: isMobile ? fsm(25) : fs(25),
             marginTop: isMobile ? fsm(40) : fs(20),
@@ -648,7 +667,7 @@ export default function HomePage() {
           <InstagramVideosAll />
         </div>
         <div>
-         <TikTokVideos videos={tiktokVideos} />
+          <TikTokVideos videos={tiktokVideos} />
         </div>
       </div>
       <Footer />

@@ -15,7 +15,7 @@ interface Shop {
   description: string;
   likes: number;
   views: number;
-  category?: string;
+  category_id?: string;
   near_station?: string;
   address?: string;
   map_embed?: string;
@@ -40,7 +40,7 @@ export async function loader({ request }: { request: Request }) {
   }
 
   const table = type === 'places' ? 'tourist_places' : 'shops';
-  const selectFields = 'id, name, image_url, description, love_count, review_count, category, address, near_station, map_embed, other_images, opening_hours';
+  const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours';
 
   try {
     // Fetch the current shop
@@ -76,7 +76,7 @@ export async function loader({ request }: { request: Request }) {
           image: itemData.image_url || (type === 'places' ? '/src/see-do.png' : '/src/shop.png'),
           description: itemData.description || 'No description available',
           hours: itemData.opening_hours || 'OPEN 10:00 ~ 22:00',
-          category: itemData.category || 'Unknown',
+          category_id: itemData.category_id || 'Unknown',
           lastText: itemData.near_station || 'Unknown station',
           address: itemData.address || 'Unknown address',
           map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
@@ -98,7 +98,7 @@ export async function loader({ request }: { request: Request }) {
         image: itemData.image_url || (type === 'places' ? '/src/see-do.png' : '/src/shop.png'),
         description: itemData.description || 'No description available',
         hours: itemData.opening_hours || 'OPEN 10:00 ~ 22:00',
-        category: itemData.category || 'Unknown',
+        category_id: itemData.category_id || 'Unknown',
         lastText: itemData.near_station || 'Unknown station',
         address: itemData.address || 'Unknown address',
         map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
@@ -118,7 +118,7 @@ export async function loader({ request }: { request: Request }) {
         map_embed: item.map_embed,
         other_images: item.other_images,
         opening_hours: item.opening_hours,
-        category: item.category,
+        category_id: item.category_id,
       })),
       type,
       error: null,
@@ -141,21 +141,21 @@ export default function ShopDetails() {
   const [shop, setShop] = useState<Shop | null>(
     shopFromState
       ? {
-          id: shopFromState.id,
-          title: shopFromState.title,
-          imageUrl: shopFromState.imageUrl || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
-          description: shopFromState.description || 'No description available',
-          likes: shopFromState.likes || 0,
-          views: shopFromState.views || 0,
-          near_station: shopFromState.near_station || 'Unknown station',
-          address: shopFromState.address || 'Unknown address',
-          map_embed: shopFromState.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
-          other_images: shopFromState.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
-          category: shopFromState.category || 'Unknown',
-          opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
-        }
+        id: shopFromState.id,
+        title: shopFromState.title,
+        imageUrl: shopFromState.imageUrl || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
+        description: shopFromState.description || 'No description available',
+        likes: shopFromState.likes || 0,
+        views: shopFromState.views || 0,
+        near_station: shopFromState.near_station || 'Unknown station',
+        address: shopFromState.address || 'Unknown address',
+        map_embed: shopFromState.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
+        other_images: shopFromState.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
+        category_id: shopFromState.category_id || 'Unknown',
+        opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
+      }
       : menu
-      ? {
+        ? {
           id: menu.id,
           title: menu.name,
           imageUrl: menu.image,
@@ -164,16 +164,17 @@ export default function ShopDetails() {
           views: menu.views || 0,
           near_station: menu.lastText,
           address: menu.address,
-          category: menu.category,
+          category_id: menu.category_id,
           map_embed: menu.map_embed,
           other_images: menu.other_images,
           opening_hours: menu.hours,
         }
-      : null
+        : null
   );
   const [loading, setLoading] = useState(!shopFromState && !menu);
   const [error, setError] = useState<string | null>(loaderError);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
   const { fs, fsm } = useUniversalFluid();
   const isMobile = useDevice();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
@@ -185,7 +186,7 @@ export default function ShopDetails() {
         try {
           setLoading(true);
           const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
-          const selectFields = 'id, name, image_url, description, love_count, review_count, category, address, near_station, map_embed, other_images, opening_hours';
+          const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours';
 
           console.log(`useEffect: Fetching from ${table} with id: ${location.state.item.id}`);
           const { data: shopData, error: shopError } = await supabase
@@ -198,7 +199,6 @@ export default function ShopDetails() {
             console.log(`useEffect: Supabase ${table} error or no data:`, shopError);
             throw new Error(shopError?.message || `${effectiveType} not found`);
           }
-
           console.log(`useEffect: Fetched ${table} data:`, shopData);
           setShop({
             id: shopData.id,
@@ -211,7 +211,7 @@ export default function ShopDetails() {
             address: shopData.address || 'Unknown address',
             map_embed: shopData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
             other_images: shopData.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
-            category: shopData.category || 'Unknown',
+            category_id: shopData.category_id || 'Unknown',
             opening_hours: shopData.opening_hours || 'OPEN 10:00 ~ 22:00',
           });
         } catch (err) {
@@ -223,12 +223,30 @@ export default function ShopDetails() {
         }
       };
 
+     
+
       fetchShop();
     } else {
       console.log('ShopDetails: No fetch needed, shop state:', shop);
     }
   }, [shop, location.state, effectiveType]);
+  
+  useEffect (() =>{
+    const fetchShop = async () => {
+       try {
+            const { data, error } = await supabase
+              .from('categories')
+              .select('id, name')
+              .order('name');
 
+            if (error) throw error;
+            setCategoriesShop(data);
+          } catch (error) {
+            console.error('Error fetching categories:', error.message);
+          }
+    }
+    fetchShop()
+  })
   if (loading) {
     return <div className="container mx-auto p-4">Loading...</div>;
   }
@@ -240,7 +258,10 @@ export default function ShopDetails() {
 
   console.log('ShopDetails: Rendering shop:', shop);
   console.log('ShopDetails: Rendering products:', products);
-
+  const getCategoryName = (categoryId) => {
+    const category = categoriesShop.find(cat => cat.id === categoryId);
+    return category ? category.name : 'No Category';
+  };
   return (
     <div className="min-h-screen">
       <Header />
@@ -271,7 +292,7 @@ export default function ShopDetails() {
                       fontSize: isMobile ? fsm(12) : fs(12),
                     }}
                   >
-                    {effectiveType === 'places' ? 'Place' : 'Shop'}
+                    {getCategoryName(shop.category_id)}
                   </button>
                   <span className="flex items-center gap-1">
                     <img
@@ -360,7 +381,7 @@ export default function ShopDetails() {
                       fontSize: isMobile ? fsm(13) : fs(13),
                     }}
                   >
-                    {effectiveType === 'places' ? 'Place' : 'Shop'}
+                    {getCategoryName(shop.category_id)}
                   </button>
                   <span className="flex items-center gap-1">
                     <img
@@ -527,7 +548,7 @@ export default function ShopDetails() {
                       map_embed={product.map_embed}
                       other_images={product.other_images}
                       opening_hours={product.opening_hours}
-                      category={product.category}
+                      category_id={product.category_id}
                     />
                   </div>
                 ))}

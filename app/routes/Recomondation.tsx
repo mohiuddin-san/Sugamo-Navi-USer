@@ -13,7 +13,7 @@ import { useUniversalFluid } from '../hooks/useUniversalFluid';
 type Shop = {
   id: string;
   name: string;
-  category: string;
+  category_id: string;
   description: string;
   address: string;
   image_url: string;
@@ -21,9 +21,10 @@ type Shop = {
   review_count: number;
   near_station: string;
   map_embed: string;
-  other_images: string[]; // Changed to string[]
+  other_images: JSON;
   opening_hours: string;
 };
+
 
 export default function Recommendation() {
   const location = useLocation();
@@ -64,7 +65,7 @@ export default function Recommendation() {
 
         const { data: shops, error: shopsError } = await supabaseShops
           .from('shops')
-          .select('id, name, image_url, description, love_count, review_count, category, address, near_station, map_embed, other_images, opening_hours')
+          .select('*')
           .in('id', shopIds);
 
         if (shopsError) {
@@ -145,14 +146,16 @@ export default function Recommendation() {
               className="w-full"
             >
               <ProductCard
-                type="shop"
-                id={shop.id}
-                title={shop.name || 'ブーランジェリーボヌール'}
-                imageUrl={shop.image_url || './src/shop.png'}
-                description={shop.description || '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！'}
-                likes={shop.love_count || 0}
-                views={shop.review_count || 0}
-              />
+                  id={shop.id}
+                  title={shop.name}
+                  imageUrl={shop.image_url || '/src/shop.png'}
+                  description={shop.description || 'No description available'}
+                  likes={shop.love_count || 0}
+                  views={shop.review_count || 0}
+                  type={'shop'}
+                  category_id={shop.category_id}
+                  linkTo={`/shops/${shop.id}`}
+                />
             </GridItem>
           ))}
         </ResponsiveGrid>

@@ -9,15 +9,28 @@ import Footer from '../components/Footer';
 import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
 import { useDevice } from "~/routes/contexts/DeviceContext";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
+type Shop = {
+  id: string;
+  name: string;
+  category_id: string;
+  description: string;
+  address: string;
+  image_url: string;
+  love_count: number;
+  review_count: number;
+  near_station: string;
+  map_embed: string;
+  other_images: JSON;
+  opening_hours: string;
+};
 
 export default function Shoppage() {
   const location = useLocation();
   const { fs, fsm } = useUniversalFluid();
   const isMobile = useDevice();
-  const [shops, setShops] = useState([]); // State for shops data
+  const [shops, setShops] = useState<Shop[]>([]); // State for shops data
   const [loading, setLoading] = useState(false); // Loading state
 
-  // Fetch shops data from Supabase
   useEffect(() => {
     async function fetchShops() {
       setLoading(true);
@@ -104,10 +117,11 @@ export default function Shoppage() {
                   description={shop.description || 'No description available'}
                   likes={shop.love_count || 0}
                   views={shop.review_count || 0}
-                  type = {'shop'}
+                  type={'shop'}
+                  category_id={shop.category_id}
                   linkTo={`/shops/${shop.id}`}
                 />
-          
+
               </GridItem>
             ))
           )}

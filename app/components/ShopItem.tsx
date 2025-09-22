@@ -1,12 +1,16 @@
-import React from 'react';
+
 import { Link } from '@remix-run/react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useDevice } from '~/routes/contexts/DeviceContext';
+import React, { useState, useEffect } from 'react';
+import supabase from '~/supabase';
 
 interface ProductCardProps {
   title: string;
   imageUrl: string;
   description: string;
+  category_id: string;
+  category: string;
   likes: number;
   views: number;
   type: 'place' | 'shop';
@@ -19,6 +23,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
   title,
   imageUrl,
   description,
+  category_id,
+  category,
   likes,
   views,
   style,
@@ -27,7 +33,33 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const { fs, fsm } = useUniversalFluid();
   const isMobile = useDevice();
   const targetLink = `/ShopDetails?id=${id}&type=${type}s`;
+  const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
+  const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
+  useEffect(() => {
+    const savedBookmarks = JSON.parse(localStorage.getItem(category) || '{}');
+    if (savedBookmarks[id || '']) {
+      setIsBookmarked(true);
+    }
 
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('id, name')
+          .order('name');
+
+        if (error) throw error;
+        setCategoriesShop(data);
+      } catch (error) {
+        console.error('Error fetching categories:', error.message);
+      }
+    }
+    fetchData();
+  }, [category, id]);
+  const getCategoryName = (categoryId: string) => {
+    const category = categoriesShop?.find(cat => cat.id === categoryId);
+    return category ? category.name : 'No Category';
+  };
   return (
     <div
       className="border-2 border-black rounded-lg bg-white flex flex-col font-cairo w-full h-full overflow-hidden"
@@ -84,7 +116,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             fontSize: isMobile ? fsm(12) : fs(12),
           }}
         >
-          {type === 'place' ? 'Place' : 'Shop'}
+          {getCategoryName(category_id)}
         </button>
         <div
           className="flex"
