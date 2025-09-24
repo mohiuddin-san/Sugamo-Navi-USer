@@ -23,7 +23,7 @@ const Footer: React.FC<FooterProps> = ({
         text="FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE!"
         backgroundColor="#000000"
         textColor="#FFFFFF"
-        animationDuration="40s"
+        animationDuration="90s"
       />
       <footer className=" text-white">
         <div className="flex justify-between bg-[#ED4548] items-center" style={{ height: isMobile ? fsm(122) : fs(209), paddingRight: isMobile ? fsm(21) : fs(89), paddingLeft: isMobile ? fsm(0) : fs(90) }}>

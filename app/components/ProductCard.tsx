@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from '@remix-run/react';
+import { useNavigate } from '@remix-run/react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useDevice } from "~/routes/contexts/DeviceContext";
 import supabase from '~/supabase';
@@ -19,7 +19,7 @@ interface ProductCardProps {
   near_station: string;
   address: string;
   map_embed: string;
-  other_images: string[]; // Changed from JSON to string[]
+  other_images: string[];
   imageHeight?: number;
   paddingText?: number;
 }
@@ -55,26 +55,28 @@ const ProductCard: React.FC<ProductCardProps> = ({
     if (savedBookmarks[shopId || '']) {
       setIsBookmarked(true);
     }
-    
-   const fetchData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('id, name')
-        .order('name');
 
-      if (error) throw error;
-      setCategoriesShop(data);
-    } catch (error) {
-      console.error('Error fetching categories:', error.message);
-    }
-  }
-  fetchData();
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('id, name')
+          .order('name');
+        console.log('Fetched Categories:', data);
+        if (error) throw error;
+        setCategoriesShop(data || []);
+      } catch (error) {
+        console.error('Error fetching categories:', error.message);
+      }
+    };
+    fetchData();
   }, [category, shopId]);
-const getCategoryName = (categoryId: string) => {
-  const category = categoriesShop?.find(cat => cat.id === categoryId);
-  return category ? category.name : 'No Category';
-};
+
+  const getCategoryName = (categoryId: string) => {
+    if (!categoriesShop.length) return 'Loading...';
+    const category = categoriesShop.find(cat => cat.id === categoryId);
+    return category ? category.name : 'No Category';
+  };
 
   const handleLoveClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -114,16 +116,16 @@ const getCategoryName = (categoryId: string) => {
       category_id,
       other_images,
       opening_hours,
-      category,
+      category: getCategoryName(category_id),
     };
-    const savedBookmarks = JSON.parse(localStorage.getItem(category) || '{}');
+    const savedBookmarks = JSON.parse(localStorage.getItem(getCategoryName(category_id)) || '{}');
     if (isBookmarked) {
       delete savedBookmarks[shopId];
-      localStorage.setItem(category, JSON.stringify(savedBookmarks));
+      localStorage.setItem(getCategoryName(category_id), JSON.stringify(savedBookmarks));
       setIsBookmarked(false);
     } else {
       savedBookmarks[shopId] = productData;
-      localStorage.setItem(category, JSON.stringify(savedBookmarks));
+      localStorage.setItem(getCategoryName(category_id), JSON.stringify(savedBookmarks));
       setIsBookmarked(true);
     }
   };
@@ -147,8 +149,8 @@ const getCategoryName = (categoryId: string) => {
           map_embed,
           other_images,
           opening_hours,
-          category,
-          category_id
+          category: getCategoryName(category_id),
+          category_id,
         },
         type: 'shops',
       },

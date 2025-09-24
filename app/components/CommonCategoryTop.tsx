@@ -38,7 +38,7 @@ const CommonCategoryTop = ({ title, subtitle, imageSrc, imageAlt}) => {
         style={{ width: isMobile ? '100%' : '51%', paddingLeft: isMobile ? fsm(35) : fs(0), paddingRight: isMobile ? fsm(35) : fs(0), marginTop: isMobile ? fsm(24) : 0, marginBottom: isMobile ? fsm(56) : 0 }}
       >
         <img
-          className="w-full h-full object-cover bg-red-200 "
+          className="w-full h-full object-cover "
           style={{
             display: 'block',
             height: isMobile? fsm(380): 'auto',

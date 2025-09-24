@@ -28,32 +28,29 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
                         className="w-full object-cover rounded-lg"
                     />
                 </div>
-                <div className="w-full text-center md:text-start" style={{ paddingTop: isMobile ? fsm(12) : fs(16) }}>
-                    <h1 className="font-semibold font-cairo" style={{fontSize: isMobile ? fsm(25) : fs(39), color: "#313131", paddingLeft: fs(25), fontWeight: fs(600) }}>
+                <div className="w-full text-center md:text-start " style={{ paddingTop: isMobile ? fsm(12) : fs(16) }}>
+                    <h1 className="font-semibold font-cairo" style={{ fontSize: isMobile ? fsm(25) : fs(39), color: "#313131", paddingLeft: fs(25), fontWeight: fs(600) }}>
                         {title}
                     </h1>
                     {!isMobile && (
-                        <div className="flex flex-row" style={{gap: fs(24)}}>
-                           
-                            <div
-                                className="flex flex-col text-start "
-                                style={{ marginTop: fs(10), width: "58%", paddingLeft: fs(25) }}
+                        <div className="flex flex-col " style={{ marginLeft: fs(29) }}>
+                            <p
+                                className="text-lg font-cairo leading-loose line-clamp-3"
+                                style={{
+                                    fontSize: isMobile ? fsm(16) : fs(16),
+                                    color: "#313131",
+                                    fontWeight: fs(400),
+                                    width: fs(288)
+                                }}
                             >
-                                <p
-                                    className="text-lg font-cairo leading-loose"
-                                    style={{
-                                        fontSize: isMobile ? fsm(16) : fs(16),
-                                        color: "#313131",
-                                        fontWeight: fs(400),
-                                    }}
-                                >
-                                    {details}
-                                </p>
+                                {details}
+                            </p>
 
-                                <div
-                                    className="flex flex-wrap justify-start gap-2 "
-                                    style={{ marginTop: fs(20) }}
-                                >
+                            <div
+                                className="flex flex-row items-end justify-between"
+                                style={{ height: fs(74) }}
+                            >
+                                <div className="flex flex-wrap justify-start" style={{ gap: fs(8) }}>
                                     {categories.map((category, index) => (
                                         <button
                                             key={index}
@@ -69,32 +66,36 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
                                         </button>
                                     ))}
                                 </div>
-                            </div>
-                            <div className="flex flex-col justify-end">
+
                                 <img
-                                    className="w-full"
-                                    src="./src/lets_go.png"
-                                    style={{ width: fs(205) }}
+                                    className=" self-end p-0"
+                                    src="./src/lets-go.svg"
+                                    style={{ width: fs(205), height: "auto" }}
                                     alt="Lets Image"
                                 />
                             </div>
+
+
+
                         </div>
 
                     )}
                     {isMobile && (
-                        <div className="flex flex-col " style={{paddingLeft: fsm(21),
-                                        paddingRight: fsm(21),paddingBottom: fsm(24),paddingTop: fsm(12)}}>
+                        <div className="flex flex-col " style={{
+                            paddingLeft: fsm(21),
+                            paddingRight: fsm(21), paddingBottom: fsm(24), paddingTop: fsm(12)
+                        }}>
                             <p
-                                    className="text-lg font-cairo text-start"
-                                    style={{
-                                        fontSize:fsm(16),
-                                        color: "#313131",
-                                        fontWeight: fsm(400),
-                                        letterSpacing: 0
-                                    }}
-                                >
-                                    {details}
-                                </p>
+                                className="text-lg font-cairo text-start"
+                                style={{
+                                    fontSize: fsm(16),
+                                    color: "#313131",
+                                    fontWeight: fsm(400),
+                                    letterSpacing: 0
+                                }}
+                            >
+                                {details}
+                            </p>
                             <div className="flex flex-row text-start" style={{ marginTop: fsm(32) }}>
                                 <div className="flex flex-col justify-start ">
                                     {categories.map((category, index) => (
@@ -113,10 +114,10 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
                                         </button>
                                     ))}
                                 </div>
-                                <div className="flex flex-col justify-end" style={{ width: fsm(225),height:fsm(100), marginLeft: fsm(38)}}>
+                                <div className="flex flex-col justify-end" style={{ width: fsm(225), height: fsm(100), marginLeft: fsm(38) }}>
                                     <img
                                         className="w-full h-auto"
-                                        src="./src/lets_go.png"
+                                        src="./src/lets-go.svg"
                                         alt="Lets Image"
                                     />
                                 </div>

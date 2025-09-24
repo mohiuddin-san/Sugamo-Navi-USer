@@ -35,6 +35,7 @@ export default function TikTokVideos({ videos }: TikTokVideosProps) {
                 className="relative flex-shrink-0 overflow-hidden shadow-md snap-center transition-transform duration-300"
               >
                 <img
+                 onClick={() => window.open(video.webVideoUrl, "_blank", "noopener,noreferrer")}
                   src={video.videoMeta.coverUrl}
                   alt={video.text || "TikTok thumbnail"}
                   className="w-full h-auto object-cover"
@@ -47,14 +48,6 @@ export default function TikTokVideos({ videos }: TikTokVideosProps) {
                   >
                     ▶️
                   </button>
-                </div>
-                {/* Top-left text */}
-                <div className="absolute top-2 left-2 text-white text-sm font-semibold bg-black bg-opacity-50 px-2 py-1 rounded">
-                  {video.text.slice(0, 20)}...
-                </div>
-                {/* Bottom-right play count */}
-                <div className="absolute bottom-2 right-2 text-white text-sm font-bold bg-black bg-opacity-50 px-2 py-1 rounded flex items-center">
-                  ▶️ {video.playCount.toLocaleString()}
                 </div>
               </div>
             ))

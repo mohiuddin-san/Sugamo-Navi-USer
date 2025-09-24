@@ -75,7 +75,7 @@ export default function Shoppage() {
         text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
         backgroundColor="#FFFFFF"
         textColor="#0000000"
-        animationDuration="40s"
+        animationDuration="90s"
         marginBottom={120}
         marginTop={98}
       />

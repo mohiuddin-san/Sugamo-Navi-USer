@@ -283,7 +283,7 @@ export default function HomePage() {
         text="FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE!"
         backgroundColor="#000000"
         textColor="#FFFFFF"
-        animationDuration="40s"
+        animationDuration="90s"
         marginBottom={0}
         marginTop={isMobile ? 0 : 124}
       />
@@ -375,7 +375,7 @@ export default function HomePage() {
         text="FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE!"
         backgroundColor="#000000"
         textColor="#FFFFFF"
-        animationDuration="40s"
+        animationDuration="90s"
         marginBottom={0}
       />
       <div
@@ -658,7 +658,7 @@ export default function HomePage() {
         text="FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE!"
         backgroundColor="#000000"
         textColor="#FFFFFF"
-        animationDuration="40s"
+        animationDuration="90s"
         marginTop={131}
         marginBottom={50}
       />

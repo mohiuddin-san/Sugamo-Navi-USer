@@ -196,7 +196,7 @@ const Header: React.FC = () => {
               />
             </button>
             <div className="relative flex items-center justify-center">
-              <div
+              {/* <div
                 className="flex items-center justify-center bg-white cursor-pointer transition-transform duration-300 hover:scale-125"
                 style={{ width: fs(27), height: fs(27) }}
                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
@@ -207,7 +207,7 @@ const Header: React.FC = () => {
                   alt="World Icon"
                   
                 />
-              </div>
+              </div> */}
               {isLanguageDropdownOpen && (
                 <div
                   className="absolute inset-0 flex flex-col items-center justify-start bg-white border rounded-full shadow-md"

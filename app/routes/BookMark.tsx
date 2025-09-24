@@ -7,7 +7,7 @@ import CommonCategoryTop from '~/components/CommonCategoryTop';
 import Footer from '~/components/Footer';
 import { useDevice } from '~/routes/contexts/DeviceContext';
 import { useUniversalFluid } from '~/hooks/useUniversalFluid';
-import supabase  from '~/supabase'; // Adjust import based on your setup
+import supabase from '~/supabase';
 
 interface Shop {
   id: string;
@@ -19,12 +19,13 @@ interface Shop {
   near_station: string;
   address: string;
   map_embed: string;
-  other_images: JSON;
+  other_images: string[];
   opening_hours: string;
   category: string;
+  category_id: string;
 }
 
-export default function Home() {
+export default function BookmarkPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [bookmarkedProducts, setBookmarkedProducts] = useState<Shop[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -34,91 +35,100 @@ export default function Home() {
   const { fs, fsm } = useUniversalFluid();
   const isMobile = useDevice();
 
-useEffect(() => {
-  const fetchBookmarksAndShops = async () => {
-    try {
-      setLoading(true);
-      setErrorMsg(null);
-      const localCategories = [];
-      const shopIds = [];
+  useEffect(() => {
+    const fetchBookmarksAndShops = async () => {
+      try {
+        setLoading(true);
+        setErrorMsg(null);
+        const localCategories = [];
+        const shopIds = [];
 
-      // Step 1: Extract categories and shop IDs from localStorage
-      Object.keys(localStorage).forEach((key) => {
-        if (!key.startsWith('sb-')) {
-          const bookmarks = JSON.parse(localStorage.getItem(key) || '{}');
-          if (Object.keys(bookmarks).length > 0) {
-            localCategories.push(key);
-            Object.keys(bookmarks).forEach((shopId) => {
-              const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-              if (uuidRegex.test(shopId) && !shopIds.includes(shopId)) {
-                shopIds.push(shopId);
-              }
-            });
+        // Step 1: Extract categories and shop IDs from localStorage
+        Object.keys(localStorage).forEach((key) => {
+          if (!key.startsWith('sb-')) {
+            const bookmarks = JSON.parse(localStorage.getItem(key) || '{}');
+            console.log(`Category: ${key}, Bookmarks:`, bookmarks);
+            if (Object.keys(bookmarks).length > 0) {
+              localCategories.push(key);
+              Object.keys(bookmarks).forEach((shopId) => {
+                const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+                if (uuidRegex.test(shopId) && !shopIds.includes(shopId)) {
+                  shopIds.push(shopId);
+                }
+              });
+            }
           }
+        });
+
+        console.log('Shop IDs:', shopIds);
+
+        if (localCategories.length === 0) {
+          setCategories([]);
+          setBookmarkedProducts([]);
+          setErrorMsg('No bookmarked items found.');
+          setLoading(false);
+          return;
         }
-      });
 
-      if (localCategories.length === 0) {
-        setCategories([]);
-        setBookmarkedProducts([]);
-        setErrorMsg('No bookmarked items found.');
+        // Set default category
+        if (!selectedCategory && localCategories.length > 0) {
+          setSelectedCategory(localCategories[0]);
+        }
+        setCategories(localCategories);
+
+        if (shopIds.length === 0) {
+          setBookmarkedProducts([]);
+          setErrorMsg('No valid bookmarked shops found.');
+          setLoading(false);
+          return;
+        }
+
+        // Step 2: Fetch shop details from Supabase
+        const { data: shops, error: shopsError } = await supabase
+          .from('shops')
+          .select('*')
+          .in('id', shopIds);
+
+        if (shopsError) {
+          throw new Error(`Failed to fetch shops: ${shopsError.message}`);
+        }
+
+        if (!shops || shops.length === 0) {
+          setBookmarkedProducts([]);
+          setErrorMsg('No matching shops found in database.');
+          setLoading(false);
+          return;
+        }
+
+        // Step 3: Parse other_images and filter shops by selected category
+        const filteredShops = shops.map(shop => ({
+          ...shop,
+          other_images: typeof shop.other_images === 'string' ? JSON.parse(shop.other_images) : shop.other_images,
+        })).filter((shop) => {
+          const categoryBookmarks = JSON.parse(localStorage.getItem(shop.category) || '{}');
+          console.log('Shop Category:', shop.category, 'Selected Category:', selectedCategory);
+          return selectedCategory ? shop.category === selectedCategory && categoryBookmarks[shop.id] : categoryBookmarks[shop.id];
+        });
+
+        console.log('Filtered Shops:', filteredShops);
+        setBookmarkedProducts(filteredShops);
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : 'Unknown error fetching bookmarked shops';
+        setErrorMsg(errMsg);
+        console.error('Error details:', error);
+      } finally {
         setLoading(false);
-        return;
       }
+    };
 
-      // Set default category
-      if (!selectedCategory && localCategories.length > 0) {
-        setSelectedCategory(localCategories[0]);
-      }
-      setCategories(localCategories);
+    console.log('Fetching bookmarks for category:', selectedCategory);
+    fetchBookmarksAndShops();
+  }, [selectedCategory]);
 
-      if (shopIds.length === 0) {
-        setBookmarkedProducts([]);
-        setErrorMsg('No valid bookmarked shops found.');
-        setLoading(false);
-        return;
-      }
-
-      // Step 2: Fetch shop details from Supabase
-      const { data: shops, error: shopsError } = await supabase
-        .from('shops')
-        .select('*')
-        .in('id', shopIds);
-
-      if (shopsError) {
-        throw new Error(`Failed to fetch shops: ${shopsError.message}`);
-      }
-
-      if (!shops || shops.length === 0) {
-        setBookmarkedProducts([]);
-        setErrorMsg('No matching shops found in database.');
-        setLoading(false);
-        return;
-      }
-
-      // Step 3: Filter shops by selected category
-      const filteredShops = shops.filter((shop) => {
-        const categoryBookmarks = JSON.parse(localStorage.getItem(shop.category) || '{}');
-        return selectedCategory ? shop.category === selectedCategory && categoryBookmarks[shop.id] : categoryBookmarks[shop.id];
-      });
-
-      setBookmarkedProducts(filteredShops);
-    } catch (error) {
-      const errMsg = error instanceof Error ? error.message : 'Unknown error fetching bookmarked shops';
-      setErrorMsg(errMsg);
-      console.error('Error details:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchBookmarksAndShops();
-}, [selectedCategory]);
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
   }, [location]);
 
-  // Handle category selection
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
   };
@@ -136,7 +146,7 @@ useEffect(() => {
         text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
         backgroundColor="#FFFFFF"
         textColor="#000000"
-        animationDuration="40s"
+        animationDuration="90s"
         marginBottom={117}
         marginTop={98}
       />
@@ -210,7 +220,10 @@ useEffect(() => {
                 other_images={product.other_images}
                 opening_hours={product.opening_hours}
                 category={product.category}
+                category_id={product.category_id}
                 linkTo="/ShopDetails"
+                style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                imageHeight={210}
               />
             ))}
           </div>
