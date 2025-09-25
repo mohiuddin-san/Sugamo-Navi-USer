@@ -403,9 +403,9 @@ export default function ShopDetails() {
                     {getCategoryName(shop.category_id)}
                   </button>
                   <span className="flex items-center gap-1">
-                    <button onClick={handleLoveClick} disabled={hasLoved} className={hasLoved ? 'opacity-50' : ''}>
+                    <button onClick={handleLoveClick} disabled={hasLoved}>
                       <img
-                        src={hasLoved ? '/src/red-love-filled.svg' : '/src/red-love.svg'} // Toggle icon if needed
+                        src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'} // Toggle icon if needed
                         alt="Love"
                         style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
                       />
@@ -494,9 +494,9 @@ export default function ShopDetails() {
                     {getCategoryName(shop.category_id)}
                   </button>
                   <span className="flex items-center gap-1">
-                    <button onClick={handleLoveClick} disabled={hasLoved} className={hasLoved ? 'opacity-50' : ''}>
+                    <button onClick={handleLoveClick} disabled={hasLoved}>
                       <img
-                        src={hasLoved ? '/src/red-love-filled.svg' : '/src/red-love.svg'} // Toggle icon if needed
+                        src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'} // Toggle icon if needed
                         alt="Love"
                         style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
                       />
