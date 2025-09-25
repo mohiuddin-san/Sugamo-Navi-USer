@@ -1,4 +1,3 @@
-
 import { Link } from '@remix-run/react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useDevice } from '~/routes/contexts/DeviceContext';
@@ -16,6 +15,11 @@ interface ProductCardProps {
   type: 'place' | 'shop';
   id: string;
   style?: React.CSSProperties;
+  near_station?: string; // Added from schema
+  address?: string; // Added from schema
+  map_embed?: string; // Added from schema
+  other_images?: string[]; // Added from schema
+  opening_hours?: string; // Added from schema
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -25,41 +29,194 @@ const ProductCard: React.FC<ProductCardProps> = ({
   description,
   category_id,
   category,
-  likes,
+  likes: initialLikes,
   views,
   style,
   id,
+  near_station,
+  address,
+  map_embed,
+  other_images,
+  opening_hours,
 }) => {
   const { fs, fsm } = useUniversalFluid();
   const isMobile = useDevice();
-  const targetLink = `/ShopDetails?id=${id}&type=${type}s`;
+  const targetLink = `/ShopDetails?id=${id}&type=${type}s`; // Match ShopDetails loader expectation
   const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
+  const [likesCount, setLikesCount] = useState<number>(initialLikes);
+  const [hasLoved, setHasLoved] = useState<boolean>(false);
+
   useEffect(() => {
-    const savedBookmarks = JSON.parse(localStorage.getItem(category) || '{}');
-    if (savedBookmarks[id || '']) {
+    // Load bookmark state
+    const bookmarkKey = `bookmarked_${type}s`; // e.g., bookmarked_shops, bookmarked_places
+    const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
+    if (savedBookmarks[id]) {
       setIsBookmarked(true);
     }
 
+    // Load love state
+    const loveKey = `love:${type}s:${id}`;
+    const lovedItems = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+    if (lovedItems[loveKey]) {
+      setHasLoved(true);
+    }
+
+    // Fetch categories
     const fetchData = async () => {
       try {
         const { data, error } = await supabase
           .from('categories')
           .select('id, name')
           .order('name');
-
         if (error) throw error;
         setCategoriesShop(data);
       } catch (error) {
         console.error('Error fetching categories:', error.message);
       }
-    }
+    };
     fetchData();
-  }, [category, id]);
+  }, [category, id, type]);
+
   const getCategoryName = (categoryId: string) => {
     const category = categoriesShop?.find(cat => cat.id === categoryId);
-    return category ? category.name : 'No Category';
+    return category ? category.name : category || 'No Category';
   };
+
+  const handleLoveIncrement = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!id) {
+      console.error('No id provided for love increment');
+      alert('Cannot like item: Invalid ID');
+      return;
+    }
+
+    if (hasLoved) {
+      console.log('Already loved, ignoring increment');
+      return;
+    }
+
+    const loveKey = `love:${type}s:${id}`;
+    try {
+      let rpcName, param;
+      if (type === 'shop') {
+        rpcName = 'increment_love_count';
+        param = { shop_id: id };
+      } else {
+        rpcName = 'increment_love_count_place';
+        param = { place_id: id }; // Use place_id for tourist_places
+      }
+
+      const { error, data } = await supabase.rpc(rpcName, param);
+
+      if (error) {
+        console.error('RPC error:', error);
+        alert(`Failed to like ${type}: ${error.message}`);
+        return;
+      }
+
+      console.log('RPC success:', data);
+      setLikesCount(prev => prev + 1);
+      setHasLoved(true);
+
+      // Save to localStorage
+      const lovedItems = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+      lovedItems[loveKey] = true;
+      localStorage.setItem('lovedShops', JSON.stringify(lovedItems));
+
+      console.log('Successfully liked', type, id, 'new likes:', likesCount + 1);
+    } catch (err) {
+      console.error('Unexpected error in increment:', err);
+      alert('Failed to like item: Unexpected error');
+    }
+  };
+
+  const handleLoveDecrement = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!id) {
+      console.error('No id provided for love decrement');
+      alert('Cannot unlike item: Invalid ID');
+      return;
+    }
+
+    if (!hasLoved) {
+      console.log('Not loved yet, ignoring decrement');
+      return;
+    }
+
+    const loveKey = `love:${type}s:${id}`;
+    try {
+      let rpcName, param;
+      if (type === 'shop') {
+        rpcName = 'decrement_love_count';
+        param = { shop_id: id };
+      } else {
+        rpcName = 'decrement_love_count_place';
+        param = { place_id: id }; // Use place_id for tourist_places
+      }
+
+      const { error, data } = await supabase.rpc(rpcName, param);
+
+      if (error) {
+        console.error('RPC error:', error);
+        alert(`Failed to unlike ${type}: ${error.message}`);
+        return;
+      }
+
+      console.log('RPC success:', data);
+      setLikesCount(prev => Math.max(prev - 1, 0));
+      setHasLoved(false);
+
+      // Remove from localStorage
+      const lovedItems = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+      delete lovedItems[loveKey];
+      localStorage.setItem('lovedShops', JSON.stringify(lovedItems));
+
+      console.log('Successfully unliked', type, id, 'new likes:', Math.max(likesCount - 1, 0));
+    } catch (err) {
+      console.error('Unexpected error in decrement:', err);
+      alert('Failed to unlike item: Unexpected error');
+    }
+  };
+
+  const handleBookmarkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!id) {
+      console.error('No id provided for bookmark');
+      return;
+    }
+
+    const productData = {
+      id,
+      title,
+      imageUrl,
+      description,
+      likes: likesCount,
+      views,
+      category_id,
+      category: getCategoryName(category_id),
+      type,
+      near_station: near_station || '',
+      address: address || '',
+      map_embed: map_embed || '',
+      other_images: other_images || [],
+      opening_hours: opening_hours || '',
+    };
+
+    const bookmarkKey = `bookmarked_${type}s`;
+    const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
+
+    if (isBookmarked) {
+      delete savedBookmarks[id];
+      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
+      setIsBookmarked(false);
+    } else {
+      savedBookmarks[id] = productData;
+      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
+      setIsBookmarked(true);
+    }
+  };
+
   return (
     <div
       className="border-2 border-black rounded-lg bg-white flex flex-col font-cairo w-full h-full overflow-hidden"
@@ -124,15 +281,24 @@ const ProductCard: React.FC<ProductCardProps> = ({
         >
           <span className="flex items-center" style={{ gap: isMobile ? fsm(5) : fs(5) }}>
             <img
-              src="/src/love.svg"
+              src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'}
               alt="Love"
-              style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
+              onClick={handleLoveIncrement}
+              onDoubleClick={handleLoveDecrement}
+              style={{
+                width: isMobile ? fsm(20) : fs(20),
+                height: isMobile ? fsm(20) : fs(20),
+                cursor: 'pointer',
+              }}
+              onError={(e) => {
+                e.currentTarget.src = '/src/love.svg';
+              }}
             />
             <p
               className="font-bold font-cairo"
               style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
             >
-              {likes || 0}
+              {likesCount || 0}
             </p>
           </span>
           <span className="flex items-center" style={{ gap: isMobile ? fsm(5) : fs(5) }}>
@@ -150,9 +316,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </span>
           <span className="flex items-center">
             <img
-              src="/src/bookmark.svg"
+              src={isBookmarked ? '/src/bookmark-filled.svg' : '/src/bookmark.svg'}
               alt="Bookmark"
-              style={{ width: isMobile ? fsm(17) : fs(17), height: isMobile ? fsm(21) : fs(21) }}
+              onClick={handleBookmarkClick}
+              style={{
+                width: isMobile ? fsm(17) : fs(17),
+                height: isMobile ? fsm(21) : fs(21),
+                cursor: 'pointer',
+              }}
             />
           </span>
         </div>
@@ -171,7 +342,24 @@ const ProductCard: React.FC<ProductCardProps> = ({
         )}
         <Link
           to={targetLink}
-          state={{ type: `${type}s`, item: { id, title, imageUrl, description, likes, views } }}
+          state={{
+            type: `${type}s`, // Match ShopDetails loader (shops or places)
+            item: {
+              id,
+              title,
+              imageUrl,
+              description,
+              likes: likesCount,
+              views,
+              category_id,
+              category: getCategoryName(category_id),
+              near_station: near_station || '',
+              address: address || '',
+              map_embed: map_embed || '',
+              other_images: other_images || [],
+              opening_hours: opening_hours || '',
+            },
+          }}
           className="italic font-bold font-cousine text-center md:text-end"
           style={{
             marginTop: isMobile ? fsm(15) : fs(0),

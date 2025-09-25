@@ -21,6 +21,7 @@ interface Shop {
   map_embed?: string;
   other_images?: string[];
   opening_hours?: string;
+  category?: string; // Added for clarity
 }
 
 export async function loader({ request }: { request: Request }) {
@@ -58,6 +59,21 @@ export async function loader({ request }: { request: Request }) {
 
     console.log(`Loader: Fetched ${table} data:`, itemData);
 
+    // Fetch category name
+    let categoryName = 'No Category';
+    if (itemData.category_id) {
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('id', itemData.category_id)
+        .single();
+      if (categoryError) {
+        console.error('Error fetching category:', categoryError);
+      } else {
+        categoryName = categoryData.name || 'No Category';
+      }
+    }
+
     // Fetch all related items of the same type (excluding current id)
     const { data: relatedData, error: relatedError } = await supabase
       .from(table)
@@ -77,6 +93,7 @@ export async function loader({ request }: { request: Request }) {
           description: itemData.description || 'No description available',
           hours: itemData.opening_hours || 'OPEN 10:00 ~ 22:00',
           category_id: itemData.category_id || 'Unknown',
+          category: categoryName,
           lastText: itemData.near_station || 'Unknown station',
           address: itemData.address || 'Unknown address',
           map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
@@ -99,6 +116,7 @@ export async function loader({ request }: { request: Request }) {
         description: itemData.description || 'No description available',
         hours: itemData.opening_hours || 'OPEN 10:00 ~ 22:00',
         category_id: itemData.category_id || 'Unknown',
+        category: categoryName,
         lastText: itemData.near_station || 'Unknown station',
         address: itemData.address || 'Unknown address',
         map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
@@ -153,6 +171,7 @@ export default function ShopDetails() {
           other_images: shopFromState.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
           category_id: shopFromState.category_id || 'Unknown',
           opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
+          category: shopFromState.category || 'No Category',
         }
       : menu
       ? {
@@ -168,6 +187,7 @@ export default function ShopDetails() {
           map_embed: menu.map_embed,
           other_images: menu.other_images,
           opening_hours: menu.hours,
+          category: menu.category,
         }
       : null
   );
@@ -175,9 +195,10 @@ export default function ShopDetails() {
   const [error, setError] = useState<string | null>(loaderError);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
+  const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
+  const [hasLoved, setHasLoved] = useState<boolean>(false);
   const visitAttemptedRef = useRef<boolean>(false);
-  const loveAttemptedRef = useRef<boolean>(false); 
-  const [hasLoved, setHasLoved] = useState<boolean>(false); 
+  const loveAttemptedRef = useRef<boolean>(false);
   const { fs, fsm } = useUniversalFluid();
   const isMobile = useDevice();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
@@ -195,7 +216,17 @@ export default function ShopDetails() {
       }
     };
     fetchCategories();
-  }, []);
+
+    // Load bookmark and love state
+    if (shop?.id) {
+      const bookmarkKey = `bookmarked_${effectiveType}`;
+      const loveKey = `love:${effectiveType}:${shop.id}`;
+      const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
+      const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+      setIsBookmarked(!!savedBookmarks[shop.id]);
+      setHasLoved(!!lovedShops[loveKey]);
+    }
+  }, [shop?.id, effectiveType]);
 
   useEffect(() => {
     if (!shop?.id || visitAttemptedRef.current) {
@@ -216,7 +247,9 @@ export default function ShopDetails() {
         visitAttemptedRef.current = true;
         console.log('ShopDetails: Incrementing review_count for:', visitKey);
         const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
-        const { error } = await supabase.rpc('increment_review_count', { shop_id: shop.id });
+        const rpcName = effectiveType === 'places' ? 'increment_review_count_place' : 'increment_review_count';
+        const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
+        const { error } = await supabase.rpc(rpcName, param);
         if (error) {
           console.error('Error incrementing review_count:', error);
           return;
@@ -245,63 +278,127 @@ export default function ShopDetails() {
     };
 
     incrementVisit();
-
-    return () => {
-      console.log('ShopDetails: Cleaning up for:', visitKey);
-    };
-  }, [shop?.id, effectiveType]);
-
-  useEffect(() => {
-    if (!shop?.id) return;
-
-    const loveKey = `love:${effectiveType}:${shop.id}`;
-    const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
-    setHasLoved(!!lovedShops[loveKey]);
   }, [shop?.id, effectiveType]);
 
   const handleLoveClick = async () => {
-    if (!shop?.id || loveAttemptedRef.current || hasLoved) {
-      console.log('ShopDetails: Skipping love increment:', {
-        shopId: shop?.id,
-        loveAttempted: loveAttemptedRef.current,
-        hasLoved,
-      });
+    if (!shop?.id) {
+      console.error('No id provided for love action');
+      alert('Cannot like item: Invalid ID');
       return;
     }
 
-    try {
-      loveAttemptedRef.current = true;
-      const loveKey = `love:${effectiveType}:${shop.id}`;
-      console.log('ShopDetails: Incrementing love_count for:', loveKey);
-      const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
-      const { error } = await supabase.rpc('increment_love_count', { shop_id: shop.id });
-      if (error) {
-        console.error('Error incrementing love_count:', error);
-        return;
+    const loveKey = `love:${effectiveType}:${shop.id}`;
+    const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+
+    if (hasLoved) {
+      try {
+        loveAttemptedRef.current = true;
+        console.log('ShopDetails: Decrementing love_count for:', loveKey);
+        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+        const rpcName = effectiveType === 'places' ? 'decrement_love_count_place' : 'decrement_love_count';
+        const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
+        const { error } = await supabase.rpc(rpcName, param);
+        if (error) {
+          console.error('Error decrementing love_count:', error);
+          alert(`Failed to unlike ${effectiveType}: ${error.message}`);
+          return;
+        }
+        console.log('ShopDetails: Successfully decremented love_count for:', loveKey);
+        const { data: updatedData, error: fetchError } = await supabase
+          .from(table)
+          .select('love_count')
+          .eq('id', shop.id)
+          .single();
+        if (fetchError) {
+          console.error('Error fetching updated love_count:', fetchError);
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, likes: Math.max(prevShop.likes - 1, 0) } : prevShop
+          );
+        } else {
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, likes: updatedData.love_count } : prevShop
+          );
+        }
+        delete lovedShops[loveKey];
+        localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
+        setHasLoved(false);
+        loveAttemptedRef.current = false;
+      } catch (err) {
+        console.error('Unexpected error in decrementLove:', err);
+        alert('Failed to unlike item: Unexpected error');
       }
-      console.log('ShopDetails: Successfully incremented love_count for:', loveKey);
-      const { data: updatedData, error: fetchError } = await supabase
-        .from(table)
-        .select('love_count')
-        .eq('id', shop.id)
-        .single();
-      if (fetchError) {
-        console.error('Error fetching updated love_count:', fetchError);
-        setShop((prevShop) =>
-          prevShop ? { ...prevShop, likes: prevShop.likes + 1 } : prevShop
-        );
-      } else {
-        setShop((prevShop) =>
-          prevShop ? { ...prevShop, likes: updatedData.love_count } : prevShop
-        );
+    } else {
+      try {
+        loveAttemptedRef.current = true;
+        console.log('ShopDetails: Incrementing love_count for:', loveKey);
+        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+        const rpcName = effectiveType === 'places' ? 'increment_love_count_place' : 'increment_love_count';
+        const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
+        const { error } = await supabase.rpc(rpcName, param);
+        if (error) {
+          console.error('Error incrementing love_count:', error);
+          alert(`Failed to like ${effectiveType}: ${error.message}`);
+          return;
+        }
+        console.log('ShopDetails: Successfully incremented love_count for:', loveKey);
+        const { data: updatedData, error: fetchError } = await supabase
+          .from(table)
+          .select('love_count')
+          .eq('id', shop.id)
+          .single();
+        if (fetchError) {
+          console.error('Error fetching updated love_count:', fetchError);
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, likes: prevShop.likes + 1 } : prevShop
+          );
+        } else {
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, likes: updatedData.love_count } : prevShop
+          );
+        }
+        lovedShops[loveKey] = true;
+        localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
+        setHasLoved(true);
+        loveAttemptedRef.current = false;
+      } catch (err) {
+        console.error('Unexpected error in incrementLove:', err);
+        alert('Failed to like item: Unexpected error');
       }
-      const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
-      lovedShops[loveKey] = true;
-      localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
-      setHasLoved(true);
-    } catch (err) {
-      console.error('Unexpected error in handleLoveClick:', err);
-      loveAttemptedRef.current = false; // Reset on error to allow retry
+    }
+  };
+
+  const handleBookmarkClick = () => {
+    if (!shop?.id) {
+      console.error('No id provided for bookmark');
+      return;
+    }
+
+    const bookmarkKey = `bookmarked_${effectiveType}`;
+    const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
+
+    if (isBookmarked) {
+      delete savedBookmarks[shop.id];
+      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
+      setIsBookmarked(false);
+    } else {
+      savedBookmarks[shop.id] = {
+        id: shop.id,
+        title: shop.title,
+        imageUrl: shop.imageUrl,
+        description: shop.description,
+        likes: shop.likes,
+        views: shop.views,
+        category_id: shop.category_id,
+        category: getCategoryName(shop.category_id),
+        near_station: shop.near_station,
+        address: shop.address,
+        map_embed: shop.map_embed,
+        other_images: shop.other_images,
+        opening_hours: shop.opening_hours,
+        type: effectiveType === 'places' ? 'place' : 'shop',
+      };
+      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
+      setIsBookmarked(true);
     }
   };
 
@@ -325,6 +422,22 @@ export default function ShopDetails() {
             throw new Error(shopError?.message || `${effectiveType} not found`);
           }
           console.log(`useEffect: Fetched ${table} data:`, shopData);
+
+          // Fetch category name
+          let categoryName = location.state.item.category || 'No Category';
+          if (shopData.category_id && !location.state.item.category) {
+            const { data: categoryData, error: categoryError } = await supabase
+              .from('categories')
+              .select('name')
+              .eq('id', shopData.category_id)
+              .single();
+            if (categoryError) {
+              console.error('Error fetching category:', categoryError);
+            } else {
+              categoryName = categoryData.name || 'No Category';
+            }
+          }
+
           setShop({
             id: shopData.id,
             title: shopData.name,
@@ -337,6 +450,7 @@ export default function ShopDetails() {
             map_embed: shopData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
             other_images: shopData.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
             category_id: shopData.category_id || 'Unknown',
+            category: categoryName,
             opening_hours: shopData.opening_hours || 'OPEN 10:00 ~ 22:00',
           });
         } catch (err) {
@@ -367,7 +481,7 @@ export default function ShopDetails() {
   console.log('ShopDetails: Rendering products:', products);
   const getCategoryName = (categoryId: string) => {
     const category = categoriesShop.find((cat) => cat.id === categoryId);
-    return category ? category.name : 'No Category';
+    return category ? category.name : shop.category || 'No Category';
   };
 
   return (
@@ -403,11 +517,11 @@ export default function ShopDetails() {
                     {getCategoryName(shop.category_id)}
                   </button>
                   <span className="flex items-center gap-1">
-                    <button onClick={handleLoveClick} disabled={hasLoved}>
+                    <button onClick={handleLoveClick}>
                       <img
-                        src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'} // Toggle icon if needed
+                        src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'}
                         alt="Love"
-                        style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
+                        style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20), cursor: 'pointer' }}
                       />
                     </button>
                     <p
@@ -432,11 +546,11 @@ export default function ShopDetails() {
                   </span>
                 </div>
               </div>
-              <button className="py-1 transition-transform duration-300 hover:scale-125">
+              <button className="py-1 transition-transform duration-300 hover:scale-125" onClick={handleBookmarkClick}>
                 <img
-                  src="/src/bookmark.svg"
+                  src={isBookmarked ? '/src/bookmark-filled.svg' : '/src/bookmark.svg'}
                   alt="Bookmark Icon"
-                  style={{ height: autoSize(20), width: autoSize(20) }}
+                  style={{ height: autoSize(20), width: autoSize(20), cursor: 'pointer' }}
                 />
               </button>
             </div>
@@ -494,11 +608,11 @@ export default function ShopDetails() {
                     {getCategoryName(shop.category_id)}
                   </button>
                   <span className="flex items-center gap-1">
-                    <button onClick={handleLoveClick} disabled={hasLoved}>
+                    <button onClick={handleLoveClick}>
                       <img
-                        src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'} // Toggle icon if needed
+                        src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'}
                         alt="Love"
-                        style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
+                        style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20), cursor: 'pointer' }}
                       />
                     </button>
                     <p
@@ -523,11 +637,11 @@ export default function ShopDetails() {
                   </span>
                 </div>
               </div>
-              <button className="py-1 transition-transform duration-300 hover:scale-125">
+              <button className="py-1 transition-transform duration-300 hover:scale-125" onClick={handleBookmarkClick}>
                 <img
-                  src="/src/bookmark.svg"
+                  src={isBookmarked ? '/src/bookmark-filled.svg' : '/src/bookmark.svg'}
                   alt="Bookmark Icon"
-                  style={{ height: autoSize(20), width: autoSize(20) }}
+                  style={{ height: autoSize(20), width: autoSize(20), cursor: 'pointer' }}
                 />
               </button>
             </div>
@@ -661,6 +775,7 @@ export default function ShopDetails() {
                       other_images={product.other_images}
                       opening_hours={product.opening_hours}
                       category_id={product.category_id}
+                      category={product.category} // Pass category if available
                     />
                   </div>
                 ))}
