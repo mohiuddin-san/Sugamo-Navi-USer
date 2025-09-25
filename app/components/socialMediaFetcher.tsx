@@ -45,33 +45,24 @@ interface Video {
 
 export async function getTikTokVideos(): Promise<Video[]> {
   try {
-    console.log('getTikTokVideos called in server context');
-    console.log('Environment variables:', {
-      VITE_APIFY_TOKEN: process.env.VITE_APIFY_TOKEN ? '[REDACTED]' : 'Missing',
-      VITE_TIKTOK_USERNAME: process.env.VITE_TIKTOK_USERNAME || 'Missing',
-    });
-
     if (!process.env.VITE_APIFY_TOKEN || !process.env.VITE_TIKTOK_USERNAME) {
       throw new Error('Missing API token or TikTok username in environment variables');
     }
 
     await fs.mkdir(CACHE_DIR, { recursive: true });
-    console.log('Cache directory ensured:', CACHE_DIR);
-
     let cachedData = null;
     try {
       const cacheContent = await fs.readFile(TIKTOK_CACHE_FILE, 'utf-8');
       cachedData = JSON.parse(cacheContent);
-      console.log('TikTok cache read successfully:', cachedData.lastUpdated);
     } catch (err) {
       console.log('No TikTok cache or invalid cache:', err);
     }
 
-    const currentDate = DateTime.now().setZone('Asia/Tokyo').toISODate();
-    console.log('Current date:', currentDate);
-    const shouldFetch = !cachedData || !cachedData.lastUpdated || cachedData.lastUpdated !== currentDate;
-    console.log('Should fetch new data:', shouldFetch);
-
+    const currentDate = DateTime.now().setZone('Asia/Tokyo');
+    const cacheExpiryDate = cachedData?.lastUpdated
+      ? DateTime.fromISO(cachedData.lastUpdated, { zone: 'Asia/Tokyo' }).plus({ days: 3 })
+      : null;
+    const shouldFetch = !cachedData || !cachedData.lastUpdated || currentDate > cacheExpiryDate;
     let videos: Video[] = [];
     if (shouldFetch) {
       console.log('Fetching new TikTok data via HTTP API...');
@@ -83,7 +74,7 @@ export async function getTikTokVideos(): Promise<Video[]> {
         },
         body: JSON.stringify({
           profiles: [process.env.VITE_TIKTOK_USERNAME],
-          resultsPerPage: 6, // Optimized for 6 videos
+          resultsPerPage: 6,
           shouldDownloadVideos: false,
         }),
       });
@@ -97,9 +88,8 @@ export async function getTikTokVideos(): Promise<Video[]> {
       const run = await response.json();
       console.log('Apify run started:', run.data.id);
 
-      // Optimized polling
-      const maxWaitTime = 30000; // 30 seconds
-      const pollInterval = 2000; // 2 seconds
+      const maxWaitTime = 30000;
+      const pollInterval = 2000;
       let elapsedTime = 0;
       let runStatus = run.data.status;
       while (runStatus === 'READY' || runStatus === 'RUNNING') {
@@ -112,7 +102,6 @@ export async function getTikTokVideos(): Promise<Video[]> {
         });
         if (!statusResponse.ok) {
           const errorText = await statusResponse.text();
-          console.error('Run status error:', errorText);
           throw new Error(`Run status check failed: ${errorText}`);
         }
         const statusData = await statusResponse.json();
@@ -120,23 +109,20 @@ export async function getTikTokVideos(): Promise<Video[]> {
         console.log('Run status:', runStatus);
         elapsedTime += pollInterval;
         if (runStatus === 'FAILED') {
-          console.error('Run failure details:', JSON.stringify(statusData, null, 2));
           throw new Error(`Run failed: ${JSON.stringify(statusData, null, 2)}`);
         }
       }
 
-      // Fetch dataset
       const datasetResponse = await fetch(`https://api.apify.com/v2/datasets/${run.data.defaultDatasetId}/items`);
       if (!datasetResponse.ok) {
         const errorText = await datasetResponse.text();
-        console.error('Dataset error:', errorText);
         throw new Error(`Apify dataset error: ${errorText}`);
       }
       const items = await datasetResponse.json();
       console.log('Raw TikTok items:', JSON.stringify(items, null, 2));
 
       videos = items
-        .slice(0, 6) // Ensure max 6 videos
+        .slice(0, 6)
         .map((item: any) => {
           const video = {
             id: item.id || '',
@@ -151,45 +137,33 @@ export async function getTikTokVideos(): Promise<Video[]> {
         })
         .filter((video: Video) => {
           const isValid = video.id && video.videoMeta.coverUrl;
-          console.log('Video valid check:', { id: video.id, coverUrl: video.videoMeta.coverUrl, isValid });
           return isValid;
         });
-
-      console.log('Filtered videos:', videos);
       if (videos.length === 0) {
         console.warn('No TikTok videos found for the specified profile');
       } else {
         await fs.writeFile(
           TIKTOK_CACHE_FILE,
-          JSON.stringify({ videos, lastUpdated: currentDate }, null, 2),
+          JSON.stringify({ videos, lastUpdated: currentDate.toISO() }, null, 2),
           'utf-8'
         );
-        console.log('TikTok cache updated with new videos');
       }
     } else {
       videos = Array.isArray(cachedData.videos) ? cachedData.videos : [];
-      console.log('Using cached TikTok data from:', cachedData.lastUpdated);
     }
-
-    console.log('Returning videos:', videos);
     return videos;
   } catch (error) {
-    console.error('Error fetching or caching TikTok videos:', error instanceof Error ? error.message : 'Unknown error');
     try {
       const cacheContent = await fs.readFile(TIKTOK_CACHE_FILE, 'utf-8');
-      console.log('Fallback cache content:', cacheContent);
       const cachedData = JSON.parse(cacheContent);
-      console.log('Using TikTok cache fallback:', cachedData.lastUpdated);
       return Array.isArray(cachedData.videos) ? cachedData.videos : [];
     } catch (cacheErr) {
-      console.error('TikTok cache fallback failed:', cacheErr instanceof Error ? cacheErr.message : 'Unknown error');
       return [];
     }
   }
 }
 export async function getInstagramVideos(): Promise<InstagramVideo[]> {
   try {
-    console.log('getInstagramVideos called in server context');
     const pageAccessToken = process.env.FB_PAGE_ACCESS_TOKEN;
     const pageId = process.env.FB_PAGE_ID;
     let igUserId = process.env.IG_USER_ID;
@@ -198,21 +172,13 @@ export async function getInstagramVideos(): Promise<InstagramVideo[]> {
       throw new Error('Missing environment variables for Instagram');
     }
 
-    console.log('Instagram environment variables:', {
-      FB_PAGE_ACCESS_TOKEN: pageAccessToken ? '[REDACTED]' : undefined,
-      FB_PAGE_ID: pageId,
-      IG_USER_ID: igUserId || 'Not set',
-    });
-
     await fs.mkdir(CACHE_DIR, { recursive: true });
 
     let cachedData = null;
     try {
       const cacheContent = await fs.readFile(INSTAGRAM_CACHE_FILE, 'utf-8');
       cachedData = JSON.parse(cacheContent);
-      console.log('Instagram cache read successfully:', cachedData.lastUpdated);
     } catch (err) {
-      console.log('No Instagram cache file or invalid cache, fetching new data:', err);
     }
 
     const currentDate = DateTime.now().setZone('Asia/Tokyo').toISODate();
@@ -225,7 +191,6 @@ export async function getInstagramVideos(): Promise<InstagramVideo[]> {
           `https://graph.facebook.com/v23.0/${pageId}?fields=instagram_business_account&access_token=${pageAccessToken}`
         );
         if (!igResponse.ok) {
-          console.error('IG ID Fetch Error:', await igResponse.text());
           throw new Error('Failed to fetch IG User ID');
         }
         const igData = await igResponse.json();
@@ -239,7 +204,6 @@ export async function getInstagramVideos(): Promise<InstagramVideo[]> {
         `https://graph.facebook.com/v23.0/${igUserId}/media?fields=media_type,media_url,thumbnail_url,caption,like_count,timestamp,permalink&access_token=${pageAccessToken}&limit=10`
       );
       if (!mediaResponse.ok) {
-        console.error('Media Fetch Error:', await mediaResponse.text());
         throw new Error('Failed to fetch Instagram media');
       }
       const mediaData = await mediaResponse.json();
@@ -258,42 +222,28 @@ export async function getInstagramVideos(): Promise<InstagramVideo[]> {
           source: 'instagram' as const,
         }))
         .filter((post: InstagramVideo) => post.id && post.thumbnail_url);
-
-      if (posts.length === 0) {
-        console.warn('No Instagram videos found');
-      }
-
       await fs.writeFile(
         INSTAGRAM_CACHE_FILE,
         JSON.stringify({ posts, lastUpdated: currentDate }, null, 2),
         'utf-8'
       );
-      console.log('Instagram cache updated with new posts');
     } else {
       posts = Array.isArray(cachedData.posts) ? cachedData.posts : [];
-      console.log('Using cached Instagram data from:', cachedData.lastUpdated);
     }
 
     return posts;
   } catch (error) {
-    console.error('Error fetching or caching Instagram videos:', error instanceof Error ? error.message : 'Unknown error');
     try {
       const cacheContent = await fs.readFile(INSTAGRAM_CACHE_FILE, 'utf-8');
       const cachedData = JSON.parse(cacheContent);
-      console.log('Using Instagram cache fallback:', cachedData.lastUpdated);
       return Array.isArray(cachedData.posts) ? cachedData.posts : [];
     } catch (cacheErr) {
-      console.error('Instagram cache fallback failed:', cacheErr instanceof Error ? cacheErr.message : 'Unknown error');
       return [];
     }
   }
 }
 
 export function mixVideos(tiktokVideos: Video[] | undefined, instagramVideos: InstagramVideo[] | undefined): Array<Video | InstagramVideo> {
-  console.log('mixVideos called with:', {
-    tiktokVideosLength: tiktokVideos?.length,
-    instagramVideosLength: instagramVideos?.length,
-  });
   const tiktok = Array.isArray(tiktokVideos) ? tiktokVideos : [];
   const instagram = Array.isArray(instagramVideos) ? instagramVideos : [];
   const mixed: Array<Video | InstagramVideo> = [];
@@ -307,7 +257,5 @@ export function mixVideos(tiktokVideos: Video[] | undefined, instagramVideos: In
       mixed.push(instagram[i]);
     }
   }
-
-  console.log('Mixed videos result:', mixed.length);
   return mixed;
 }

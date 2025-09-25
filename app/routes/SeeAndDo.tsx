@@ -1,10 +1,11 @@
 import { useLocation } from '@remix-run/react';
 import Header from '~/components/Header';
+import Footer from '../components/Footer';
 import React, { useEffect, useState } from 'react';
 import ProductCard from '~/components/ShopItem';
 import MarqueeHeader from '~/components/MarqueeHeader';
 import CommonCategoryTop from '~/components/CommonCategoryTop';
-import Footer from '../components/Footer';
+
 import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
 import { useDevice } from "~/routes/contexts/DeviceContext";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
