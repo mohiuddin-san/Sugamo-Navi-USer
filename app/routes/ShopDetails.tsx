@@ -1,6 +1,6 @@
 import { useLoaderData, useLocation } from '@remix-run/react';
 import Header from '~/components/Header';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ShopItem from '~/components/ShopItem';
 import MarqueeHeader from '~/components/MarqueeHeader';
 import Footer from '~/components/Footer';
@@ -141,21 +141,21 @@ export default function ShopDetails() {
   const [shop, setShop] = useState<Shop | null>(
     shopFromState
       ? {
-        id: shopFromState.id,
-        title: shopFromState.title,
-        imageUrl: shopFromState.imageUrl || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
-        description: shopFromState.description || 'No description available',
-        likes: shopFromState.likes || 0,
-        views: shopFromState.views || 0,
-        near_station: shopFromState.near_station || 'Unknown station',
-        address: shopFromState.address || 'Unknown address',
-        map_embed: shopFromState.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
-        other_images: shopFromState.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
-        category_id: shopFromState.category_id || 'Unknown',
-        opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
-      }
+          id: shopFromState.id,
+          title: shopFromState.title,
+          imageUrl: shopFromState.imageUrl || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
+          description: shopFromState.description || 'No description available',
+          likes: shopFromState.likes || 0,
+          views: shopFromState.views || 0,
+          near_station: shopFromState.near_station || 'Unknown station',
+          address: shopFromState.address || 'Unknown address',
+          map_embed: shopFromState.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
+          other_images: shopFromState.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
+          category_id: shopFromState.category_id || 'Unknown',
+          opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
+        }
       : menu
-        ? {
+      ? {
           id: menu.id,
           title: menu.name,
           imageUrl: menu.image,
@@ -169,16 +169,141 @@ export default function ShopDetails() {
           other_images: menu.other_images,
           opening_hours: menu.hours,
         }
-        : null
+      : null
   );
   const [loading, setLoading] = useState(!shopFromState && !menu);
   const [error, setError] = useState<string | null>(loaderError);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
+  const visitAttemptedRef = useRef<boolean>(false);
+  const loveAttemptedRef = useRef<boolean>(false); 
+  const [hasLoved, setHasLoved] = useState<boolean>(false); 
   const { fs, fsm } = useUniversalFluid();
   const isMobile = useDevice();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   const visibleCards = 4;
+
+  useEffect(() => {
+    // Fetch categories
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase.from('categories').select('id, name').order('name');
+        if (error) throw error;
+        setCategoriesShop(data || []);
+      } catch (error) {
+        console.error('Error fetching categories:', error instanceof Error ? error.message : 'Unknown error');
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    if (!shop?.id || visitAttemptedRef.current) {
+      console.log('ShopDetails: Skipping visit increment:', { shopId: shop?.id, visitAttempted: visitAttemptedRef.current });
+      return;
+    }
+
+    const visitKey = `${effectiveType}:${shop.id}`;
+    const visitedShops = JSON.parse(localStorage.getItem('visitedShops') || '{}');
+    if (visitedShops[visitKey]) {
+      console.log('ShopDetails: Already visited:', visitKey);
+      visitAttemptedRef.current = true;
+      return;
+    }
+
+    const incrementVisit = async () => {
+      try {
+        visitAttemptedRef.current = true;
+        console.log('ShopDetails: Incrementing review_count for:', visitKey);
+        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+        const { error } = await supabase.rpc('increment_review_count', { shop_id: shop.id });
+        if (error) {
+          console.error('Error incrementing review_count:', error);
+          return;
+        }
+        console.log('ShopDetails: Successfully incremented review_count for:', visitKey);
+        const { data: updatedData, error: fetchError } = await supabase
+          .from(table)
+          .select('review_count')
+          .eq('id', shop.id)
+          .single();
+        if (fetchError) {
+          console.error('Error fetching updated review_count:', fetchError);
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, views: prevShop.views + 1 } : prevShop
+          );
+        } else {
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, views: updatedData.review_count } : prevShop
+          );
+        }
+        visitedShops[visitKey] = true;
+        localStorage.setItem('visitedShops', JSON.stringify(visitedShops));
+      } catch (err) {
+        console.error('Unexpected error in incrementVisit:', err);
+      }
+    };
+
+    incrementVisit();
+
+    return () => {
+      console.log('ShopDetails: Cleaning up for:', visitKey);
+    };
+  }, [shop?.id, effectiveType]);
+
+  useEffect(() => {
+    if (!shop?.id) return;
+
+    const loveKey = `love:${effectiveType}:${shop.id}`;
+    const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+    setHasLoved(!!lovedShops[loveKey]);
+  }, [shop?.id, effectiveType]);
+
+  const handleLoveClick = async () => {
+    if (!shop?.id || loveAttemptedRef.current || hasLoved) {
+      console.log('ShopDetails: Skipping love increment:', {
+        shopId: shop?.id,
+        loveAttempted: loveAttemptedRef.current,
+        hasLoved,
+      });
+      return;
+    }
+
+    try {
+      loveAttemptedRef.current = true;
+      const loveKey = `love:${effectiveType}:${shop.id}`;
+      console.log('ShopDetails: Incrementing love_count for:', loveKey);
+      const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+      const { error } = await supabase.rpc('increment_love_count', { shop_id: shop.id });
+      if (error) {
+        console.error('Error incrementing love_count:', error);
+        return;
+      }
+      console.log('ShopDetails: Successfully incremented love_count for:', loveKey);
+      const { data: updatedData, error: fetchError } = await supabase
+        .from(table)
+        .select('love_count')
+        .eq('id', shop.id)
+        .single();
+      if (fetchError) {
+        console.error('Error fetching updated love_count:', fetchError);
+        setShop((prevShop) =>
+          prevShop ? { ...prevShop, likes: prevShop.likes + 1 } : prevShop
+        );
+      } else {
+        setShop((prevShop) =>
+          prevShop ? { ...prevShop, likes: updatedData.love_count } : prevShop
+        );
+      }
+      const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+      lovedShops[loveKey] = true;
+      localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
+      setHasLoved(true);
+    } catch (err) {
+      console.error('Unexpected error in handleLoveClick:', err);
+      loveAttemptedRef.current = false; // Reset on error to allow retry
+    }
+  };
 
   useEffect(() => {
     if (!shop && location.state?.item?.id && location.state?.type) {
@@ -223,30 +348,12 @@ export default function ShopDetails() {
         }
       };
 
-     
-
       fetchShop();
     } else {
       console.log('ShopDetails: No fetch needed, shop state:', shop);
     }
-  }, [shop, location.state, effectiveType]);
-  
-  useEffect (() =>{
-    const fetchShop = async () => {
-       try {
-            const { data, error } = await supabase
-              .from('categories')
-              .select('id, name')
-              .order('name');
+  }, [location.state, effectiveType]);
 
-            if (error) throw error;
-            setCategoriesShop(data);
-          } catch (error) {
-            console.error('Error fetching categories:', error.message);
-          }
-    }
-    fetchShop()
-  })
   if (loading) {
     return <div className="container mx-auto p-4">Loading...</div>;
   }
@@ -258,10 +365,11 @@ export default function ShopDetails() {
 
   console.log('ShopDetails: Rendering shop:', shop);
   console.log('ShopDetails: Rendering products:', products);
-  const getCategoryName = (categoryId) => {
-    const category = categoriesShop.find(cat => cat.id === categoryId);
+  const getCategoryName = (categoryId: string) => {
+    const category = categoriesShop.find((cat) => cat.id === categoryId);
     return category ? category.name : 'No Category';
   };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -295,11 +403,13 @@ export default function ShopDetails() {
                     {getCategoryName(shop.category_id)}
                   </button>
                   <span className="flex items-center gap-1">
-                    <img
-                      src="/src/red-love.svg"
-                      alt="Love"
-                      style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
-                    />
+                    <button onClick={handleLoveClick} disabled={hasLoved} className={hasLoved ? 'opacity-50' : ''}>
+                      <img
+                        src={hasLoved ? '/src/red-love-filled.svg' : '/src/red-love.svg'} // Toggle icon if needed
+                        alt="Love"
+                        style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
+                      />
+                    </button>
                     <p
                       className="font-bold font-cairo"
                       style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
@@ -384,11 +494,13 @@ export default function ShopDetails() {
                     {getCategoryName(shop.category_id)}
                   </button>
                   <span className="flex items-center gap-1">
-                    <img
-                      src="/src/red-love.svg"
-                      alt="Love"
-                      style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
-                    />
+                    <button onClick={handleLoveClick} disabled={hasLoved} className={hasLoved ? 'opacity-50' : ''}>
+                      <img
+                        src={hasLoved ? '/src/red-love-filled.svg' : '/src/red-love.svg'} // Toggle icon if needed
+                        alt="Love"
+                        style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
+                      />
+                    </button>
                     <p
                       className="font-bold font-cairo"
                       style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}

@@ -48,29 +48,41 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const isMobile = useDevice();
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
   const [likes, setLikes] = useState<number>(initialLikes);
+  const [hasLoved, setHasLoved] = useState<boolean>(false);
   const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
 
   useEffect(() => {
-    const savedBookmarks = JSON.parse(localStorage.getItem(category) || '{}');
-    if (savedBookmarks[shopId || '']) {
+    console.log('ProductCard: Initializing for shopId:', shopId, 'initialLikes:', initialLikes);
+    
+    // Check bookmark status
+    const bookmarkKey = getCategoryName(category_id) || 'Uncategorized';
+    const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
+    if (shopId && savedBookmarks[shopId]) {
       setIsBookmarked(true);
     }
 
+    // Check if user has already loved this shop
+    const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+    if (shopId && lovedShops[shopId]) {
+      setHasLoved(true);
+      console.log('ProductCard: Shop already loved for shopId:', shopId);
+    }
+
+    // Fetch categories
     const fetchData = async () => {
       try {
         const { data, error } = await supabase
           .from('categories')
           .select('id, name')
           .order('name');
-        console.log('Fetched Categories:', data);
         if (error) throw error;
         setCategoriesShop(data || []);
       } catch (error) {
-        console.error('Error fetching categories:', error.message);
+        console.error('ProductCard: Error fetching categories:', error);
       }
     };
     fetchData();
-  }, [category, shopId]);
+  }, [category, shopId, category_id]);
 
   const getCategoryName = (categoryId: string) => {
     if (!categoriesShop.length) return 'Loading...';
@@ -78,31 +90,93 @@ const ProductCard: React.FC<ProductCardProps> = ({
     return category ? category.name : 'No Category';
   };
 
-  const handleLoveClick = async (e: React.MouseEvent) => {
+  const handleLoveIncrement = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!shopId) {
-      console.error('No shopId provided for love click');
+      console.error('ProductCard: No shopId provided for love increment');
+      alert('Cannot like shop: Invalid shop ID');
       return;
     }
+    
+    console.log('ProductCard: shopId for increment:', shopId, 'type:', typeof shopId, 'hasLoved:', hasLoved);
+    
+    if (hasLoved) {
+      console.log('ProductCard: Already loved, ignoring increment');
+      return;
+    }
+
     try {
-      const { error } = await supabase.rpc('increment_love_count', { shop_id: shopId });
+      console.log('ProductCard: Calling increment_love_count RPC for shopId:', shopId);
+      const { error, data } = await supabase.rpc('increment_love_count', { shop_id: shopId });
+      
       if (error) {
-        console.error('Error incrementing love count:', error);
-      } else {
-        setLikes(likes + 1);
-        console.log('Love count incremented for shopId:', shopId);
+        console.error('ProductCard: RPC error:', error);
+        alert(`Failed to like shop: ${error.message}`);
+        return;
       }
+      
+      console.log('ProductCard: RPC success:', data);
+      setLikes(prev => prev + 1);
+      setHasLoved(true);
+      
+      // Save to localStorage
+      const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+      lovedShops[shopId] = true;
+      localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
+      
+      console.log('ProductCard: Successfully liked shopId:', shopId, 'new likes:', likes + 1);
     } catch (err) {
-      console.error('Unexpected error:', err);
+      console.error('ProductCard: Unexpected error in increment:', err);
+      alert('Failed to like shop: Unexpected error');
+    }
+  };
+
+  const handleLoveDecrement = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!shopId) {
+      console.error('ProductCard: No shopId provided for love decrement');
+      alert('Cannot unlike shop: Invalid shop ID');
+      return;
+    }
+    
+    if (!hasLoved) {
+      console.log('ProductCard: Not loved yet, ignoring decrement');
+      return;
+    }
+
+    try {
+      console.log('ProductCard: Calling decrement_love_count RPC for shopId:', shopId);
+      const { error, data } = await supabase.rpc('decrement_love_count', { shop_id: shopId });
+      
+      if (error) {
+        console.error('ProductCard: RPC error:', error);
+        alert(`Failed to unlike shop: ${error.message}`);
+        return;
+      }
+      
+      console.log('ProductCard: RPC success:', data);
+      setLikes(prev => Math.max(prev - 1, 0));
+      setHasLoved(false);
+      
+      // Remove from localStorage
+      const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+      delete lovedShops[shopId];
+      localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
+      
+      console.log('ProductCard: Successfully unliked shopId:', shopId, 'new likes:', Math.max(likes - 1, 0));
+    } catch (err) {
+      console.error('ProductCard: Unexpected error in decrement:', err);
+      alert('Failed to unlike shop: Unexpected error');
     }
   };
 
   const handleBookmarkClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!shopId) {
-      console.error('No shopId provided for bookmark');
+      console.error('ProductCard: No shopId provided for bookmark');
       return;
     }
+    
     const productData = {
       id: shopId,
       title,
@@ -118,21 +192,24 @@ const ProductCard: React.FC<ProductCardProps> = ({
       opening_hours,
       category: getCategoryName(category_id),
     };
-    const savedBookmarks = JSON.parse(localStorage.getItem(getCategoryName(category_id)) || '{}');
+    
+    const bookmarkKey = getCategoryName(category_id) || 'Uncategorized';
+    const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
+    
     if (isBookmarked) {
       delete savedBookmarks[shopId];
-      localStorage.setItem(getCategoryName(category_id), JSON.stringify(savedBookmarks));
+      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
       setIsBookmarked(false);
     } else {
       savedBookmarks[shopId] = productData;
-      localStorage.setItem(getCategoryName(category_id), JSON.stringify(savedBookmarks));
+      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
       setIsBookmarked(true);
     }
   };
 
   const handleBlogListClick = () => {
     if (!shopId) {
-      console.error('No shopId provided for navigation');
+      console.error('ProductCard: No shopId provided for navigation');
       return;
     }
     navigate(`${linkTo}?id=${shopId}&type=shops`, {
@@ -205,13 +282,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <div className="flex space-x-3">
           <span className="flex items-center gap-1">
             <img
-              src="/src/love.svg"
+              src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'}
               alt="Love"
-              onClick={handleLoveClick}
+              onClick={handleLoveIncrement}
+              onDoubleClick={handleLoveDecrement}
               style={{
                 width: isMobile ? fsm(20) : fs(20),
                 height: isMobile ? fsm(20) : fs(20),
                 cursor: 'pointer',
+              }}
+              onError={(e) => {
+                console.error('ProductCard: Love icon failed to load');
+                e.currentTarget.src = '/src/shop.png'; // Fallback
               }}
             />
             <p

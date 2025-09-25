@@ -37,7 +37,6 @@ export default function TikTokVideos({ videos }: TikTokVideosProps) {
                 <img
                  onClick={() => window.open(video.webVideoUrl, "_blank", "noopener,noreferrer")}
                   src={video.videoMeta.coverUrl}
-                  alt={video.text || "TikTok thumbnail"}
                   className="w-full h-auto object-cover"
                 />
                 {/* Overlay Play Button */}
