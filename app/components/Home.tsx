@@ -555,7 +555,7 @@ export default function HomePage() {
           </span>
           <div className="grid grid-cols-1 md:grid-cols-2" style={{ paddingTop: isMobile ? fsm(50) : fs(71) }}>
             <ModelCourseItem
-              imageUrl="./src/model-course-1.png"
+              imageUrl="./src/model-course-1.jpg"
               title="食べ歩きとお守り巡り"
               details="巣鴨地蔵通り商店街をスタート。昔ながらの和菓子や塩せんべいを片手に、ぶらり食べ歩きはいかがですか？"
               categories={["Temple", "Tea", "History", "???????"]}
@@ -569,7 +569,7 @@ export default function HomePage() {
                 <div className="h-full w-px bg-black pt-8 pb-7"></div>
               </div>
               <ModelCourseItem
-                imageUrl="./src/model-course-2.png"
+                imageUrl="./src/model-course-2.jpg"
                 title="寺社巡り〜歴史と癒しの旅〜"
                 details="巣鴨地蔵通り商店街をスタート。昔ながらの和菓子や塩せんべいを片手に、ぶらり食べ歩きはいかがですか？"
                 categories={["Temple", "Tea", "History"]}

@@ -3,7 +3,6 @@ import BookMark from "./BookMark";
 import Home from "~/components/Home";
 import { json } from '@remix-run/node';
 import { getInstagramVideos, getTikTokVideos } from '~/components/socialMediaFetcher';
-import Header from "~/components/Header";
 
 export const loader = async () => {
   try {
@@ -32,7 +31,7 @@ export const loader = async () => {
 export default function HomePage() {
   return (
     <div className="bg-white">
-      <Header />
+      <Home />
     </div>
   );
 }

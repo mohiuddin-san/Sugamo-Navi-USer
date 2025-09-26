@@ -67,7 +67,7 @@ export default function Shoppage() {
       <CommonCategoryTop
         title="FOOD&DRINK"
         subtitle="食べる"
-        imageSrc=""
+        imageSrc="/src/food.png"
         imageAlt="Food and Drink Image"
       />
       <MarqueeHeader

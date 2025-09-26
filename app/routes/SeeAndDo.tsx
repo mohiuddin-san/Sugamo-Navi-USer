@@ -69,7 +69,7 @@ export default function Shoppage() {
       <CommonCategoryTop
         title="SEE&DO"
         subtitle="観る・遊ぶ"
-        imageSrc=""
+        imageSrc="/src/see-do.jpg"
         imageAlt="See and Do Image"
       />
       <MarqueeHeader
