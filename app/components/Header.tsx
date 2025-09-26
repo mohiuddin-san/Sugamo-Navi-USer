@@ -135,9 +135,7 @@ const Header: React.FC = () => {
 
   return (
     <div
-      className={` w-full transition-opacity duration-500 ${
-        pageTransition ? "opacity-0" : "opacity-100 sm:z-10"
-      }`}
+      className={` w-full transition-opacity duration-500`}
       style={{ paddingTop: fs(33),
            height: fs(90)}}
     >
@@ -148,7 +146,7 @@ const Header: React.FC = () => {
       >
         <div
           className="font-bold font-cousine cursor-pointer"
-          style={{ fontSize: fs(25) }}
+          style={{ fontSize: fs(28) }}
           onClick={handleHomeClick}
         >
           SUGAMO NAVI

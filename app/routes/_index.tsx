@@ -1,8 +1,9 @@
-import { json, useLoaderData } from "@remix-run/react";
+import { json, useLoaderData, useNavigation } from "@remix-run/react";
 import { getInstagramVideos, getTikTokVideos } from "~/components/socialMediaFetcher";
 import Home from "~/components/Home";
 import supabaseShops from "~/supabase";
 import supabaseBlogs from "~/supabase_blog";
+import { useState, useEffect } from "react";
 
 // Define types (same as before)
 type Shop = {
@@ -51,7 +52,7 @@ export const loader = async () => {
 
     // Static data (always succeeds)
     const staticData = {
-      topImg: "/src/sugamo-navi.webp", 
+      topImg: "/src/sugamo-navi.webp",
       imageUrl: "./src/sugamo-gate.png",
       title: "ABOUT SUGAMO",
       details: [
@@ -64,14 +65,12 @@ export const loader = async () => {
       letsGOimg: "/src/lets-g.svg",
     };
 
-    // Fetch social media data
-    console.log("🔄 Fetching social media..."); // Debug
     const [instagramPosts, tiktokVideos] = await Promise.all([
-      getInstagramVideos().catch(err => {
+      getInstagramVideos().catch((err) => {
         console.error("❌ Instagram fetch failed:", err);
         return [];
       }),
-      getTikTokVideos().catch(err => {
+      getTikTokVideos().catch((err) => {
         console.error("❌ TikTok fetch failed:", err);
         return [];
       }),
@@ -165,7 +164,7 @@ export const loader = async () => {
         topImg: "/src/sugamo-navi.webp",
         imageUrl: "/src/sugamo-gate.webp",
         title: "ABOUT SUGAMO",
-        details: [], // Always array
+        details: [],
         letsGOimg: "/src/lets-g.svg",
         blogs: [],
         categories: {},
@@ -182,7 +181,49 @@ export const loader = async () => {
 
 export default function HomePage() {
   const data = useLoaderData<LoaderData>();
-  console.log("📊 HomePage rendering with data:", { error: data.error, blogs: data.blogs?.length, shops: data.topShops?.length, posts: data.posts?.length }); // Debug
+  const navigation = useNavigation();
+  const [showLoader, setShowLoader] = useState(false);
+
+  // Ensure loader shows for at least 500ms during loading state
+  useEffect(() => {
+    if (navigation.state === "loading") {
+      setShowLoader(true);
+      const timer = setTimeout(() => setShowLoader(false), 500); // Minimum 500ms
+      return () => clearTimeout(timer);
+    } else {
+      setShowLoader(false);
+    }
+  }, [navigation.state]);
+
+  // Debug log to track states
+  console.log("📊 HomePage rendering with data:", {
+    error: data.error,
+    blogs: data.blogs?.length,
+    shops: data.topShops?.length,
+    posts: data.posts?.length,
+    navigationState: navigation.state,
+    showLoader,
+  });
+
+  if (showLoader || navigation.state === "loading") {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen bg-white px-4">
+        <div className="flex space-x-3 mb-6">
+          <div className="w-4 h-4 bg-[#ED4548] rounded-full animate-bounce [animation-delay:0ms]"></div>
+          <div className="w-4 h-4 bg-[#ED4548] rounded-full animate-bounce [animation-delay:200ms]"></div>
+          <div className="w-4 h-4 bg-[#ED4548] rounded-full animate-bounce [animation-delay:400ms]"></div>
+        </div>
+        <div className="text-center">
+          <h2 className="text-2xl md:text-3xl font-cousine font-bold text-[#313131] animate-pulse">
+            Sugamo Navi
+          </h2>
+          <p className="mt-2 text-lg font-cairo text-[#ED4548] animate-pulse">
+            巣鴨の魅力を発見中...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white">

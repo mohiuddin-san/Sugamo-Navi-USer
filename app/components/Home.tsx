@@ -575,7 +575,7 @@ export default function Home({
             style={{ paddingTop: isMobile ? fsm(50) : fs(71) }}
           >
             <ModelCourseItemMemo
-              imageUrl="./src/model-course-1.webp"
+              imageUrl="./src/model-course-1.png"
               title="食べ歩きとお守り巡り"
               details="巣鴨地蔵通り商店街をスタート。昔ながらの和菓子や塩せんべいを片手に、ぶらり食べ歩きはいかがですか？"
               categories={["Temple", "Tea", "History", "???????"]}
@@ -589,7 +589,7 @@ export default function Home({
                 <div className="h-full w-px bg-black pt-8 pb-7"></div>
               </div>
               <ModelCourseItemMemo
-                imageUrl="./src/model-course-2.webp"
+                imageUrl="./src/model-course-2.png"
                 title="寺社巡り〜歴史と癒しの旅〜"
                 details="巣鴨地蔵通り商店街をスタート。昔ながらの和菓子や塩せんべいを片手に、ぶらり食べ歩きはいかがですか？"
                 categories={["Temple", "Tea", "History"]}
@@ -687,7 +687,16 @@ export default function Home({
         marginTop={131}
         marginBottom={50}
       />
-      <div className="grid grid-cols-1 md:grid-cols-2" style={{ marginTop: isMobile ? fsm(64) : fs(90), marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(72), marginBottom: isMobile ? fsm(56) : fs(170), gap: isMobile ? fsm(56) : fs(72) }}>
+      <div
+        className="grid grid-cols-2 md:grid-cols-2"
+        style={{
+          marginTop: isMobile ? fsm(64) : fs(90),
+          marginLeft: isMobile ? fsm(20) : fs(90),
+          marginRight: isMobile ? fsm(20) : fs(72),
+          marginBottom: isMobile ? fsm(56) : fs(170),
+          gap: isMobile ? fsm(56) : fs(72),
+        }}
+      >
         <div>
           <InstagramVideosAll />
         </div>
@@ -695,7 +704,6 @@ export default function Home({
           <TikTokVideos videos={tiktokVideos} />
         </div>
       </div>
-      <Footer />
       <Footer />
     </div>
   );
