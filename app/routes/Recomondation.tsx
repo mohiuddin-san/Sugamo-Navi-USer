@@ -110,7 +110,7 @@ export default function Recommendation() {
       <CommonCategoryTop
         title="Recommend"
         subtitle="推奨"
-        imageSrc="/src/food.png"
+        imageSrc=""
         imageAlt="Food and Drink Image"
       />
       <MarqueeHeader

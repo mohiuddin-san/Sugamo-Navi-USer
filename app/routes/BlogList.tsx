@@ -113,7 +113,7 @@ export default function BlogList() {
       <CommonCategoryTop
         title="TRAVEL TIPS"
         subtitle="旅の情報"
-        imageSrc="/src/bookmark.png"
+        imageSrc=""
         imageAlt="Travel tips Image"
       />
       <MarqueeHeader
