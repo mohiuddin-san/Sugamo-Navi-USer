@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "@remix-run/react";
+import { Link, useNavigate, useLocation,useRevalidator} from "@remix-run/react";
 import { useUniversalFluid } from "../hooks/useUniversalFluid";
 import { useMediaQuery } from "react-responsive";
 import supabaseShops from "~/supabase";  
@@ -15,6 +15,7 @@ const Header: React.FC = () => {
   const [loadingShops, setLoadingShops] = useState(true);
   const [shopsError, setShopsError] = useState<string | null>(null);
   const { fs, fsm } = useUniversalFluid();
+  const revalidator = useRevalidator();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery({ maxWidth: 767 });
@@ -38,7 +39,13 @@ const Header: React.FC = () => {
 
   const handleSearchClick = () => setIsSearchOpen(true);
   const handleBookmarkClick = () => navigate("/BookMark");
-  const handleHomeClick = () => navigate("/");
+    const handleHomeClick = () => {
+    console.log("🏠 Header: Navigating to home"); // Debug
+    navigate("/", { replace: true }); 
+    if (revalidator.state === "idle") {
+      revalidator.revalidate();
+    }
+  };
 
   const handleLanguageSelect = (language: string) => {
     setSelectedLanguage(language);
@@ -256,12 +263,12 @@ const Header: React.FC = () => {
             style={{ width: fsm(27), height: fsm(27) }}
             onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
           >
-            <img
+            {/* <img
               src="/src/world.svg"
               alt="World Icon"
               className="w-full h-full object-cover"
               style={{ marginLeft: fsm(6) }}
-            />
+            /> */}
           </div>
           {isLanguageDropdownOpen && (
             <div
