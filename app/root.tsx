@@ -12,7 +12,7 @@ export const links = () => [
   { rel: "preload", href: "~/styles/app.css", as: "style" },
   { rel: "preload", href: "https://cdn.example.com/sugamo-navi.webp", as: "image" },
 ];
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
 export const meta = () => [
   { charset: "utf-8" },
   { title: "Sugamo Navi" },
