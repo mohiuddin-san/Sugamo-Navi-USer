@@ -1,9 +1,9 @@
-import { json, useLoaderData, useNavigation } from "@remix-run/react";
+import { json, useLoaderData } from "@remix-run/react";
 import { getInstagramVideos, getTikTokVideos } from "~/components/socialMediaFetcher";
 import Home from "~/components/Home";
 import supabaseShops from "~/supabase";
 import supabaseBlogs from "~/supabase_blog";
-import { useState, useEffect } from "react";
+import { useNavigation } from "@remix-run/react";
 
 // Define types (same as before)
 type Shop = {
@@ -52,7 +52,7 @@ export const loader = async () => {
 
     // Static data (always succeeds)
     const staticData = {
-      topImg: "/src/sugamo-navi.webp",
+      topImg: "/src/sugamo-navi.webp", 
       imageUrl: "./src/sugamo-gate.png",
       title: "ABOUT SUGAMO",
       details: [
@@ -66,11 +66,11 @@ export const loader = async () => {
     };
 
     const [instagramPosts, tiktokVideos] = await Promise.all([
-      getInstagramVideos().catch((err) => {
+      getInstagramVideos().catch(err => {
         console.error("❌ Instagram fetch failed:", err);
         return [];
       }),
-      getTikTokVideos().catch((err) => {
+      getTikTokVideos().catch(err => {
         console.error("❌ TikTok fetch failed:", err);
         return [];
       }),
@@ -153,8 +153,8 @@ export const loader = async () => {
       categories: categoriesMap,
       categoriesShop: categoriesShop || [],
       topShops: sortedShops,
-      posts: Array.isArray(instagramPosts) ? instagramPosts.slice(0, 3) : [],
-      tiktokVideos: Array.isArray(tiktokVideos) ? tiktokVideos.slice(0, 3) : [],
+      posts: Array.isArray(instagramPosts) ? instagramPosts.slice(0, 6) : [],
+      tiktokVideos: Array.isArray(tiktokVideos) ? tiktokVideos.slice(0, 6) : [],
       error: null,
     });
   } catch (error) {
@@ -164,7 +164,7 @@ export const loader = async () => {
         topImg: "/src/sugamo-navi.webp",
         imageUrl: "/src/sugamo-gate.webp",
         title: "ABOUT SUGAMO",
-        details: [],
+        details: [], // Always array
         letsGOimg: "/src/lets-g.svg",
         blogs: [],
         categories: {},
@@ -182,42 +182,28 @@ export const loader = async () => {
 export default function HomePage() {
   const data = useLoaderData<LoaderData>();
   const navigation = useNavigation();
-  const [showLoader, setShowLoader] = useState(false);
 
-  // Ensure loader shows for at least 500ms during loading state
-  useEffect(() => {
-    if (navigation.state === "loading") {
-      setShowLoader(true);
-      const timer = setTimeout(() => setShowLoader(false), 500); // Minimum 500ms
-      return () => clearTimeout(timer);
-    } else {
-      setShowLoader(false);
-    }
-  }, [navigation.state]);
-
-  // Debug log to track states
-  console.log("📊 HomePage rendering with data:", {
-    error: data.error,
-    blogs: data.blogs?.length,
-    shops: data.topShops?.length,
+  console.log("📊 HomePage rendering with data:", { 
+    error: data.error, 
+    blogs: data.blogs?.length, 
+    shops: data.topShops?.length, 
     posts: data.posts?.length,
-    navigationState: navigation.state,
-    showLoader,
-  });
+    loading: navigation.state 
+  }); // Debug
 
-  if (showLoader || navigation.state === "loading") {
+  if (navigation.state === 'loading') {
     return (
       <div className="flex flex-col justify-center items-center h-screen bg-white px-4">
-        <div className="flex space-x-3 mb-6">
-          <div className="w-4 h-4 bg-[#ED4548] rounded-full animate-bounce [animation-delay:0ms]"></div>
-          <div className="w-4 h-4 bg-[#ED4548] rounded-full animate-bounce [animation-delay:200ms]"></div>
-          <div className="w-4 h-4 bg-[#ED4548] rounded-full animate-bounce [animation-delay:400ms]"></div>
+        <div className="flex space-x-2 mb-6">
+          <div className="w-3 h-3 bg-[#ED4548] rounded-full animate-bounce-slow [animation-delay:0ms]"></div>
+          <div className="w-3 h-3 bg-[#ED4548] rounded-full animate-bounce-slow [animation-delay:150ms]"></div>
+          <div className="w-3 h-3 bg-[#ED4548] rounded-full animate-bounce-slow [animation-delay:300ms]"></div>
         </div>
         <div className="text-center">
-          <h2 className="text-2xl md:text-3xl font-cousine font-bold text-[#313131] animate-pulse">
+          <h2 className="text-2xl md:text-3xl font-cousine font-bold text-[#313131] mb-2 animate-pulse">
             Sugamo Navi
           </h2>
-          <p className="mt-2 text-lg font-cairo text-[#ED4548] animate-pulse">
+          <p className="text-lg font-cairo text-[#ED4548] animate-fade-in-slow">
             巣鴨の魅力を発見中...
           </p>
         </div>

@@ -50,6 +50,7 @@ type HomeProps = {
   categories: Record<string, string>;
   categoriesShop: { id: string; name: string }[];
   topShops: Shop[];
+  serverIsMobile: boolean;
 };
 
 // Memoized components
@@ -61,7 +62,7 @@ export default function Home({
   posts = [],
   tiktokVideos = [],
   error,
-  topImg = "./src/sugamo-navi.webp", // Fallback local path
+  topImg = "./src/sugamo-navi.webp",
   imageUrl = "./src/sugamo-gate.webp",
   title = "ABOUT SUGAMO",
   details = [],
@@ -70,15 +71,16 @@ export default function Home({
   categories = {},
   categoriesShop = [],
   topShops = [],
+  serverIsMobile,
 }: HomeProps) {
-  console.log("Home props:", { posts, topImg, imageUrl, letsGOimg, topShops, blogs }); // Debug props
+  console.log("Home props:", { posts, topImg, imageUrl, letsGOimg, topShops, blogs });
 
-  const isMobile = useMediaQuery({ maxWidth: 768 });
+  const clientIsMobile = useMediaQuery({ maxWidth: 768 });
+  const isMobile = typeof window === "undefined" ? serverIsMobile : clientIsMobile;
+
   const { fs, fsm, fluidStyle } = useUniversalFluid();
-
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
 
-  // Memoize category lookup
   const getCategoryName = useMemo(
     () => (categoryId: string) => {
       const category = categoriesShop.find((cat) => cat.id === categoryId);
@@ -96,59 +98,35 @@ export default function Home({
   return (
     <div className="w-full flex flex-col items-center">
       <Header />
-      <div
-        className="md:bg-white w-full"
-        style={{
-          paddingLeft: isMobile ? fsm(19) : fs(90),
-          paddingRight: isMobile ? fsm(19) : fs(90),
-        }}
-      >
+      <div className="md:bg-white w-full pl-5 md:pl-[90px] pr-5 md:pr-[90px]">
         <picture>
           <source
-            srcSet={isMobile ? "./src/sugamunavi-mobile.webp" : topImg}
+            media="(max-width: 768px)"
+            srcSet="./src/sugamunavi-mobile.webp"
             type="image/webp"
           />
+          <source srcSet={topImg} type="image/webp" />
           <img
-            className="w-full"
-            style={{ marginTop: autoSize(21), height: "auto" }}
+            className="w-full mt-5 md:mt-[21px]"
             src={topImg}
             alt="Sugamo Japan"
-            loading="eager" // Critical image, load eagerly
+            loading="eager"
             onError={(e) => {
               console.error("Top image failed to load:", topImg);
-              e.currentTarget.src = "./src/fallback-image.webp"; // Fallback
+              e.currentTarget.src = "./src/fallback-image.webp";
             }}
           />
         </picture>
       </div>
-      <div
-        className="flex flex-col md:flex-row bg-[#F7F7F7]"
-        style={{
-          gap: fs(54),
-          marginLeft: isMobile ? fsm(20) : fs(130),
-          marginRight: isMobile ? fsm(20) : fs(130),
-          paddingTop: isMobile ? fsm(25) : fs(59),
-          paddingLeft: isMobile ? fsm(40) : fs(83),
-          paddingRight: isMobile ? fsm(40) : fs(55),
-          paddingBottom: isMobile ? fsm(36) : fs(54),
-        }}
-      >
+      <div className="flex flex-col md:flex-row bg-[#F7F7F7] gap-6 md:gap-[54px] ml-5 md:ml-[130px] mr-5 md:mr-[130px] pt-6 md:pt-[59px] pl-10 md:pl-[83px] pr-10 md:pr-[55px] pb-9 md:pb-[54px]">
         <div className="flex flex-col w-full md:w-1/2">
           <p
-            className="text-center md:text-left font-cousine italic font-bold"
-            style={{ fontSize: isMobile ? fsm(44) : fs(48), letterSpacing: isMobile ? fsm(0) : fs(0) }}
+            className="text-center md:text-left font-cousine italic font-bold text-4xl md:text-5xl"
+            style={{ letterSpacing: autoSize(0) }}
           >
             {title}
           </p>
-          <div
-            className="font-semibold font-cairo text-[#313131] text-start"
-            style={{
-              fontSize: isMobile ? fsm(16) : fs(16),
-              width: "100%",
-              lineHeight: 1.6,
-              marginTop: isMobile ? fsm(10) : fs(16),
-            }}
-          >
+          <div className="font-semibold font-cairo text-[#313131] text-start text-base w-full leading-relaxed mt-3 md:mt-4">
             {details.length > 0 ? (
               details.map((line, index) => (
                 <p key={index} className="mb-6">{line}</p>
@@ -158,13 +136,7 @@ export default function Home({
             )}
           </div>
           <div className="mt-8 w-full flex justify-center md:justify-end">
-            <div
-              className="relative w-full flex justify-center md:justify-end"
-              style={{
-                width: isMobile ? fsm(311) : fs(319),
-                height: isMobile ? fsm(100) : fs(95),
-              }}
-            >
+            <div className="relative w-[311px] md:w-[319px] h-[100px] md:h-[95px] flex justify-center md:justify-end">
               <img
                 src={letsGOimg}
                 alt="Let's Go Sugamo"
@@ -178,22 +150,20 @@ export default function Home({
             </div>
           </div>
         </div>
-        {!isMobile && (
-          <div className="flex justify-center items-center w-full md:w-1/2 md:mt-0">
-            <div className="relative w-full h-full">
-              <img
-                src={imageUrl}
-                alt="Sugamo Gate"
-                className="w-full h-full absolute top-0 left-0 object-cover rounded-[30px]"
-                loading="lazy"
-                onError={(e) => {
-                  console.error("Gate image failed:", imageUrl);
-                  e.currentTarget.src = "./src/fallback-image.webp";
-                }}
-              />
-            </div>
+        <div className="hidden md:flex justify-center items-center w-full md:w-1/2 md:mt-0">
+          <div className="relative w-full h-full">
+            <img
+              src={imageUrl}
+              alt="Sugamo Gate"
+              className="w-full h-full absolute top-0 left-0 object-cover rounded-[30px]"
+              loading="lazy"
+              onError={(e) => {
+                console.error("Gate image failed:", imageUrl);
+                e.currentTarget.src = "./src/fallback-image.webp";
+              }}
+            />
           </div>
-        )}
+        </div>
       </div>
       <MarqueeHeader
         text="FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE!"
@@ -204,28 +174,11 @@ export default function Home({
         marginTop={isMobile ? 0 : 124}
       />
       <div className="w-full h-auto">
-        <div
-          className="flex md:flex-row flex-col"
-          style={{
-            marginLeft: isMobile ? fsm(20) : fs(90),
-            marginRight: isMobile ? fsm(20) : fs(90),
-            paddingTop: isMobile ? fsm(40) : fs(70),
-            paddingBottom: isMobile ? fsm(40) : fs(70),
-            gap: isMobile ? fsm(40) : fs(58),
-          }}
-        >
-          <div
-            className="flex flex-row justify-center md:items-center"
-            style={{ gap: isMobile ? fsm(26) : fs(24) }}
-          >
+        <div className="flex flex-col md:flex-row ml-5 md:ml-[90px] mr-5 md:mr-[90px] pt-10 md:pt-[70px] pb-10 md:pb-[70px] gap-10 md:gap-[58px]">
+          <div className="flex flex-row justify-center md:items-center gap-6 md:gap-[24px]">
             <div
               key={posts[0]?.id || "1"}
-              className="relative overflow-hidden rounded-lg"
-              style={{
-                width: isMobile ? "45%" : fs(253),
-                height: isMobile ? fsm(360) : fs(450),
-                maxWidth: isMobile ? fsm(207) : fs(253),
-              }}
+              className="relative overflow-hidden rounded-lg w-[45%] md:w-[253px] h-[360px] md:h-[450px] max-w-[207px] md:max-w-[253px]"
             >
               <video
                 src={posts[0]?.media_url || "./src/video1.mp4"}
@@ -256,12 +209,7 @@ export default function Home({
             </div>
             <div
               key={posts[1]?.id || "2"}
-              className="relative overflow-hidden rounded-lg"
-              style={{
-                width: isMobile ? "45%" : fs(253),
-                height: isMobile ? fsm(360) : fs(450),
-                maxWidth: isMobile ? fsm(207) : fs(253),
-              }}
+              className="relative overflow-hidden rounded-lg w-[45%] md:w-[253px] h-[360px] md:h-[450px] max-w-[207px] md:max-w-[253px]"
             >
               <video
                 src={posts[1]?.media_url || "./src/video2.mp4"}
@@ -292,41 +240,32 @@ export default function Home({
             </div>
           </div>
           <div className="flex flex-col justify-center items-center md:items-start">
-            {!isMobile && (
-              <img
-                style={{ width: fs(200), height: fs(100) }}
-                alt="SUGAMO NAVI"
-                src="./src/sugamo-navi-text.svg"
-                loading="lazy"
-                onError={(e) => {
-                  console.error("Sugamo Navi text failed");
-                  e.currentTarget.src = "./src/fallback-image.webp";
-                }}
-              />
-            )}
+            <img
+              className="hidden md:block w-[200px] h-[100px]"
+              alt="SUGAMO NAVI"
+              src="./src/sugamo-navi-text.svg"
+              loading="lazy"
+              onError={(e) => {
+                console.error("Sugamo Navi text failed");
+                e.currentTarget.src = "./src/fallback-image.webp";
+              }}
+            />
             <div className="flex flex-col w-auto">
               <p
-                className="font-cousine font-bold italic text-[#ED4548] underline decoration-[#ED4548] decoration-2 space-x-0 underline-offset-[3px]"
-                style={{
-                  fontSize: isMobile ? fsm(75) : fs(80),
-                  textDecorationSkipInk: "none",
-                }}
+                className="font-cousine font-bold italic text-[#ED4548] underline decoration-[#ED4548] decoration-2 underline-offset-[3px] text-[75px] md:text-[80px]"
+                style={{ textDecorationSkipInk: "none" }}
               >
                 INSTAGRAM
               </p>
               <div className="flex flex-row justify-center md:justify-start items-center gap-2">
                 <p
-                  className="font-cousine font-bold italic text-black underline space-x-0 decoration-black decoration-2 underline-offset-[3px]"
-                  style={{
-                    fontSize: isMobile ? fsm(75) : fs(80),
-                    textDecorationSkipInk: "none",
-                    letterSpacing: 0,
-                  }}
+                  className="font-cousine font-bold italic text-black underline decoration-black decoration-2 underline-offset-[3px] text-[75px] md:text-[80px]"
+                  style={{ textDecorationSkipInk: "none", letterSpacing: 0 }}
                 >
                   TIKTOK
                 </p>
                 <img
-                  style={{ width: isMobile ? fsm(58) : fs(58), height: isMobile ? fsm(58) : fs(58) }}
+                  className="w-[58px] h-[58px]"
                   src="./src/instragram.svg"
                   alt="Instagram Icon"
                   loading="lazy"
@@ -336,7 +275,7 @@ export default function Home({
                   }}
                 />
                 <img
-                  style={{ width: isMobile ? fsm(58) : fs(58), height: isMobile ? fsm(58) : fs(58) }}
+                  className="w-[58px] h-[58px]"
                   src="./src/titok.svg"
                   alt="TikTok Icon"
                   loading="lazy"
@@ -357,56 +296,23 @@ export default function Home({
         animationDuration="90s"
         marginBottom={0}
       />
-      <div
-        className="flex flex-col justify-center items-center"
-        style={{
-          marginTop: isMobile ? fsm(90) : fs(90),
-          marginLeft: isMobile ? fsm(20) : fs(90),
-          marginRight: isMobile ? fsm(20) : fs(90),
-        }}
-      >
+      <div className="flex flex-col justify-center items-center mt-[90px] md:mt-[90px] ml-5 md:ml-[90px] mr-5 md:mr-[90px]">
         {topShops.length === 0 ? (
           <div className="container mx-auto p-4 text-red-600">No shops available</div>
         ) : (
-          <div
-            className="relative flex flex-col items-center border-2 border-black"
-            style={{ borderRadius: autoSize(30) }}
-          >
-            <span
-              className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
-              style={{
-                fontSize: isMobile ? fsm(28) : fs(61),
-                width: isMobile ? fsm(338) : "75%",
-              }}
-            >
+          <div className="relative flex flex-col items-center border-2 border-black rounded-[30px]">
+            <span className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-cousine italic font-bold text-[28px] md:text-[61px] w-[338px] md:w-3/4">
               {"SUGAMO’S BEST SHOP"}
-              <span
-                className="w-auto font-cairo font-semibold block md:inline md:mt-0 not-italic"
-                style={{
-                  fontSize: isMobile ? fsm(16) : fs(20),
-                  paddingLeft: isMobile ? fsm(0) : fs(32),
-                }}
-              >
+              <span className="w-auto font-cairo font-semibold block md:inline md:mt-0 not-italic text-base md:text-xl pl-0 md:pl-8">
                 巣鴨のおすすめのお店
               </span>
             </span>
-            <div
-              className="grid grid-cols-1 md:grid-cols-3 items-center"
-              style={{
-                paddingTop: isMobile ? fsm(90) : fs(90),
-                paddingLeft: isMobile ? fsm(35) : fs(35),
-                paddingRight: isMobile ? fsm(35) : fs(35),
-                paddingBottom: autoSize(80),
-                gap: isMobile ? fsm(32) : fs(42),
-              }}
-            >
-              {/* 1st Card */}
-              <div className="flex flex-col items-center transform order-1 md:order-2" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 items-center pt-[90px] pl-[35px] pr-[35px] pb-20 gap-8 md:gap-[42px]">
+              <div className="flex flex-col items-center transform order-1 md:order-2 gap-4 md:gap-6">
                 <img
                   src="./src/first.svg"
                   alt="First Place"
-                  style={{ width: autoSize(116), height: autoSize(113) }}
-                  className="object-cover rounded-lg"
+                  className="object-cover rounded-lg w-[116px] h-[113px]"
                   loading="lazy"
                   onError={(e) => {
                     console.error("First place icon failed");
@@ -427,18 +333,16 @@ export default function Home({
                   category_id={topShops[0]?.category_id}
                   map_embed={topShops[0]?.map_embed || ""}
                   other_images={topShops[0]?.other_images || null}
-                  style={{ width: isMobile ? "auto" : fs(434), height: isMobile ? "auto" : fs(560) }}
+                  className="w-auto md:w-[434px] h-auto md:h-[560px]"
                   imageHeight={262}
                   paddingText={54}
                 />
               </div>
-              {/* 2nd Card */}
-              <div className="flex flex-col items-center order-2 md:order-1" style={{ gap: isMobile ? fsm(16) : fs(26) }}>
+              <div className="flex flex-col items-center order-2 md:order-1 gap-4 md:gap-6">
                 <img
                   src="./src/second.svg"
                   alt="Second Place"
-                  style={{ width: autoSize(88), height: autoSize(88) }}
-                  className="object-cover rounded-lg"
+                  className="object-cover rounded-lg w-[88px] h-[88px]"
                   loading="lazy"
                   onError={(e) => {
                     console.error("Second place icon failed");
@@ -459,17 +363,15 @@ export default function Home({
                   category_id={topShops[1]?.category_id || ""}
                   map_embed={topShops[1]?.map_embed || ""}
                   other_images={topShops[1]?.other_images || null}
-                  style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                  className="w-auto md:w-[350px] h-auto md:h-[496px]"
                   imageHeight={210}
                 />
               </div>
-              {/* 3rd Card */}
-              <div className="flex flex-col items-center order-3 lg:order-3" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
+              <div className="flex flex-col items-center order-3 lg:order-3 gap-4 md:gap-6">
                 <img
                   src="./src/third.svg"
                   alt="Third Place"
-                  style={{ width: autoSize(88), height: autoSize(88) }}
-                  className="object-cover rounded-lg"
+                  className="object-cover rounded-lg w-[88px] h-[88px]"
                   loading="lazy"
                   onError={(e) => {
                     console.error("Third place icon failed");
@@ -490,40 +392,29 @@ export default function Home({
                   category_id={topShops[2]?.category_id}
                   map_embed={topShops[2]?.map_embed || ""}
                   other_images={topShops[2]?.other_images || null}
-                  style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                  className="w-auto md:w-[350px] h-auto md:h-[496px]"
                   imageHeight={210}
                 />
               </div>
             </div>
-            <div
-              className="absolute bottom-0 translate-y-1/2 flex items-center bg-white whitespace-nowrap max-w-full"
-              style={{ gap: autoSize(13), paddingLeft: autoSize(20), paddingRight: autoSize(20) }}
-            >
+            <div className="absolute bottom-0 translate-y-1/2 flex items-center bg-white whitespace-nowrap max-w-full gap-3 pl-5 pr-5">
               <img
                 src="./src/left-line.svg"
                 alt="Top 3 Rankings Left"
-                className="h-auto object-cover"
-                style={{ width: autoSize(32) }}
+                className="h-auto object-cover w-8"
                 loading="lazy"
                 onError={(e) => {
                   console.error("Left line icon failed");
                   e.currentTarget.src = "./src/fallback-image.webp";
                 }}
               />
-              <p
-                className="text-black font-cairo italic font-bold text-center"
-                style={{
-                  fontSize: isMobile ? fsm(31) : fs(48),
-                  fontWeight: 700,
-                }}
-              >
+              <p className="text-black font-cairo italic font-bold text-center text-[31px] md:text-5xl">
                 TOP 3 RANKINGS
               </p>
               <img
                 src="./src/right-line.svg"
                 alt="Top 3 Rankings Right"
-                className="h-auto object-cover"
-                style={{ width: autoSize(32) }}
+                className="h-auto object-cover w-8"
                 loading="lazy"
                 onError={(e) => {
                   console.error("Right line icon failed");
@@ -535,45 +426,21 @@ export default function Home({
         )}
         <Link
           to="/Recommendation"
-          className="w-full italic font-bold text-end text-black font-cousine"
-          style={{
-            fontSize: isMobile ? fsm(25) : fs(25),
-            marginTop: isMobile ? fsm(40) : fs(20),
-            marginRight: isMobile ? fsm(20) : fs(0),
-          }}
+          className="w-full italic font-bold text-end text-black font-cousine text-2xl md:text-2xl mt-10 md:mt-5 mr-5 md:mr-0"
           prefetch="intent"
         >
           more+
         </Link>
       </div>
-      <div
-        className="flex flex-col justify-center items-center"
-        style={{
-          marginTop: isMobile ? fsm(80) : fs(154),
-          marginLeft: isMobile ? fsm(20) : fs(90),
-          marginRight: isMobile ? fsm(20) : fs(90),
-        }}
-      >
-        <div
-          className="w-full h-auto relative flex flex-col items-center bg-white border-2 border-black rounded-[30px]"
-          style={{ paddingBottom: isMobile ? fsm(26) : fs(35) }}
-        >
-          <span
-            className="absolute p-0 -translate-y-1/2 left-1/2 transform -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
-            style={{ lineHeight: 1, fontSize: isMobile ? fsm(31) : fs(61), width: isMobile ? fsm(257) : fs(642) }}
-          >
+      <div className="flex flex-col justify-center items-center mt-20 md:mt-[154px] ml-5 md:ml-[90px] mr-5 md:mr-[90px]">
+        <div className="w-full h-auto relative flex flex-col items-center bg-white border-2 border-black rounded-[30px] pb-6 md:pb-9 pt-[94px]">
+          <span className="absolute p-0 -translate-y-1/2 left-1/2 transform -translate-x-1/2 bg-white text-center font-cousine italic font-bold leading-none text-[31px] md:text-[61px] w-[257px] md:w-[642px]">
             {"MODEL COURSE"}
-            <span
-              className="font-cairo font-semibold not-italic"
-              style={{ fontSize: isMobile ? fsm(16) : fs(20) }}
-            >
+            <span className="font-cairo font-semibold not-italic text-base md:text-xl">
               モデルコース
             </span>
           </span>
-          <div
-            className="grid grid-cols-1 md:grid-cols-2"
-            style={{ paddingTop: isMobile ? fsm(50) : fs(71) }}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 pt-12 md:pt-[71px]">
             <ModelCourseItemMemo
               imageUrl="./src/model-course-1.png"
               title="食べ歩きとお守り巡り"
@@ -600,57 +467,21 @@ export default function Home({
         </div>
         <Link
           to="/ModelCourse"
-          className="w-full italic font-bold text-end text-black font-cousine"
-          style={{
-            fontSize: isMobile ? fsm(25) : fs(25),
-            marginTop: isMobile ? fsm(40) : fs(20),
-            marginRight: isMobile ? fsm(20) : fs(0),
-          }}
+          className="w-full italic font-bold text-end text-black font-cousine text-2xl md:text-2xl mt-10 md:mt-5 mr-5 md:mr-0"
           prefetch="intent"
         >
           more+
         </Link>
       </div>
-      <div
-        className="flex flex-col justify-center items-center w-full"
-        style={{
-          marginTop: isMobile ? fsm(154) : fs(224),
-          paddingLeft: isMobile ? fsm(20) : fs(90),
-          paddingRight: isMobile ? fsm(20) : fs(90),
-        }}
-      >
-        <div
-          className="w-full h-auto relative flex flex-col items-center border-2 border-black rounded-[30px] bg-white"
-          style={{
-            paddingBottom: autoSize(90),
-            paddingTop: autoSize(94),
-          }}
-        >
-          <span
-            className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap"
-            style={{
-              fontSize: isMobile ? fsm(31) : fs(61),
-              width: isMobile ? fsm(240) : "auto",
-              paddingLeft: isMobile ? fsm(0) : fs(24),
-              paddingRight: isMobile ? fsm(0) : fs(24),
-            }}
-          >
+      <div className="flex flex-col justify-center items-center w-full mt-[154px] md:mt-[224px] pl-5 md:pl-[90px] pr-5 md:pr-[90px]">
+        <div className="w-full h-auto relative flex flex-col items-center border-2 border-black rounded-[30px] bg-white pb-[90px] pt-[94px]">
+          <span className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap text-[31px] md:text-[61px] w-[240px] md:w-auto pl-0 md:pl-6 pr-0 md:pr-6">
             {"TRAVEL TIPS"}
-            <span
-              className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0 not-italic"
-              style={{ fontSize: isMobile ? fsm(16) : fs(20) }}
-            >
+            <span className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0 not-italic text-base md:text-xl">
               旅の情報
             </span>
           </span>
-          <div
-            className="grid grid-cols-1 md:grid-cols-3 w-full"
-            style={{
-              paddingLeft: isMobile ? fsm(33) : fs(46),
-              paddingRight: isMobile ? fsm(33) : fs(46),
-              gap: isMobile ? fsm(16) : fsm(24),
-            }}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-3 w-full pl-8 md:pl-12 pr-8 md:pr-12 gap-4 md:gap-6">
             {blogs.length > 0 ? (
               blogs.map((blog) => (
                 <TravelsTipsItemMemo
@@ -668,12 +499,7 @@ export default function Home({
         </div>
         <Link
           to="/BlogList"
-          className="w-full italic font-bold text-end text-black font-cousine"
-          style={{
-            fontSize: isMobile ? fsm(25) : fs(25),
-            marginTop: isMobile ? fsm(40) : fs(20),
-            marginRight: isMobile ? fsm(20) : fs(0),
-          }}
+          className="w-full italic font-bold text-end text-black font-cousine text-2xl md:text-2xl mt-10 md:mt-5 mr-5 md:mr-0"
           prefetch="intent"
         >
           more+
@@ -687,8 +513,8 @@ export default function Home({
         marginTop={131}
         marginBottom={50}
       />
-      <div
-        className="grid grid-cols-2 md:grid-cols-2"
+     <div
+        className="grid grid-cols-1 md:grid-cols-2"
         style={{
           marginTop: isMobile ? fsm(64) : fs(90),
           marginLeft: isMobile ? fsm(20) : fs(90),
