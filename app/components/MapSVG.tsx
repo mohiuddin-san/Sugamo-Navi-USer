@@ -36,38 +36,28 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
       });
   }, [svgPath]);
 
-  // SVG-এর DOM-এ ইভেন্ট লিসেনার যোগ করা
   useEffect(() => {
     if (!svgContainerRef.current) return;
 
     const svgElement = svgContainerRef.current.querySelector('svg');
     if (!svgElement) return;
-
-    // SVG-এর সব <path>, <rect>, <circle> এলিমেন্ট খুঁজে বের করা
     const paths = svgElement.querySelectorAll('path');
     const rects = svgElement.querySelectorAll('rect');
     const circles = svgElement.querySelectorAll('circle');
-
-    // ডিবাগিং: সব পিন এলিমেন্ট লগ করা
-    console.log('SVG-এর পাথ এলিমেন্ট সংখ্যা:', paths.length);
-    console.log('SVG-এর রেক্ট এলিমেন্ট সংখ্যা:', rects.length);
-    console.log('SVG-এর সার্কেল এলিমেন্ট সংখ্যা:', circles.length);
-    console.log(
-      'পাথ এলিমেন্টগুলোর ডাটা:',
-      Array.from(paths).map((p) => ({
-        d: p.getAttribute('d')?.substring(0, 20),
-        dataTitle: p.getAttribute('data-title'),
-      }))
-    );
+    const texts = svgElement.querySelectorAll('text');
 
     const handleClick = (event: MouseEvent) => {
       const target = event.target as SVGElement;
       let title = 'Unknown Location';
 
-      if (target.tagName === 'path' || target.tagName === 'rect' || target.tagName === 'circle') {
-        // data-title থেকে টাইটেল নেওয়া
-        title = target.getAttribute('data-title') || 'Location';
-        console.log('পিন ক্লিক করা হয়েছে:', title);
+      if (
+        target.tagName === 'path' ||
+        target.tagName === 'rect' ||
+        target.tagName === 'circle' ||
+        target.tagName === 'text'
+      ) {
+        title = target.getAttribute('data-title') || target.textContent || 'Location';
+        console.log('ক্লিক করা এলিমেন্ট:', title);
         onPinClick(title);
       }
     };
@@ -81,6 +71,9 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
     circles.forEach((circle) => {
       circle.addEventListener('click', handleClick);
     });
+    texts.forEach((text) => {
+      text.addEventListener('click', handleClick);
+    });
 
     // ক্লিনআপ
     return () => {
@@ -92,6 +85,9 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
       });
       circles.forEach((circle) => {
         circle.removeEventListener('click', handleClick);
+      });
+      texts.forEach((text) => {
+        text.removeEventListener('click', handleClick);
       });
     };
   }, [svgContent, onPinClick]);

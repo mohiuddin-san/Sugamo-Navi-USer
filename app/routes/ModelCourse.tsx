@@ -1,7 +1,6 @@
-// app/routes/model-course.tsx
 import { useLoaderData, useLocation } from '@remix-run/react';
 import Header from '~/components/Header';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import MarqueeHeader from '~/components/MarqueeHeader';
 import CommonCategoryTop from '~/components/CommonCategoryTop';
@@ -159,6 +158,9 @@ export default function ModelCourse() {
   const [currentIndexM, setCurrentIndexM] = useState(0);
   const [selectedStop, setSelectedStop] = useState<typeof stops[0] | null>(null);
   const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
+  const [hasSvgAnimated, setHasSvgAnimated] = useState(false);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const stopsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % modelCourse.length);
@@ -176,26 +178,58 @@ export default function ModelCourse() {
     setCurrentIndexM((prev) => (prev - 1 + modelCourse.length) % modelCourse.length);
   };
 
-const handlePinClick = (title: string) => {
-  console.log('পিন ক্লিক করা হয়েছে, টাইটেল:', title);
-  setSelectedTitle(title);
+  const handlePinClick = (title: string) => {
+    console.log('পিন ক্লিক করা হয়েছে, টাইটেল:', title);
+    setSelectedTitle(title);
 
-  // টাইটেল ম্যাচিংয়ের জন্য নমনীয় লজিক
-  const matchingStop = stops.find(
-    (stop) => stop.title.trim() === title.trim()
-  );
-  if (matchingStop) {
-    setSelectedStop(matchingStop);
-    console.log('ম্যাচিং স্টপ:', matchingStop);
-  } else {
-    console.log('কোনো ম্যাচিং স্টপ পাওয়া যায়নি:', title);
-    setSelectedStop(null);
-  }
-};
+    const matchingStop = stops.find(
+      (stop) => stop.title.trim() === title.trim()
+    );
+    if (matchingStop) {
+      setSelectedStop(matchingStop);
+      console.log('ম্যাচিং স্টপ:', matchingStop);
+
+      // Scroll to the corresponding stop
+      const stopIndex = stops.findIndex((stop) => stop.title.trim() === title.trim());
+      if (stopIndex !== -1 && stopsRef.current[stopIndex]) {
+        stopsRef.current[stopIndex]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    } else {
+      console.log('কোনো ম্যাচিং স্টপ পাওয়া যায়নি:', title);
+      setSelectedStop(null);
+    }
+  };
 
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
   }, [location]);
+
+  // Intersection Observer to trigger SVG animation only once
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasSvgAnimated) {
+            setHasSvgAnimated(true);
+          }
+        });
+      },
+      { threshold: 0.1 } // Trigger when 10% of the element is visible
+    );
+
+    if (mapRef.current) {
+      observer.observe(mapRef.current);
+    }
+
+    return () => {
+      if (mapRef.current) {
+        observer.unobserve(mapRef.current);
+      }
+    };
+  }, [hasSvgAnimated]);
 
   return (
     <div className="min-h-screen">
@@ -335,25 +369,12 @@ const handlePinClick = (title: string) => {
               marginBottom={0}
               marginTop={0}
             />
-            <div style={{ position: 'relative' }}>
-              <MapSVG svgPath="/src/map_view.svg" onPinClick={handlePinClick} />
-              {selectedStop && (
-                <div
-                  className="absolute top-0 right-0 bg-white border-2 border-black p-4 rounded shadow-lg z-10"
-                  style={{
-                    width: isMobile ? '90%' : '300px',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    margin: '10px',
-                    fontSize: fs(14),
-                  }}
-                >
-                  <h3 className="font-bold font-cousine text-black mb-2">{selectedStop.title}</h3>
-                  <p className="font-cairo text-black">{selectedStop.description}</p>
-                  <img src={selectedStop.image} alt={selectedStop.title} style={{ width: '100%', marginTop: '10px' }} />
-                  <button onClick={() => setSelectedStop(null)} className="mt-2 text-sm">Close</button>
-                </div>
-              )}
+            <div style={{ position: 'relative' }} ref={mapRef}>
+              <MapSVG
+                svgPath="/src/map-pin.svg"
+                onPinClick={handlePinClick}
+                startAnimation={hasSvgAnimated}
+              />
             </div>
             <MarqueeHeader
               text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
@@ -389,18 +410,26 @@ const handlePinClick = (title: string) => {
                     paddingRight: isMobile ? fsm(21) : fs(0),
                   }}
                 >
-                  このコースは、巣鴨の歴史と文化、そしてグルメをバランスよく楽しめる、まさに「王道」と呼ぶにふさわしい内容です。
-                  <br />
-                  コースの始まりは、江戸六地蔵のひとつである眞性寺。旅の安全を願って造られた歴史的なお地蔵様を拝んだら、巣鴨のメインストリート、地蔵通り商店街へ。
-                  <br />
-                  商店街の中ほどにあるとげぬき地蔵尊 高岩寺では、お年寄りから「とげぬき地蔵」として親しまれているお地蔵様にお参りできます。「洗い観音」に水をかけて清める体験も、巣鴨ならではです。
-                  <br />
-                  <br />
-                  お参りを終えたら、お待ちかねのグルメタイム。「カレーうどん」で有名な古奈屋で食事をしたり、行列のできるかき氷店雪菓で休憩したりと、人気の味を堪能できます。また、マルジでは「赤いパンツ」をはじめとするユニークな商品が並び、巣鴨らしい活気を感じられます。さらに、お茶の老舗山年園や、名物の「塩大福」が人気のみずのに立ち寄れば、お土産探しも完璧です。
-                  <br />
-                  <br />
-                  <br />
-                  歴史的なお寺を巡り、おいしいものを味わい、活気あふれる商店街で買い物を楽しむ。このコースは、巣鴨の魅力をぎゅっと凝縮した、初めての方にもリピーターにもおすすめのコースです。
+                  {selectedStop ? (
+                    <>
+                      <strong>{selectedStop.title}</strong>: {selectedStop.description}
+                    </>
+                  ) : (
+                    <>
+                      このコースは、巣鴨の歴史と文化、そしてグルメをバランスよく楽しめる、まさに「王道」と呼ぶにふさわしい内容です。
+                      <br />
+                      コースの始まりは、江戸六地蔵のひとつである眞性寺。旅の安全を願って造られた歴史的なお地蔵様を拝んだら、巣鴨のメインストリート、地蔵通り商店街へ。
+                      <br />
+                      商店街の中ほどにあるとげぬき地蔵尊 高岩寺では、お年寄りから「とげぬき地蔵」として親しまれているお地蔵様にお参りできます。「洗い観音」に水をかけて清める体験も、巣鴨ならではです。
+                      <br />
+                      <br />
+                      お参りを終えたら、お待ちかねのグルメタイム。「カレーうどん」で有名な古奈屋で食事をしたり、行列のできるかき氷店雪菓で休憩したりと、人気の味を堪能できます。また、マルジでは「赤いパンツ」をはじめとするユニークな商品が並び、巣鴨らしい活気を感じられます。さらに、お茶の老舗山年園や、名物の「塩大福」が人気のみずのに立ち寄れば、お土産探しも完璧です。
+                      <br />
+                      <br />
+                      <br />
+                      歴史的なお寺を巡り、おいしいものを味わい、活気あふれる商店街で買い物を楽しむ。このコースは、巣鴨の魅力をぎゅっと凝縮した、初めての方にもリピーターにもおすすめのコースです。
+                    </>
+                  )}
                 </p>
               </div>
               <div
@@ -426,16 +455,21 @@ const handlePinClick = (title: string) => {
                     overflowY: isMobile ? 'visible' : 'scroll',
                   }}
                 >
-                  {stops.map((stop) => (
+                  {stops.map((stop, index) => (
                     <div
                       key={stop.id}
-                      className="flex flex-col items-center"
+                      ref={(el) => (stopsRef.current[index] = el)}
+                      className={`flex flex-col items-center `}
                       style={{
                         height: isMobile ? fsm(115) : fs(115),
                         marginBottom: isMobile ? fsm(16) : fs(16),
                       }}
                     >
-                      <div className="bg-white border-2 border-black rounded-[10px] w-full flex overflow-hidden">
+                      <div
+                        className={` border-2 border-black rounded-[10px] w-full flex overflow-hidden ${
+                        selectedTitle === stop.title ? 'bg-[#ED4548]' : 'bg-[#FFFFFF]'
+                      }`}
+                      >
                         <div
                           className="bg-gray-300 flex items-center justify-center text-gray-600"
                           style={{
@@ -452,7 +486,9 @@ const handlePinClick = (title: string) => {
                           style={{ marginLeft: isMobile ? fsm(16) : fs(16) }}
                         >
                           <h3
-                            className="italic font-bold font-cousine"
+                            className={`italic font-bold font-cousine ${
+                        selectedTitle === stop.title ? 'text-[#FFFFFF]' : 'text-[#000000]'
+                      }`}
                             style={{
                               fontSize: isMobile ? fsm(16) : fs(16),
                               marginTop: isMobile ? fsm(7) : fs(7),
@@ -461,7 +497,9 @@ const handlePinClick = (title: string) => {
                             STOP.{stop.id}
                           </h3>
                           <p
-                            className="font-cairo font-semibold"
+                            className={`font-cairo font-semibold ${
+                        selectedTitle === stop.title ? 'text-[#FFFFFF]' : 'text-[#000000]'
+                      }`}
                             style={{ fontSize: isMobile ? fsm(20) : fs(20) }}
                           >
                             {stop.title}

@@ -48,7 +48,7 @@ export function loader() {
   ];
   return {
     topImg: "./src/sugamo-navi.webp",
-    imageUrl: "./src/sugamo-gate.png",
+    imageUrl: "./src/sugamo-gate.jpg",
     title: "ABOUT SUGAMO",
     details: [
       "「巣鴨」は、東京の中でも個性的な街のひとつです。",
