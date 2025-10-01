@@ -16,32 +16,32 @@ export async function loader() {
     modelCourse: [
       {
         title: 'ナンジェリー・ボストール',
-        imageUrl: '/src/model-course-1.png',
+        imageUrl: '/src/model-course-1.jpg',
         itemNumber: 1,
       },
       {
         title: 'ボストール・ボストール',
-        imageUrl: '/src/model-course-2.png',
+        imageUrl: '/src/model-course-2.jpg',
         itemNumber: 2,
       },
       {
         title: 'ボストール・ボストール',
-        imageUrl: '/src/model-course-1.png',
+        imageUrl: '/src/model-course-1.jpg',
         itemNumber: 3,
       },
       {
         title: 'ボストール・ボストール',
-        imageUrl: '/src/model-course-2.png',
+        imageUrl: '/src/model-course-2.jpg',
         itemNumber: 4,
       },
       {
         title: 'ナンジェリー・ボストール',
-        imageUrl: '/src/model-course-1.png',
+        imageUrl: '/src/model-course-1.jpg',
         itemNumber: 5,
       },
       {
         title: 'ボストール・ボストール',
-        imageUrl: '/src/model-course-2.png',
+        imageUrl: '/src/model-course-2.jpg',
         itemNumber: 6,
       },
     ],
@@ -244,7 +244,7 @@ export default function ModelCourse() {
         text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
         backgroundColor="#FFFFFF"
         textColor="#000000"
-        animationDuration="40s"
+        animationDuration="90s"
         marginBottom={43}
         marginTop={98}
       />
@@ -314,10 +314,10 @@ export default function ModelCourse() {
           marginTop: isMobile ? fsm(88) : fs(101),
         }}
       >
-        <div className="bg-white overflow-hidden" style={{ marginLeft: fs(33) }}>
+        <div className="bg-white overflow-hidden">
           <div
             className="flex flex-col justify-between"
-            style={{ marginRight: fs(33) }}
+            style={{ marginLeft: fs(33), marginRight: fs(33) }}
           >
             <div className="flex items-center justify-between">
               <span className="flex items-center">
@@ -359,7 +359,7 @@ export default function ModelCourse() {
           ></div>
           <div
             className="border-l-2 border-r-2 border-black rounded-lg overflow-hidden"
-            style={{ marginRight: fs(33) }}
+            style={{ marginLeft: fs(33), marginRight: fs(33) }}
           >
             <MarqueeHeader
               text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
@@ -369,7 +369,7 @@ export default function ModelCourse() {
               marginBottom={0}
               marginTop={0}
             />
-            <div style={{ position: 'relative' }} ref={mapRef}>
+            <div style={{ position: 'relative'}} ref={mapRef}>
               <MapSVG
                 svgPath="/src/map-pin.svg"
                 onPinClick={handlePinClick}
@@ -582,7 +582,7 @@ export default function ModelCourse() {
                 >
                   <ShopItem
                     title={product.title}
-                    imageUrl={product.imageUrl}
+                    imageUrl="/src/burger.png"
                     description={product.description}
                     likes={product.likes}
                     views={product.views}
