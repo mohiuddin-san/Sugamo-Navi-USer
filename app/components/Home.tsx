@@ -72,8 +72,7 @@ export default function HomePage() {
   }>();
   const error = data?.error || null;
   const { topImg, imageUrl, title, details, letsGOimg } = loader();
-  const isMobile = useMediaQuery({ maxWidth: 768 });
-  const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
+  const autoSize = (size: number) => (true ? fsm(size) : fs(size));
   const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
 
   const [topShops, setTopShops] = useState<Shop[]>([]);
@@ -85,7 +84,7 @@ export default function HomePage() {
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [blogsError, setBlogsError] = useState<string | null>(null);
-
+  const isMobile = useMediaQuery({ maxWidth: 768 });
   useEffect(() => {
     const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
     setBookmarkedBlogs(savedBookmarks);
@@ -216,11 +215,17 @@ export default function HomePage() {
   return (
     <div className="w-full flex flex-col items-center">
       <Header />
-      <div className=" md:bg-white w-full" style={{ paddingLeft: isMobile ? fsm(19) : fs(90), paddingRight: isMobile ? fsm(19) : fs(90) }}>
+      <div className=" md:bg-white w-full md:pl-16 pl-4 md:pr-16 pr-4">
         <img
-          className="w-full"
+          className="w-full block md:hidden"
           style={{ marginTop: autoSize(21), height: 'auto' }}
-          src={isMobile ? "./src/sugamunavi-mobile.webp" : topImg}
+          src={"./src/sugamunavi-mobile.webp" }
+          alt="Sugamo Japan"
+        />
+        <img
+          className="w-full hidden md:block"
+          style={{ marginTop: autoSize(21), height: 'auto' }}
+          src={ topImg}
           alt="Sugamo Japan"
         />
       </div>
