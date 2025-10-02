@@ -7,7 +7,7 @@ const DeviceContext = createContext();
 // Device Provider Component
 export function DeviceProvider({ children }) {
   const [isMounted, setIsMounted] = useState(false);
-  const isMobile = useMediaQuery({ maxWidth: 768 });
+  const isMobile = useMediaQuery({ maxWidth: 480 });
   
   useEffect(() => {
     setIsMounted(true);

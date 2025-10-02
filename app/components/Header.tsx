@@ -14,11 +14,12 @@ const Header: React.FC = () => {
   const [shops, setShops] = useState<{ id: string; name: string }[]>([]);
   const [loadingShops, setLoadingShops] = useState(true);
   const [shopsError, setShopsError] = useState<string | null>(null);
+  const { fs, fsm } = useUniversalFluid();
   const revalidator = useRevalidator();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useMediaQuery({ maxWidth: 767 });
 
-  const { fs, fsm} = useUniversalFluid();
 
   const menuItems = [
     "食べる",
@@ -134,10 +135,15 @@ const Header: React.FC = () => {
 
   return (
     <div
-      className={` w-full transition-opacity duration-500 pt-33 md:pt-33 h-90 md:h-90`}
+      className={` w-full transition-opacity duration-500`}
+      style={{ paddingTop: fs(33),
+           height: fs(90)}}
     >
       {/* Desktop Header */}
-      <div className="hidden md:flex justify-between items-center flex-nowrap ml-90 mr-90">
+      <div
+        className="hidden md:flex justify-between items-center flex-nowrap"
+        style={{ marginLeft: fs(90), marginRight: fs(90) }}
+      >
         <div
           className="font-bold font-cousine cursor-pointer"
           style={{ fontSize: fs(28) }}
@@ -147,13 +153,15 @@ const Header: React.FC = () => {
         </div>
         <div className="flex flex-row justify-between items-center">
           <nav
-            className="flex flex-nowrap items-center justify-center gap-17"
+            className="flex flex-nowrap items-center justify-center"
+            style={{ gap: isMobile ? fsm(48) : fs(17) }}
           >
             {menuItems.map((item) => (
               <Link
                 key={item}
                 to={menuRoutes[item]}
-                className=" relative text-16 pl-15 pr-15 py-1 pt-2 font-bold font-cousine transition duration-300 ease-in-out rounded-full cursor-pointer group whitespace-nowrap"
+                className=" relative py-1 pt-2 font-bold font-cousine transition duration-300 ease-in-out rounded-full cursor-pointer group whitespace-nowrap"
+                style={{ fontSize: fs(16), paddingLeft:fs(15), paddingRight: fs(15) }}
               >
                 <span className="relative text-center z-10 text-black group-hover:text-white transition-colors duration-300">
                   {item}
@@ -164,7 +172,7 @@ const Header: React.FC = () => {
           </nav>
 
           {/* Icons */}
-          <div className="flex items-center gap-32 ml-28">
+          <div className="flex items-center" style={{ gap: fs(32), marginLeft: fs(28) }}>
             <div
               className="flex items-center py-1 cursor-pointer transition-transform duration-300 hover:scale-105 hover:text-black"
               onClick={handleSearchClick}
@@ -172,10 +180,12 @@ const Header: React.FC = () => {
               <img
                 src="/src/search.svg"
                 alt="Search Icon"
-                className="transition-transform duration-300 hover:scale-105 w-19 h-19"
+                className="transition-transform duration-300 hover:scale-105"
+                style={{width: fs(19), height: fs(19)}}
               />
               <span
-                className="font-cousine font-bold italic whitespace-nowrap text-16"
+                className="font-cousine font-bold italic whitespace-nowrap"
+                style={{ fontSize: fs(16) }}
               >
                 Search
               </span>
@@ -187,7 +197,7 @@ const Header: React.FC = () => {
               <img
                 src="/src/bookmark.svg"
                 alt="Bookmark Icon"
-                className="h-21 w-26"
+                style={{ height: isMobile ? fsm(21) : fs(21), width: isMobile ? fsm(26) : fs(26) }}
               />
             </button>
             <div className="relative flex items-center justify-center">
@@ -205,7 +215,7 @@ const Header: React.FC = () => {
               </div> */}
               {isLanguageDropdownOpen && (
                 <div
-                  className="absolute inset-0 flex flex-col items-center justify-start bg-white border rounded-full shadow-md "
+                  className="absolute inset-0 flex flex-col items-center justify-start bg-white border rounded-full shadow-md"
                   style={{
                     borderRadius: fs(30),
                     width: fs(40),
@@ -243,6 +253,7 @@ const Header: React.FC = () => {
         </div>
       </div>
 
+      {/* Mobile Header */}
       <div className="md:hidden flex justify-between items-center px-4 relative">
         <div className="relative flex items-center justify-center">
           <div
@@ -385,31 +396,44 @@ const Header: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white w-full h-full flex flex-col items-center justify-center p-6">
             <div
-              className="font-bold font-cousine cursor-pointer mb-24 text-25"
+              className="font-bold font-cousine cursor-pointer mb-6"
+              style={{ fontSize: isMobile ? fsm(25) : fs(25) }}
               onClick={handleHomeClick}
             >
               SUGAMO NAVI
             </div>
-            <div className="flex justify-center mb-24">
+            <div className="flex justify-center mb-6">
               <div
-                className="flex items-center justify-center rounded-full border-2 border-black overflow-hidden w-300 md:w-600 h-40 md:h-60"
+                className="flex items-center justify-center rounded-full border-2 border-black overflow-hidden"
+                style={{
+                  width: isMobile ? fsm(300) : fs(600),
+                  height: isMobile ? fsm(40) : fs(60),
+                }}
               >
                 <img
-                  className="h-19 md:h-25 w-19 md:w-25 ml-20 md:ml-30"
                   src="/src/icons8-search.gif"
                   alt="Search Icon"
+                  style={{
+                    height: isMobile ? fsm(19) : fs(25),
+                    width: isMobile ? fsm(19) : fs(25),
+                    marginLeft: isMobile ? fsm(20) : fs(30),
+                  }}
                 />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search shops..."
-                  className="w-full h-full bg-transparent border-none focus:outline-none font-cousine font-bold pl-3 text-18 md:text-20"
+                  className="w-full h-full bg-transparent border-none focus:outline-none font-cousine font-bold pl-3"
+                  style={{
+                    fontSize: isMobile ? fsm(18) : fs(20),
+                  }}
                 />
               </div>
             </div>
             <ul
-              className="space-y-2 bg-[#F7F7F7] text-center p-4 rounded-lg w-300 md:w-500"
+              className="space-y-2 bg-[#F7F7F7] text-center p-4 rounded-lg"
+              style={{ width: isMobile ? fsm(300) : fs(500) }}
             >
               {loadingShops ? (
                 <li className="text-gray-700">Loading shops...</li>

@@ -492,8 +492,8 @@ export default function ShopDetails() {
         backgroundColor="#FFFFFF"
         textColor="#000000"
         animationDuration="90s"
-        marginBottomClass="mb-120"
-        marginTopClass="mt-100"
+        marginBottom={120}
+        marginTop={100}
       />
       <div
         className="flex flex-col md:flex-row items-center justify-center"

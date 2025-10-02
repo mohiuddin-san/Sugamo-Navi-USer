@@ -118,8 +118,8 @@ export default function Recommendation() {
         backgroundColor="#FFFFFF"
         textColor="#000000"
         animationDuration="90s"
-        marginBottomClass="mb-120"
-        marginTopClass="mt-98"
+        marginBottom={120}
+        marginTop={98}
       />
       {shopsLoading ? (
         <div className="container mx-auto p-4">Loading shops...</div>
