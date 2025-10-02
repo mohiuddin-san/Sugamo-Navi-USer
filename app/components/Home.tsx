@@ -13,6 +13,7 @@ import { useLoaderData } from '@remix-run/react';
 import supabaseShops from "~/supabase";
 import supabaseBlogs from "~/supabase_blog";
 import TikTokVideos from '~/components/TiktokVideos';
+import LoadingScreen from '~/components/LoadingScreen'
 
 type LoaderData = {
   posts: any[];
@@ -64,6 +65,8 @@ export function loader() {
 }
 
 export default function HomePage() {
+  const { isMobile, mounted, isLoading } = useIsMobile();
+   console.log('isMobile:', isMobile, 'mounted:', mounted);
   const data = useLoaderData<LoaderData>();
   const { posts, tiktokVideos } = useLoaderData<{
     posts: any[];
@@ -72,7 +75,7 @@ export default function HomePage() {
   }>();
   const error = data?.error || null;
   const { topImg, imageUrl, title, details, letsGOimg } = loader();
-  const { isMobile, mounted } = useIsMobile();
+ 
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
   const [topShops, setTopShops] = useState<Shop[]>([]);
@@ -211,7 +214,9 @@ export default function HomePage() {
     const category = categoriesShop.find(cat => cat.id === categoryId);
     return category ? category.name : 'No Category';
   };
-
+  if (isLoading || !mounted) {
+    return <LoadingScreen />;
+  }
   return (
     <div className="w-full flex flex-col items-center">
       <Header />

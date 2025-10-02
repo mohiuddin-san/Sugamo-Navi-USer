@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from '@remix-run/react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
-import { useDevice } from "~/routes/contexts/DeviceContext";
+import { useIsMobile } from '../hooks/useIsMobile';
 import supabase from '~/supabase';
 
 interface ProductCardProps {
@@ -14,7 +14,7 @@ interface ProductCardProps {
   category: string;
   category_id: string;
   opening_hours: string;
-  style?: React.CSSProperties;
+  style?: string;
   shopId?: string;
   near_station: string;
   address: string;
@@ -45,7 +45,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const { fs, fsm } = useUniversalFluid();
   const navigate = useNavigate();
-  const isMobile = useDevice();
+  const isMobile = useIsMobile();
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
   const [likes, setLikes] = useState<number>(initialLikes);
   const [hasLoved, setHasLoved] = useState<boolean>(false);
@@ -237,10 +237,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={handleBlogListClick}
-      className="border-2 border-black rounded-lg bg-white flex flex-col font-cairo w-full pb-5 cursor-pointer"
+      className={`${style} border-2 border-black rounded-lg bg-white flex flex-col font-cairo w-full pb-5 cursor-pointer`}
       style={{
         borderRadius: isMobile ? fsm(10) : fs(10),
-        ...style,
       }}
     >
       <h1
