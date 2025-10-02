@@ -18,7 +18,6 @@ const Header: React.FC = () => {
   const revalidator = useRevalidator();
   const navigate = useNavigate();
   const location = useLocation();
-  const isMobile = useMediaQuery({ maxWidth: 767 });
 
 
   const menuItems = [
@@ -153,9 +152,7 @@ const Header: React.FC = () => {
         </div>
         <div className="flex flex-row justify-between items-center">
           <nav
-            className="flex flex-nowrap items-center justify-center"
-            style={{ gap: isMobile ? fsm(48) : fs(17) }}
-          >
+            className="flex flex-nowrap items-center justify-center gap-12 md:gap-4">
             {menuItems.map((item) => (
               <Link
                 key={item}
@@ -195,9 +192,9 @@ const Header: React.FC = () => {
               onClick={handleBookmarkClick}
             >
               <img
+              className="w-6 h-5"
                 src="/src/bookmark.svg"
                 alt="Bookmark Icon"
-                style={{ height: isMobile ? fsm(21) : fs(21), width: isMobile ? fsm(26) : fs(26) }}
               />
             </button>
             <div className="relative flex items-center justify-center">
@@ -396,44 +393,30 @@ const Header: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white w-full h-full flex flex-col items-center justify-center p-6">
             <div
-              className="font-bold font-cousine cursor-pointer mb-6"
-              style={{ fontSize: isMobile ? fsm(25) : fs(25) }}
+              className="font-bold font-cousine cursor-pointer mb-6 text-[clamp(18px,2vw,25px)]"
               onClick={handleHomeClick}
             >
               SUGAMO NAVI
             </div>
             <div className="flex justify-center mb-6">
               <div
-                className="flex items-center justify-center rounded-full border-2 border-black overflow-hidden"
-                style={{
-                  width: isMobile ? fsm(300) : fs(600),
-                  height: isMobile ? fsm(40) : fs(60),
-                }}
+                className="flex items-center justify-center rounded-full border-2 border-black overflow-hidden h-10 md:h-15"
               >
                 <img
-                  src="/src/icons8-search.gif"
+                  src="/src/icons8-search.gif h-5 md:h-6 w-5 md:w-6 ml-5 md:ml-7"
                   alt="Search Icon"
-                  style={{
-                    height: isMobile ? fsm(19) : fs(25),
-                    width: isMobile ? fsm(19) : fs(25),
-                    marginLeft: isMobile ? fsm(20) : fs(30),
-                  }}
                 />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search shops..."
-                  className="w-full h-full bg-transparent border-none focus:outline-none font-cousine font-bold pl-3"
-                  style={{
-                    fontSize: isMobile ? fsm(18) : fs(20),
-                  }}
+                  className="w-full h-full bg-transparent border-none focus:outline-none font-cousine font-bold pl-3 "
                 />
               </div>
             </div>
             <ul
               className="space-y-2 bg-[#F7F7F7] text-center p-4 rounded-lg"
-              style={{ width: isMobile ? fsm(300) : fs(500) }}
             >
               {loadingShops ? (
                 <li className="text-gray-700">Loading shops...</li>
