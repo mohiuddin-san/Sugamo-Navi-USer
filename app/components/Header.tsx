@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation,useRevalidator} from "@remix-run/react";
+import { Link, useNavigate, useLocation, useRevalidator } from "@remix-run/react";
 import { useUniversalFluid } from "../hooks/useUniversalFluid";
 import { useMediaQuery } from "react-responsive";
-import supabaseShops from "~/supabase";  
+import supabaseShops from "~/supabase";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -39,9 +39,9 @@ const Header: React.FC = () => {
 
   const handleSearchClick = () => setIsSearchOpen(true);
   const handleBookmarkClick = () => navigate("/BookMark");
-    const handleHomeClick = () => {
+  const handleHomeClick = () => {
     console.log("🏠 Header: Navigating to home"); // Debug
-    navigate("/", { replace: true }); 
+    navigate("/", { replace: true });
     if (revalidator.state === "idle") {
       revalidator.revalidate();
     }
@@ -136,8 +136,10 @@ const Header: React.FC = () => {
   return (
     <div
       className={` w-full transition-opacity duration-500`}
-      style={{ paddingTop: fs(33),
-           height: fs(90)}}
+      style={{
+        paddingTop: fs(33),
+        height: fs(90)
+      }}
     >
       {/* Desktop Header */}
       <div
@@ -161,7 +163,7 @@ const Header: React.FC = () => {
                 key={item}
                 to={menuRoutes[item]}
                 className=" relative py-1 pt-2 font-bold font-cousine transition duration-300 ease-in-out rounded-full cursor-pointer group whitespace-nowrap"
-                style={{ fontSize: fs(16), paddingLeft:fs(15), paddingRight: fs(15) }}
+                style={{ fontSize: fs(16), paddingLeft: fs(15), paddingRight: fs(15) }}
               >
                 <span className="relative text-center z-10 text-black group-hover:text-white transition-colors duration-300">
                   {item}
@@ -181,7 +183,7 @@ const Header: React.FC = () => {
                 src="/src/search.svg"
                 alt="Search Icon"
                 className="transition-transform duration-300 hover:scale-105"
-                style={{width: fs(19), height: fs(19)}}
+                style={{ width: fs(19), height: fs(19) }}
               />
               <span
                 className="font-cousine font-bold italic whitespace-nowrap"
@@ -226,17 +228,16 @@ const Header: React.FC = () => {
                     className="flex justify-center rounded-full cursor-pointer"
                     onClick={() => setIsLanguageDropdownOpen(false)}
                   >
-                  <img src="/src/world.svg" alt="World Icon" />
+                    <img src="/src/world.svg" alt="World Icon" />
                   </div>
                   {["JA", "EN", "ZH"].map((lang) => (
                     <div
                       key={lang}
                       onClick={() => handleLanguageSelect(lang)}
-                      className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${
-                        selectedLanguage === lang
+                      className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${selectedLanguage === lang
                           ? "bg-black text-white"
                           : "border border-black text-black"
-                      } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
+                        } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
                       style={{
                         width: fs(28),
                         height: fs(28),
@@ -291,11 +292,10 @@ const Header: React.FC = () => {
                 <div
                   key={lang}
                   onClick={() => handleLanguageSelect(lang)}
-                  className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${
-                    selectedLanguage === lang
+                  className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${selectedLanguage === lang
                       ? "bg-black text-white"
                       : "border border-black text-black"
-                  } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
+                    } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
                   style={{
                     height: fsm(27),
                     width: fsm(27),
@@ -309,7 +309,7 @@ const Header: React.FC = () => {
           )}
         </div>
         <div
-          className="flex justify-center font-cousine font-bold absolute left-1/2 transform -translate-x-1/2"
+          className="flex justify-center font-cousine font-bold absolute left-1/2 transform -translate-x-1/2 cursor-pointer active:scale-90 active:opacity-50 transition-all duration-200 select-none"
           style={{ fontSize: fsm(25) }}
           onClick={handleHomeClick}
         >
