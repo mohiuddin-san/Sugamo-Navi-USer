@@ -5,7 +5,7 @@
     "env.d.ts",
     "netlify-edge-plugin.ts",
     ".next/types/**/*.ts"
-, "app/components/TikTokVideo.tsx"  ],
+, "app/components/TikTokVideo.tsx", "app/hooks/DeviceContext.tsx"  ],
   "compilerOptions": {
     "lib": [
       "DOM",

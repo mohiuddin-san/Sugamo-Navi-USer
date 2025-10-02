@@ -3,16 +3,12 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 type DeviceContextType = {
   width: number;
   isMobile: boolean;
-  isTablet: boolean;
-  isDesktop: boolean;
   mounted: boolean;
 };
 
 const DeviceContext = createContext<DeviceContextType>({
   width: 0,
   isMobile: false,
-  isTablet: false,
-  isDesktop: false,
   mounted: false,
 });
 
@@ -21,30 +17,30 @@ export const DeviceProvider = ({ children }: { children: ReactNode }) => {
   const [width, setWidth] = useState(0);
 
   useEffect(() => {
+    console.log('useEffect running!'); // Debug log
+    const currentWidth = window.innerWidth;
+    console.log('Setting width to:', currentWidth); // Debug log
+    
+    setWidth(currentWidth);
     setMounted(true);
-    setWidth(window.innerWidth);
 
     const handleResize = () => {
-      clearTimeout((window as any).resizeTimeout);
-      (window as any).resizeTimeout = setTimeout(() => {
-        setWidth(window.innerWidth);
-      }, 150);
+      const newWidth = window.innerWidth;
+      console.log('Resizing to:', newWidth); // Debug log
+      setWidth(newWidth);
     };
 
     window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      clearTimeout((window as any).resizeTimeout);
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const isMobile = mounted && width < 768;
-  const isTablet = mounted && width >= 768 && width < 1024;
-  const isDesktop = mounted && width >= 1024;
+  const isMobile = width > 0 && width < 768;
+  
+  console.log('Provider rendering - width:', width, 'isMobile:', isMobile); // Debug log
 
   return (
     <DeviceContext.Provider 
-      value={{ width, isMobile, isTablet, isDesktop, mounted }}
+      value={{ width, isMobile, mounted }}
     >
       {children}
     </DeviceContext.Provider>

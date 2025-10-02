@@ -2,11 +2,11 @@ import { Link } from '@remix-run/react';
 import Header from '~/components/Header';
 import React, { useEffect, useState } from 'react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
+import { useDevice } from '../hooks/DeviceContext';
 import Footer from './Footer';
 import MarqueeHeader from "./MarqueeHeader";
 import ProductCard from '~/components/ProductCard';
 import ModelCourseItem from './ModelCourseItem';
-import { useDevice } from '~/routes/contexts/DeviceContext';
 import TravelsTipsItem from './TravelsTipsItem';
 import InstagramVideosAll from '~/components/InstagramVideos';
 import { useLoaderData } from '@remix-run/react';
@@ -72,20 +72,28 @@ export default function HomePage() {
   }>();
   const error = data?.error || null;
   const { topImg, imageUrl, title, details, letsGOimg } = loader();
-  const { isMobile, mounted } = useDevice();
-  const autoSize = (size: number) => (mounted && isMobile ? fsm(size) : fs(size));
+  const { isMobile, mounted, width } = useDevice();
+  const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
-
+  console.log('====== DEBUG INFO ======');
+  console.log('Width:', width);
+  console.log('isMobile:', isMobile);
+  console.log('mounted:', mounted);
+  console.log('========================');
   const [topShops, setTopShops] = useState<Shop[]>([]);
   const [shopsLoading, setShopsLoading] = useState(true);
   const [shopsError, setShopsError] = useState<string | null>(null);
   const [blogs, setBlogs] = useState([]);
   const [categories, setCategories] = useState({});
   const [categoriesShop, setCategoriesShop] = useState({});
+  const [bookmarkedBlogs, setBookmarkedBlogs] = useState([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [blogsError, setBlogsError] = useState<string | null>(null);
 
   useEffect(() => {
+    const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
+    setBookmarkedBlogs(savedBookmarks);
+
     const fetchData = async () => {
       try {
         console.log("Starting blogs fetch...");
@@ -212,29 +220,29 @@ export default function HomePage() {
   return (
     <div className="w-full flex flex-col items-center">
       <Header />
-      <div className=" md:bg-white w-full" style={{ paddingLeft: mounted && isMobile ? fsm(19) : fs(90), paddingRight: mounted && isMobile ? fsm(19) : fs(90) }}>
+      <div className=" md:bg-white w-full" style={{ paddingLeft: isMobile ? fsm(19) : fs(90), paddingRight: isMobile ? fsm(19) : fs(90) }}>
         <img
           className="w-full"
           style={{ marginTop: autoSize(21), height: 'auto' }}
-          src={mounted && isMobile ? "./src/sugamunavi-mobile.webp" : topImg}
+          src={isMobile ? "./src/sugamunavi-mobile.webp" : topImg}
           alt="Sugamo Japan"
         />
       </div>
-      <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), marginLeft: mounted && isMobile ? fsm(20) : fs(130), marginRight: mounted && isMobile ? fsm(20) : fs(130), paddingTop: mounted && isMobile ? fsm(25) : fs(59), paddingLeft: mounted && isMobile ? fsm(40) : fs(83), paddingRight: mounted && isMobile ? fsm(40) : fs(55), paddingBottom: mounted && isMobile ? fsm(36) : fs(54) }}>
+      <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), marginLeft: isMobile ? fsm(20) : fs(130), marginRight: isMobile ? fsm(20) : fs(130), paddingTop: isMobile ? fsm(25) : fs(59), paddingLeft: isMobile ? fsm(40) : fs(83), paddingRight: isMobile ? fsm(40) : fs(55), paddingBottom: isMobile ? fsm(36) : fs(54) }}>
         <div className="flex flex-col w-full md:w-1/2">
           <p
             className="text-center md:text-left font-cousine italic font-bold "
-            style={{ fontSize: mounted && isMobile ? fsm(44) : fs(48), letterSpacing: mounted && isMobile ? fsm(0) : fs(0) }}
+            style={{ fontSize: isMobile ? fsm(44) : fs(48), letterSpacing: isMobile ? fsm(0) : fs(0) }}
           >
             {title}
           </p>
           <div
             className="font-semibold font-cairo text-[#313131] text-start"
             style={{
-              fontSize: mounted && isMobile ? fsm(16) : fs(16),
+              fontSize: isMobile ? fsm(16) : fs(16),
               width: '100%',
               lineHeight: 1.6,
-              marginTop: mounted && isMobile ? fsm(10) : fs(16)
+              marginTop: isMobile ? fsm(10) : fs(16)
             }}
           >
             {details.map((line, index) => (
@@ -247,8 +255,8 @@ export default function HomePage() {
             <div
               className="relative w-full flex justify-center md:justify-end"
               style={{
-                width: mounted && isMobile ? fsm(311) : fs(319),
-                height: mounted && isMobile ? fsm(100) : fs(95),
+                width: isMobile ? fsm(311) : fs(319),
+                height: isMobile ? fsm(100) : fs(95),
               }}
             >
               <img
@@ -281,12 +289,12 @@ export default function HomePage() {
         textColor="#FFFFFF"
         animationDuration="90s"
         marginBottom={0}
-        marginTop={mounted && isMobile ? 0 : 124}
+        marginTop={isMobile ? 0 : 124}
       />
       <div className='w-full h-auto '>
-        <div className="flex md:flex-row flex-col " style={{ marginLeft: mounted && isMobile ? fsm(20) : fs(90), marginRight: mounted && isMobile ? fsm(20) : fs(90), paddingTop: mounted && isMobile ? fsm(40) : fs(70), paddingBottom: mounted && isMobile ? fsm(40) : fs(70), gap: mounted && isMobile ? fsm(40) : fs(58) }}>
-          <div className='flex flex-row justify-center md:items-center ' style={{ gap: mounted && isMobile ? fsm(26) : fs(24) }}>
-            <div key={posts[0]?.id || '1'} className="relative overflow-hidden rounded-lg" style={{ width: mounted && isMobile ? '45%' : fs(253), height: mounted && isMobile ? fsm(360) : fs(450), maxWidth: mounted && isMobile ? fsm(207) : fs(253) }}>
+        <div className="flex md:flex-row flex-col " style={{ marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(90), paddingTop: isMobile ? fsm(40) : fs(70), paddingBottom: isMobile ? fsm(40) : fs(70), gap: isMobile ? fsm(40) : fs(58) }}>
+          <div className='flex flex-row justify-center md:items-center ' style={{ gap: isMobile ? fsm(26) : fs(24) }}>
+            <div key={posts[0]?.id || '1'} className="relative overflow-hidden rounded-lg" style={{ width: isMobile ? '45%' : fs(253), height: isMobile ? fsm(360) : fs(450), maxWidth: isMobile ? fsm(207) : fs(253) }}>
               <video
                 src={posts[0]?.media_url || './src/video1.mp4'}
                 className="object-cover w-full h-full"
@@ -301,7 +309,7 @@ export default function HomePage() {
                 <p className='text-body font-cairo text-white'>{posts[0]?.like_count || 0}</p>
               </div>
             </div>
-            <div key={posts[1]?.id || '2'} className="relative overflow-hidden rounded-lg" style={{ width: mounted && isMobile ? '45%' : fs(253), height: mounted && isMobile ? fsm(360) : fs(450), maxWidth: mounted && isMobile ? fsm(207) : fs(253) }}>
+            <div key={posts[1]?.id || '2'} className="relative overflow-hidden rounded-lg" style={{ width: isMobile ? '45%' : fs(253), height: isMobile ? fsm(360) : fs(450), maxWidth: isMobile ? fsm(207) : fs(253) }}>
               <video
                 src={posts[1]?.media_url || './src/video2.mp4'}
                 className="object-cover w-full h-full"
@@ -333,7 +341,7 @@ export default function HomePage() {
     decoration-[#ED4548] decoration-2 space-x-0 underline-offset-[3px]
   `}
                 style={{
-                  fontSize: mounted && isMobile ? fsm(75) : fs(80),
+                  fontSize: isMobile ? fsm(75) : fs(80),
                   textDecorationSkipInk: "none",
                 }}
               >
@@ -345,7 +353,7 @@ export default function HomePage() {
                 <p
                   className="font-cousine font-bold italic text-black underline space-x-0 decoration-black decoration-2 underline-offset-[3px]"
                   style={{
-                    fontSize: mounted && isMobile ? fsm(75) : fs(80),
+                    fontSize: isMobile ? fsm(75) : fs(80),
                     textDecorationSkipInk: "none",
                     letterSpacing: 0
                   }}
@@ -354,11 +362,11 @@ export default function HomePage() {
                 </p>
 
                 <img
-                  style={{ width: mounted && isMobile ? fsm(58) : fs(58), height: mounted && isMobile ? fsm(58) : fs(58) }}
+                  style={{ width: isMobile ? fsm(58) : fs(58), height: isMobile ? fsm(58) : fs(58) }}
                   src='./src/instragram.svg'
                 />
                 <img
-                  style={{ width: mounted && isMobile ? fsm(58) : fs(58), height: mounted && isMobile ? fsm(58) : fs(58) }}
+                  style={{ width: isMobile ? fsm(58) : fs(58), height: isMobile ? fsm(58) : fs(58) }}
                   src='./src/titok.svg'
                 />
               </div>
@@ -377,9 +385,9 @@ export default function HomePage() {
       <div
         className="flex flex-col justify-center items-center"
         style={fluidStyle({
-          marginTop: mounted && isMobile ? fsm(90) : fs(90),
-          marginLeft: mounted && isMobile ? fsm(20) : fs(90),
-          marginRight: mounted && isMobile ? fsm(20) : fs(90)
+          marginTop: isMobile ? fsm(90) : fs(90),
+          marginLeft: isMobile ? fsm(20) : fs(90),
+          marginRight: isMobile ? fsm(20) : fs(90)
         })}
       >
         {shopsLoading ? (
@@ -395,16 +403,16 @@ export default function HomePage() {
             <span
               className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
               style={fluidStyle({
-                fontSize: mounted && isMobile ? fsm(28) : fs(61),
-                w: mounted && isMobile ? fsm(338) : "75%"
+                fontSize: isMobile ? fsm(28) : fs(61),
+                w: isMobile ? fsm(338) : "75%"
               })}
             >
               {"SUGAMO’S BEST SHOP"}
               <span
                 className="w-auto font-cairo font-semibold block md:inline md:mt-0 not-italic"
                 style={fluidStyle({
-                  fontSize: mounted && isMobile ? fsm(16) : fs(20),
-                  paddingLeft: mounted && isMobile ? fsm(0) : fs(32)
+                  fontSize: isMobile ? fsm(16) : fs(20),
+                  paddingLeft: isMobile ? fsm(0) : fs(32)
                 })}
               >
                 巣鴨のおすすめのお店
@@ -414,15 +422,15 @@ export default function HomePage() {
             <div
               className="grid grid-cols-1 md:grid-cols-3 items-center"
               style={fluidStyle({
-                paddingTop: mounted && isMobile ? fsm(90) : fs(90),
-                paddingLeft: mounted && isMobile ? fsm(35) : fs(35),
-                paddingRight: mounted && isMobile ? fsm(35) : fs(35),
+                paddingTop: isMobile ? fsm(90) : fs(90),
+                paddingLeft: isMobile ? fsm(35) : fs(35),
+                paddingRight: isMobile ? fsm(35) : fs(35),
                 paddingBottom: autoSize(80),
-                gap: mounted && isMobile ? fsm(32) : fs(42)
+                gap: isMobile ? fsm(32) : fs(42)
               })}
             >
               {/* 1st Card */}
-              <div className="flex flex-col items-center transform order-1 md:order-2" style={{ gap: mounted && isMobile ? fsm(16) : fs(25) }}>
+              <div className="flex flex-col items-center transform order-1 md:order-2" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
                 <img
                   src="./src/first.svg"
                   alt="First Place"
@@ -443,13 +451,13 @@ export default function HomePage() {
                   category_id= {topShops[0]?.category_id}
                   map_embed={topShops[0]?.map_embed || ''}
                   other_images={topShops[0]?.other_images || null}
-                  style={{ width: mounted && isMobile ? "auto" : fs(434), height: mounted && isMobile ? "auto" : fs(560) }}
+                  style={{ width: isMobile ? "auto" : fs(434), height: isMobile ? "auto" : fs(560) }}
                   imageHeight={262}
                   paddingText={54}
                 />
               </div>
               {/* 2nd Card */}
-              <div className="flex flex-col items-center order-2 md:order-1" style={{ gap: mounted && isMobile ? fsm(16) : fs(26) }}>
+              <div className="flex flex-col items-center order-2 md:order-1" style={{ gap: isMobile ? fsm(16) : fs(26) }}>
                 <img
                   src="./src/second.svg"
                   alt="Second Place"
@@ -470,12 +478,12 @@ export default function HomePage() {
                   category_id= {(topShops[1]?.category_id ) || ''}
                   map_embed={topShops[1]?.map_embed || ''}
                   other_images={topShops[1]?.other_images || null}
-                  style={{ width: mounted && isMobile ? "auto" : fs(350), height: mounted && isMobile ? "auto" : fs(496) }}
+                  style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
                   imageHeight={210}
                 />
               </div>
               {/* 3rd Card */}
-              <div className="flex flex-col items-center order-3 lg:order-3" style={{ gap: mounted && isMobile ? fsm(16) : fs(25) }}>
+              <div className="flex flex-col items-center order-3 lg:order-3" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
                 <img
                   src="./src/third.svg"
                   alt="Third Place"
@@ -496,7 +504,7 @@ export default function HomePage() {
                   category_id= {topShops[2]?.category_id }
                   map_embed={topShops[2]?.map_embed || ''}
                   other_images={topShops[2]?.other_images || null}
-                  style={{ width: mounted && isMobile ? "auto" : fs(350), height: mounted && isMobile ? "auto" : fs(496) }}
+                  style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
                   imageHeight={210}
                 />
               </div>
@@ -514,7 +522,7 @@ export default function HomePage() {
               <p
                 className="text-black font-cairo italic font-bold text-center"
                 style={{
-                  fontSize: mounted && isMobile ? fsm(31) : fs(48),
+                  fontSize: isMobile ? fsm(31) : fs(48),
                   fontWeight: 700,
                 }}
               >
@@ -533,23 +541,23 @@ export default function HomePage() {
           to="/Recommendation"
           className="w-full italic font-bold text-end text-black font-cousine"
           style={fluidStyle({
-            fontSize: mounted && isMobile ? fsm(25) : fs(25),
-            marginTop: mounted && isMobile ? fsm(40) : fs(20),
-            marginRight: mounted && isMobile ? fsm(20) : fs(0)
+            fontSize: isMobile ? fsm(25) : fs(25),
+            marginTop: isMobile ? fsm(40) : fs(20),
+            marginRight: isMobile ? fsm(20) : fs(0)
           })}
         >
           more+
         </Link>
       </div>
-      <div className="flex flex-col justify-center items-center" style={{ marginTop: mounted && isMobile ? fsm(80) : fs(154), marginLeft: mounted && isMobile ? fsm(20) : fs(90), marginRight: mounted && isMobile ? fsm(20) : fs(90) }}>
-        <div className="w-full h-auto relative flex flex-col items-center bg-white border-2 border-black rounded-[30px]" style={{ paddingBottom: mounted && isMobile ? fsm(26) : fs(35) }}>
+      <div className="flex flex-col justify-center items-center" style={{ marginTop: isMobile ? fsm(80) : fs(154), marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(90) }}>
+        <div className="w-full h-auto relative flex flex-col items-center bg-white border-2 border-black rounded-[30px]" style={{ paddingBottom: isMobile ? fsm(26) : fs(35) }}>
           <span
             className="absolute p-0 -translate-y-1/2 left-1/2 transform -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
-            style={{ lineHeight: 1, fontSize: mounted && isMobile ? fsm(31) : fs(61), width: mounted && isMobile ? fsm(257) : fs(642) }}
+            style={{ lineHeight: 1, fontSize: isMobile ? fsm(31) : fs(61), width: isMobile ? fsm(257) : fs(642) }}
           >
-            {"MODEL COURSE"} <span className="font-cairo font-semibold not-italic" style={{ fontSize: mounted && isMobile ? fsm(16) : fs(20) }}>モデルコース</span>
+            {"MODEL COURSE"} <span className="font-cairo font-semibold not-italic" style={{ fontSize: isMobile ? fsm(16) : fs(20) }}>モデルコース</span>
           </span>
-          <div className="grid grid-cols-1 md:grid-cols-2" style={{ paddingTop: mounted && isMobile ? fsm(50) : fs(71) }}>
+          <div className="grid grid-cols-1 md:grid-cols-2" style={{ paddingTop: isMobile ? fsm(50) : fs(71) }}>
             <ModelCourseItem
               imageUrl="./src/model-course-1.jpg"
               title="食べ歩きとお守り巡り"
@@ -578,9 +586,9 @@ export default function HomePage() {
           to="/ModelCourse"
           className="w-full italic font-bold text-end text-black font-cousine"
           style={fluidStyle({
-            fontSize: mounted && isMobile ? fsm(25) : fs(25),
-            marginTop: mounted && isMobile ? fsm(40) : fs(20),
-            marginRight: mounted && isMobile ? fsm(20) : fs(0)
+            fontSize: isMobile ? fsm(25) : fs(25),
+            marginTop: isMobile ? fsm(40) : fs(20),
+            marginRight: isMobile ? fsm(20) : fs(0)
           })}
         >
           more+
@@ -589,9 +597,9 @@ export default function HomePage() {
       <div
         className="flex flex-col justify-center items-center w-full"
         style={{
-          marginTop: mounted && isMobile ? fsm(154) : fs(224),
-          paddingLeft: mounted && isMobile ? fsm(20) : fs(90),
-          paddingRight: mounted && isMobile ? fsm(20) : fs(90)
+          marginTop: isMobile ? fsm(154) : fs(224),
+          paddingLeft: isMobile ? fsm(20) : fs(90),
+          paddingRight: isMobile ? fsm(20) : fs(90)
         }}
       >
         <div
@@ -604,21 +612,21 @@ export default function HomePage() {
           <span
             className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap"
             style={fluidStyle({
-              fontSize: mounted && isMobile ? fsm(31) : fs(61),
-              w: mounted && isMobile ? fsm(240) : "auto",
-              paddingLeft: mounted && isMobile ? fsm(0) : fs(24),
-              paddingRight: mounted && isMobile ? fsm(0) : fs(24)
+              fontSize: isMobile ? fsm(31) : fs(61),
+              w: isMobile ? fsm(240) : "auto",
+              paddingLeft: isMobile ? fsm(0) : fs(24),
+              paddingRight: isMobile ? fsm(0) : fs(24)
             })}
           >
             {"TRAVEL TIPS "}
             <span
               className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0 not-italic"
-              style={fluidStyle({ fontSize: mounted && isMobile ? fsm(16) : fs(20) })}
+              style={fluidStyle({ fontSize: isMobile ? fsm(16) : fs(20) })}
             >
               旅の情報
             </span>
           </span>
-          <div className="grid grid-cols-1 md:grid-cols-3 w-full" style={{ paddingLeft: mounted && isMobile ? fsm(33) : fs(46), paddingRight: mounted && isMobile ? fsm(33) : fs(46), gap: mounted && isMobile ? fsm(16) : fsm(24) }}>
+          <div className="grid grid-cols-1 md:grid-cols-3 w-full" style={{ paddingLeft: isMobile ? fsm(33) : fs(46), paddingRight: isMobile ? fsm(33) : fs(46), gap: isMobile ? fsm(16) : fsm(24) }}>
             {blogsLoading ? (
               <div className="col-span-full text-center p-4">Loading tips...</div>
             ) : blogsError ? (
@@ -642,9 +650,9 @@ export default function HomePage() {
           to="/BlogList"
           className="w-full italic font-bold text-end text-black font-cousine"
           style={fluidStyle({
-            fontSize: mounted && isMobile ? fsm(25) : fs(25),
-            marginTop: mounted && isMobile ? fsm(40) : fs(20),
-            marginRight: mounted && isMobile ? fsm(20) : fs(0)
+            fontSize: isMobile ? fsm(25) : fs(25),
+            marginTop: isMobile ? fsm(40) : fs(20),
+            marginRight: isMobile ? fsm(20) : fs(0)
           })}
         >
           more+
@@ -658,7 +666,7 @@ export default function HomePage() {
         marginTop={131}
         marginBottom={50}
       />
-      <div className="grid grid-cols-1 md:grid-cols-2" style={{ marginTop: mounted && isMobile ? fsm(64) : fs(90), marginLeft: mounted && isMobile ? fsm(20) : fs(90), marginRight: mounted && isMobile ? fsm(20) : fs(72), marginBottom: mounted && isMobile ? fsm(56) : fs(170), gap: mounted && isMobile ? fsm(56) : fs(72) }}>
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ marginTop: isMobile ? fsm(64) : fs(90), marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(72), marginBottom: isMobile ? fsm(56) : fs(170), gap: isMobile ? fsm(56) : fs(72) }}>
         <div>
           <InstagramVideosAll />
         </div>
