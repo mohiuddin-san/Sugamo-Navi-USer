@@ -35,6 +35,24 @@ export default {
         courier: ["Courier", "monospace"],
         cousine: ['Cousine', 'monospace'],
       },
+      // Custom font sizes (5-200px)
+      fontSize: {
+        ...Object.fromEntries(
+          Array.from({ length: 196 }, (_, i) => {
+            const size = i + 5; // 5 থেকে 200 পর্যন্ত
+            return [`${size}`, `${size}px`];
+          })
+        ),
+      },
+      // Custom spacing for width/height/padding/margin (1-1000px)
+      spacing: {
+        ...Object.fromEntries(
+          Array.from({ length: 1000 }, (_, i) => {
+            const size = i + 1; // 1 থেকে 1000 পর্যন্ত
+            return [`${size}`, `${size}px`];
+          })
+        ),
+      },
     },
   },
   plugins: [
@@ -69,7 +87,7 @@ export default {
       }
 
       // 2. レスポンシブフォントサイズ（改善版fs/fsm/fs-vw関数の実装）
-
+      
       // fs関数: PC-タブレット間のレスポンシブサイズ（Figmaデザイン対応）
       // 基準: 1440px（Figma PCデザイン）→ 768px（タブレット）
       // 使用例: class="fs-20" (1440pxで20px, デフォルト縮小率0.75)
@@ -78,7 +96,7 @@ export default {
         const minVw = 768   // タブレット最小幅
         const baseVw = 1440 // Figma PCデザイン基準幅
         const minSize = maxSize * ratio
-
+        
         return {
           fontSize: `calc(${minSize}px + ${maxSize - minSize} * ((100vw - ${minVw}px) / ${baseVw - minVw}))`
         }
@@ -97,20 +115,22 @@ export default {
         const maxVw = 767
         const size320 = size480 * ratio320  // 320px width
         const size767 = size480 * ratio767  // 767px width
-        return {
-          fontSize: `calc(${size320}px + ${size767 - size320} * ((100vw - ${minVw}px) / ${maxVw - minVw}))`
-        }
-      }
-      const createSmallViewFsmUtility = (size480, ratio320 = 0.37, ratio767 = 1.2) => {
-        const minVw = 480
-        const maxVw = 767
-        const size320 = size480 * ratio320  // 320px width
-        const size767 = size480 * ratio767  // 767px width
+        
         return {
           fontSize: `calc(${size320}px + ${size767 - size320} * ((100vw - ${minVw}px) / ${maxVw - minVw}))`
         }
       }
 
+      const createSmallViewFsmUtility = (size480, ratio320 = 0.37, ratio767 = 1.2) => {
+        const minVw = 480
+        const maxVw = 767
+        const size320 = size480 * ratio320  // 320px width
+        const size767 = size480 * ratio767  // 767px width
+        
+        return {
+          fontSize: `calc(${size320}px + ${size767 - size320} * ((100vw - ${minVw}px) / ${maxVw - minVw}))`
+        }
+      }
 
       // よく使うサイズのプリセット
       const fsUtilities = {}
@@ -130,7 +150,7 @@ export default {
       })
 
       // fs-vw関数のプリセット（グリッド用の一般的なサイズ）
-      const fsVwSizes = [76, 100, 120, 216, 280,244, 360, 480, 536, 640, 720, 960, 1200, 1440]
+      const fsVwSizes = [76, 100, 120, 216, 280, 244, 360, 480, 536, 640, 720, 960, 1200, 1440]
       fsVwSizes.forEach(size => {
         // widthユーティリティ
         fsVwUtilities[`.w-fs-vw-${size}`] = {
@@ -157,18 +177,18 @@ export default {
       // Width・Padding・Margin用のfs関数ユーティリティ
       const sizingSizes = [8, 12, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 120, 150, 200, 250, 300, 350, 400, 450, 500, 600, 800]
       const sizingUtilities = {}
-
+      
       sizingSizes.forEach(size => {
         // Width
         sizingUtilities[`.w-fs-${size}`] = {
           width: createFsUtility(size).fontSize
         }
-
-        // Height  
+        
+        // Height
         sizingUtilities[`.h-fs-${size}`] = {
           height: createFsUtility(size).fontSize
         }
-
+        
         // Padding
         sizingUtilities[`.p-fs-${size}`] = {
           padding: createFsUtility(size).fontSize
@@ -193,7 +213,7 @@ export default {
         sizingUtilities[`.pr-fs-${size}`] = {
           paddingRight: createFsUtility(size).fontSize
         }
-
+        
         // Margin
         sizingUtilities[`.m-fs-${size}`] = {
           margin: createFsUtility(size).fontSize
@@ -218,12 +238,12 @@ export default {
         sizingUtilities[`.mr-fs-${size}`] = {
           marginRight: createFsUtility(size).fontSize
         }
-
+        
         // Border radius
         sizingUtilities[`.rounded-fs-${size}`] = {
           borderRadius: createFsUtility(size).fontSize
         }
-
+        
         // Gap
         sizingUtilities[`.gap-fs-${size}`] = {
           gap: createFsUtility(size).fontSize
@@ -234,7 +254,7 @@ export default {
         sizingUtilities[`.gap-y-fs-${size}`] = {
           rowGap: createFsUtility(size).fontSize
         }
-
+        
         // Border width
         sizingUtilities[`.border-fs-${size}`] = {
           borderWidth: createFsUtility(size).fontSize
@@ -251,7 +271,7 @@ export default {
         sizingUtilities[`.border-r-fs-${size}`] = {
           borderRightWidth: createFsUtility(size).fontSize
         }
-
+        
         // Outline
         sizingUtilities[`.outline-fs-${size}`] = {
           outlineWidth: createFsUtility(size).fontSize
@@ -259,17 +279,17 @@ export default {
         sizingUtilities[`.outline-offset-fs-${size}`] = {
           outlineOffset: createFsUtility(size).fontSize
         }
-
+        
         // Shadow (box-shadow blur値)
         sizingUtilities[`.shadow-fs-${size}`] = {
           boxShadow: `0 4px ${createFsUtility(size).fontSize} rgba(0,0,0,0.1)`
         }
-
+        
         // Text shadow
         sizingUtilities[`.text-shadow-fs-${size}`] = {
           textShadow: `0 2px ${createFsUtility(size).fontSize} rgba(0,0,0,0.1)`
         }
-
+        
         // Transform translate
         sizingUtilities[`.translate-x-fs-${size}`] = {
           transform: `translateX(${createFsUtility(size).fontSize})`
@@ -283,7 +303,7 @@ export default {
         sizingUtilities[`.-translate-y-fs-${size}`] = {
           transform: `translateY(-${createFsUtility(size).fontSize})`
         }
-
+        
         // Top/Right/Bottom/Left positioning
         sizingUtilities[`.top-fs-${size}`] = {
           top: createFsUtility(size).fontSize
@@ -309,7 +329,7 @@ export default {
         sizingUtilities[`.-left-fs-${size}`] = {
           left: `-${createFsUtility(size).fontSize}`
         }
-
+        
         // Min/Max width/height
         sizingUtilities[`.min-w-fs-${size}`] = {
           minWidth: createFsUtility(size).fontSize
@@ -323,7 +343,7 @@ export default {
         sizingUtilities[`.max-h-fs-${size}`] = {
           maxHeight: createFsUtility(size).fontSize
         }
-
+        
         // Space between (for flex/grid children)
         sizingUtilities[`.space-x-fs-${size}`] = {
           '& > * + *': {
@@ -335,7 +355,7 @@ export default {
             marginTop: createFsUtility(size).fontSize
           }
         }
-
+        
         // Scroll margin/padding
         sizingUtilities[`.scroll-m-fs-${size}`] = {
           scrollMargin: createFsUtility(size).fontSize
@@ -347,7 +367,7 @@ export default {
 
       // fsm版も追加
       const fsmSizingSizes = [8, 12, 16, 20, 24, 28, 32, 40, 48, 64, 80, 100, 150, 200, 250, 300]
-
+      
       fsmSizingSizes.forEach(size => {
         // Width (fsm)
         sizingUtilities[`.w-fsm-${size}`] = {
@@ -355,21 +375,21 @@ export default {
             width: createFsmUtility(size).fontSize
           }
         }
-
+        
         // Padding (fsm)
         sizingUtilities[`.p-fsm-${size}`] = {
           '@media (max-width: 767px)': {
             padding: createFsmUtility(size).fontSize
           }
         }
-
+        
         // Margin (fsm)
         sizingUtilities[`.m-fsm-${size}`] = {
           '@media (max-width: 767px)': {
-            margin: createFsUtility(size).fontSize
+            margin: createFsmUtility(size).fontSize
           }
         }
-
+        
         // Gap (fsm)
         sizingUtilities[`.gap-fsm-${size}`] = {
           '@media (max-width: 767px)': {
@@ -451,4 +471,3 @@ export default {
     require('@tailwindcss/line-clamp')
   ],
 }
-

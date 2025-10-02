@@ -147,8 +147,8 @@ export default function BookmarkPage() {
         backgroundColor="#FFFFFF"
         textColor="#000000"
         animationDuration="90s"
-        marginBottom={117}
-        marginTop={98}
+        marginBottomClass="mb-0"
+        marginTopClass="mt-0 md:mt-98"
       />
       <div
         className="w-full items-center text-center mb-8 px-4 flex justify-center gap-4 font-sawarabi"
@@ -222,7 +222,7 @@ export default function BookmarkPage() {
                 category={product.category}
                 category_id={product.category_id}
                 linkTo="/ShopDetails"
-                style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                style="w-auto md:w-350 h-auto md:h-496"
                 imageHeight={210}
               />
             ))}

@@ -75,8 +75,8 @@ export default function Shoppage() {
         backgroundColor="#FFFFFF"
         textColor="#0000000"
         animationDuration="90s"
-        marginBottom={120}
-        marginTop={98}
+        marginBottomClass="mb-120"
+        marginTopClass="mt-98"
       />
 
       {loading ? (

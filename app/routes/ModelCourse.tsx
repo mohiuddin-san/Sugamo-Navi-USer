@@ -366,8 +366,6 @@ export default function ModelCourse() {
               backgroundColor="#FFFFFF"
               textColor="#000000"
               animationDuration="90s"
-              marginBottom={0}
-              marginTop={0}
             />
             <div style={{ position: 'relative'}} ref={mapRef}>
               <MapSVG
@@ -381,8 +379,8 @@ export default function ModelCourse() {
               backgroundColor="#FFFFFF"
               textColor="#000000"
               animationDuration="40s"
-              marginBottom={0}
-              marginTop={0}
+              marginBottomClass="mb-0"
+              marginTopClass="mt-0 "
             />
           </div>
           <div

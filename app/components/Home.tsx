@@ -72,7 +72,6 @@ export default function HomePage() {
   }>();
   const error = data?.error || null;
   const { topImg, imageUrl, title, details, letsGOimg } = loader();
-  const autoSize = (size: number) => (true ? fsm(size) : fs(size));
   const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
 
   const [topShops, setTopShops] = useState<Shop[]>([]);
@@ -84,7 +83,6 @@ export default function HomePage() {
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [blogsError, setBlogsError] = useState<string | null>(null);
-  const isMobile = useMediaQuery({ maxWidth: 768 });
   useEffect(() => {
     const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
     setBookmarkedBlogs(savedBookmarks);
@@ -217,33 +215,28 @@ export default function HomePage() {
       <Header />
       <div className=" md:bg-white w-full md:pl-16 pl-4 md:pr-16 pr-4">
         <img
-          className="w-full block md:hidden"
-          style={{ marginTop: autoSize(21), height: 'auto' }}
-          src={"./src/sugamunavi-mobile.webp" }
+          className="w-full block md:hidden mt-21 h-auto"
+          src={"./src/sugamunavi-mobile.webp"}
           alt="Sugamo Japan"
         />
         <img
-          className="w-full hidden md:block"
-          style={{ marginTop: autoSize(21), height: 'auto' }}
-          src={ topImg}
+          className="w-full hidden md:block mt-21 h-auto"
+          src={topImg}
           alt="Sugamo Japan"
         />
       </div>
-      <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), marginLeft: isMobile ? fsm(20) : fs(130), marginRight: isMobile ? fsm(20) : fs(130), paddingTop: isMobile ? fsm(25) : fs(59), paddingLeft: isMobile ? fsm(40) : fs(83), paddingRight: isMobile ? fsm(40) : fs(55), paddingBottom: isMobile ? fsm(36) : fs(54) }}>
+      <div className="flex flex-col md:flex-row bg-[#F7F7F7] ml-20 md:ml-130 mr-20 md:mr-130 gap-54 pt-25 md:pt-59 pl-40 md:pl-83 pr-40 md:pr-55 pb-36 md:pb-54">
         <div className="flex flex-col w-full md:w-1/2">
           <p
-            className="text-center md:text-left font-cousine italic font-bold "
-            style={{ fontSize: isMobile ? fsm(44) : fs(48), letterSpacing: isMobile ? fsm(0) : fs(0) }}
+            className="text-center md:text-left font-cousine italic font-bold text-44 md:text-48"
           >
             {title}
           </p>
           <div
-            className="font-semibold font-cairo text-[#313131] text-start"
+            className="font-semibold font-cairo text-[#313131] text-start text-16 mt-10 md:mt-16"
             style={{
-              fontSize: isMobile ? fsm(16) : fs(16),
               width: '100%',
               lineHeight: 1.6,
-              marginTop: isMobile ? fsm(10) : fs(16)
             }}
           >
             {details.map((line, index) => (
@@ -254,11 +247,7 @@ export default function HomePage() {
           <div className="mt-8 w-full flex justify-center md:justify-end">
 
             <div
-              className="relative w-full flex justify-center md:justify-end"
-              style={{
-                width: isMobile ? fsm(311) : fs(319),
-                height: isMobile ? fsm(100) : fs(95),
-              }}
+              className="relative flex justify-center md:justify-end w-311 md:w-319 h-100 md:h-95"
             >
               <img
                 src={letsGOimg}
@@ -270,32 +259,29 @@ export default function HomePage() {
           </div>
         </div>
 
-        {!isMobile && (
-          <div className="flex justify-center items-center w-full md:w-1/2 md:mt-0">
-            <div
-              className="relative w-full h-full">
-              <img
-                src={imageUrl}
-                alt="Sugamo Japan"
-                className="w-full h-full absolute top-0 left-0 object-cover rounded-[30px] "
-
-              />
-            </div>
+        <div className="hidden md:flex justify-center items-center w-full md:w-1/2 md:mt-0">
+          <div className="relative w-full h-full">
+            <img
+              src={imageUrl}
+              alt="Sugamo Japan"
+              className="w-full h-full absolute top-0 left-0 object-cover rounded-[30px]"
+            />
           </div>
-        )}
+        </div>
+
       </div>
       <MarqueeHeader
         text="FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE!"
         backgroundColor="#000000"
         textColor="#FFFFFF"
         animationDuration="90s"
-        marginBottom={0}
-        marginTop={isMobile ? 0 : 124}
+        marginBottomClass="mb-0"
+        marginTopClass="mt-0 md:mt-124"
       />
       <div className='w-full h-auto '>
-        <div className="flex md:flex-row flex-col " style={{ marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(90), paddingTop: isMobile ? fsm(40) : fs(70), paddingBottom: isMobile ? fsm(40) : fs(70), gap: isMobile ? fsm(40) : fs(58) }}>
-          <div className='flex flex-row justify-center md:items-center ' style={{ gap: isMobile ? fsm(26) : fs(24) }}>
-            <div key={posts[0]?.id || '1'} className="relative overflow-hidden rounded-lg" style={{ width: isMobile ? '45%' : fs(253), height: isMobile ? fsm(360) : fs(450), maxWidth: isMobile ? fsm(207) : fs(253) }}>
+        <div className="flex md:flex-row flex-col ml-20 md:ml-90 mr-20 md:mr-90 pt-40 md:pt-70 pb-40 md:pb-70 gap-40 md:gap-58">
+          <div className='flex flex-row justify-center md:items-center gap-26 md:gap-24'>
+            <div key={posts[0]?.id || '1'} className="relative overflow-hidden rounded-lg w-207 md:w-253 h-360 md:h-450">
               <video
                 src={posts[0]?.media_url || './src/video1.mp4'}
                 className="object-cover w-full h-full"
@@ -310,7 +296,7 @@ export default function HomePage() {
                 <p className='text-body font-cairo text-white'>{posts[0]?.like_count || 0}</p>
               </div>
             </div>
-            <div key={posts[1]?.id || '2'} className="relative overflow-hidden rounded-lg" style={{ width: isMobile ? '45%' : fs(253), height: isMobile ? fsm(360) : fs(450), maxWidth: isMobile ? fsm(207) : fs(253) }}>
+            <div key={posts[1]?.id || '2'} className="relative overflow-hidden rounded-lg w-207 md:w-253 h-360 md:h-450">
               <video
                 src={posts[1]?.media_url || './src/video2.mp4'}
                 className="object-cover w-full h-full"
@@ -327,22 +313,21 @@ export default function HomePage() {
             </div>
           </div>
           <div className=' flex flex-col justify-center items-center md:items-start'>
-            {!isMobile && (
               <img
+                className='hidden md:block'
                 style={{ width: fs(200), height: fs(100) }}
                 alt="SUGAMO NAVI"
                 src="./src/sugamo-navi-text.svg"
               />
-            )}
+            
 
             <div className='flex flex-col w-auto'>
               <p
                 className={`
     font-cousine font-bold italic text-[#ED4548] underline 
-    decoration-[#ED4548] decoration-2 space-x-0 underline-offset-[3px]
+    decoration-[#ED4548] decoration-2 space-x-0 underline-offset-[3px] text-75 md:text-80
   `}
                 style={{
-                  fontSize: isMobile ? fsm(75) : fs(80),
                   textDecorationSkipInk: "none",
                 }}
               >
@@ -352,9 +337,8 @@ export default function HomePage() {
 
               <div className='flex flex-row justify-center md:justify-start items-center gap-2'>
                 <p
-                  className="font-cousine font-bold italic text-black underline space-x-0 decoration-black decoration-2 underline-offset-[3px]"
+                  className="text-75 md:text-80 font-cousine font-bold italic text-black underline space-x-0 decoration-black decoration-2 underline-offset-[3px]"
                   style={{
-                    fontSize: isMobile ? fsm(75) : fs(80),
                     textDecorationSkipInk: "none",
                     letterSpacing: 0
                   }}
@@ -363,11 +347,11 @@ export default function HomePage() {
                 </p>
 
                 <img
-                  style={{ width: isMobile ? fsm(58) : fs(58), height: isMobile ? fsm(58) : fs(58) }}
+                  className='w-58 h-58'
                   src='./src/instragram.svg'
                 />
                 <img
-                  style={{ width: isMobile ? fsm(58) : fs(58), height: isMobile ? fsm(58) : fs(58) }}
+                  className='w-58 h-58'
                   src='./src/titok.svg'
                 />
               </div>
@@ -381,15 +365,9 @@ export default function HomePage() {
         backgroundColor="#000000"
         textColor="#FFFFFF"
         animationDuration="90s"
-        marginBottom={0}
       />
       <div
-        className="flex flex-col justify-center items-center"
-        style={fluidStyle({
-          marginTop: isMobile ? fsm(90) : fs(90),
-          marginLeft: isMobile ? fsm(20) : fs(90),
-          marginRight: isMobile ? fsm(20) : fs(90)
-        })}
+        className="flex flex-col justify-center items-center mt-90 ml-20 md:ml-90 mr-20 md:mr-90"
       >
         {shopsLoading ? (
           <div className="container mx-auto p-4">
@@ -400,43 +378,27 @@ export default function HomePage() {
             Error: {shopsError}
           </div>
         ) : (
-          <div className="relative flex flex-col items-center border-2 border-black" style={{ borderRadius: autoSize(30) }}>
+          <div className="relative flex flex-col items-center border-2 border-black border-spacing-30">
             <span
-              className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
-              style={fluidStyle({
-                fontSize: isMobile ? fsm(28) : fs(61),
-                w: isMobile ? fsm(338) : "75%"
-              })}
+              className="w-338 md:w-auto text-21 md:text-61 absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
             >
               {"SUGAMO’S BEST SHOP"}
               <span
-                className="w-auto font-cairo font-semibold block md:inline md:mt-0 not-italic"
-                style={fluidStyle({
-                  fontSize: isMobile ? fsm(16) : fs(20),
-                  paddingLeft: isMobile ? fsm(0) : fs(32)
-                })}
+                className="w-auto font-cairo font-semibold block md:inline md:mt-0 not-italic text-16 md:text-20 pl-0 md:pl-32"
               >
                 巣鴨のおすすめのお店
               </span>
             </span>
 
             <div
-              className="grid grid-cols-1 md:grid-cols-3 items-center"
-              style={fluidStyle({
-                paddingTop: isMobile ? fsm(90) : fs(90),
-                paddingLeft: isMobile ? fsm(35) : fs(35),
-                paddingRight: isMobile ? fsm(35) : fs(35),
-                paddingBottom: autoSize(80),
-                gap: isMobile ? fsm(32) : fs(42)
-              })}
+              className="grid grid-cols-1 md:grid-cols-3 items-center pt-90 pl-35 pr-35 pb-80 gap-32 md:gap-42"
             >
               {/* 1st Card */}
-              <div className="flex flex-col items-center transform order-1 md:order-2" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
+              <div className="flex flex-col items-center transform order-1 md:order-2 gap-16 md:gap-25" >
                 <img
                   src="./src/first.svg"
                   alt="First Place"
-                  style={{ width: autoSize(116), height: autoSize(113) }}
-                  className="object-cover rounded-lg"
+                  className="object-cover rounded-lg w-116 h-113"
                 />
                 <ProductCard
                   title={topShops[0]?.name || "ブーランジェリーボヌール"}
@@ -448,22 +410,21 @@ export default function HomePage() {
                   opening_hours={topShops[0]?.opening_hours || ''}
                   near_station={topShops[0]?.near_station || ''}
                   address={topShops[0]?.address || ''}
-                  category={getCategoryName(topShops[0]?.category_id )|| ''}
-                  category_id= {topShops[0]?.category_id}
+                  category={getCategoryName(topShops[0]?.category_id) || ''}
+                  category_id={topShops[0]?.category_id}
                   map_embed={topShops[0]?.map_embed || ''}
                   other_images={topShops[0]?.other_images || null}
-                  style={{ width: isMobile ? "auto" : fs(434), height: isMobile ? "auto" : fs(560) }}
+                  style="w-auto md:w-434 h-auto md:h-560"
                   imageHeight={262}
                   paddingText={54}
                 />
               </div>
               {/* 2nd Card */}
-              <div className="flex flex-col items-center order-2 md:order-1" style={{ gap: isMobile ? fsm(16) : fs(26) }}>
+              <div className="flex flex-col items-center order-2 md:order-1 gap-16 md:gap-26">
                 <img
                   src="./src/second.svg"
                   alt="Second Place"
-                  style={{ width: autoSize(88), height: autoSize(88) }}
-                  className="object-cover rounded-lg"
+                  className="object-cover rounded-lg w-88 h-88"
                 />
                 <ProductCard
                   title={topShops[1]?.name || "Cafe Sugamo"}
@@ -475,21 +436,20 @@ export default function HomePage() {
                   opening_hours={topShops[1]?.opening_hours || ''}
                   near_station={topShops[1]?.near_station || ''}
                   address={topShops[1]?.address || ''}
-                  category={(getCategoryName( topShops[1]?.category_id )) || ''}
-                  category_id= {(topShops[1]?.category_id ) || ''}
+                  category={(getCategoryName(topShops[1]?.category_id)) || ''}
+                  category_id={(topShops[1]?.category_id) || ''}
                   map_embed={topShops[1]?.map_embed || ''}
                   other_images={topShops[1]?.other_images || null}
-                  style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                  style="w-auto md:w-350 h-auto md:h-496"
                   imageHeight={210}
                 />
               </div>
               {/* 3rd Card */}
-              <div className="flex flex-col items-center order-3 lg:order-3" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
+              <div className="flex flex-col items-center order-3 lg:order-3 gap-16 md:gap-26" >
                 <img
                   src="./src/third.svg"
                   alt="Third Place"
-                  style={{ width: autoSize(88), height: autoSize(88) }}
-                  className="object-cover rounded-lg"
+                   className="object-cover rounded-lg w-88 h-88"
                 />
                 <ProductCard
                   title={topShops[2]?.name || "Restaurant Sugamo"}
@@ -501,29 +461,26 @@ export default function HomePage() {
                   opening_hours={topShops[2]?.opening_hours || ''}
                   near_station={topShops[2]?.near_station || ''}
                   address={topShops[2]?.address || ''}
-                  category={getCategoryName(topShops[2]?.category_id ) || ''}
-                  category_id= {topShops[2]?.category_id }
+                  category={getCategoryName(topShops[2]?.category_id) || ''}
+                  category_id={topShops[2]?.category_id}
                   map_embed={topShops[2]?.map_embed || ''}
                   other_images={topShops[2]?.other_images || null}
-                  style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                  style="w-auto md:w-350 h-auto md:h-496"
                   imageHeight={210}
                 />
               </div>
             </div>
             <div
-              className="absolute bottom-0 translate-y-1/2 flex items-center bg-white whitespace-nowrap max-w-full"
-              style={{ gap: autoSize(13), paddingLeft: autoSize(20), paddingRight: autoSize(20) }}
+              className="absolute bottom-0 translate-y-1/2 flex items-center bg-white whitespace-nowrap max-w-full gap-13 pl-20 pr-20"
             >
               <img
                 src="./src/left-line.svg"
                 alt="Top 3 Rankings"
-                className="h-auto object-cover"
-                style={{ width: autoSize(32) }}
+                className="h-auto object-cover w-32"
               />
               <p
-                className="text-black font-cairo italic font-bold text-center"
+                className="text-black font-cairo italic font-bold text-center text-31 md:text-48"
                 style={{
-                  fontSize: isMobile ? fsm(31) : fs(48),
                   fontWeight: 700,
                 }}
               >
@@ -532,33 +489,27 @@ export default function HomePage() {
               <img
                 src="./src/right-line.svg"
                 alt="Top 3 Rankings"
-                className="h-auto object-cover"
-                style={{ width: autoSize(32) }}
+                className="h-auto object-cover w-32"
               />
             </div>
           </div>
         )}
         <Link
           to="/Recommendation"
-          className="w-full italic font-bold text-end text-black font-cousine"
-          style={fluidStyle({
-            fontSize: isMobile ? fsm(25) : fs(25),
-            marginTop: isMobile ? fsm(40) : fs(20),
-            marginRight: isMobile ? fsm(20) : fs(0)
-          })}
+          className="w-full italic font-bold text-end text-black font-cousine text-25 mt-40 md:mt-20 mr-20 md:mr-0"
         >
           more+
         </Link>
       </div>
-      <div className="flex flex-col justify-center items-center" style={{ marginTop: isMobile ? fsm(80) : fs(154), marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(90) }}>
-        <div className="w-full h-auto relative flex flex-col items-center bg-white border-2 border-black rounded-[30px]" style={{ paddingBottom: isMobile ? fsm(26) : fs(35) }}>
+      <div className="flex flex-col justify-center items-center mt-80 md:mt-154 ml-20 md:ml-90 mr-20 md:mr-90  ">
+        <div className="w-full h-auto relative flex flex-col items-center bg-white border-2 border-black rounded-[30px] pb-26 md:35" >
           <span
-            className="absolute p-0 -translate-y-1/2 left-1/2 transform -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
-            style={{ lineHeight: 1, fontSize: isMobile ? fsm(31) : fs(61), width: isMobile ? fsm(257) : fs(642) }}
+            className="text-31 md:text-61 w-257 md:w-642 absolute p-0 -translate-y-1/2 left-1/2 transform -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
+
           >
-            {"MODEL COURSE"} <span className="font-cairo font-semibold not-italic" style={{ fontSize: isMobile ? fsm(16) : fs(20) }}>モデルコース</span>
+            {"MODEL COURSE"} <span className="font-cairo font-semibold not-italic text-16 md:text-20" >モデルコース</span>
           </span>
-          <div className="grid grid-cols-1 md:grid-cols-2" style={{ paddingTop: isMobile ? fsm(50) : fs(71) }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 pt-50 md:pr-71">
             <ModelCourseItem
               imageUrl="./src/model-course-1.jpg"
               title="食べ歩きとお守り巡り"
@@ -585,49 +536,28 @@ export default function HomePage() {
         </div>
         <Link
           to="/ModelCourse"
-          className="w-full italic font-bold text-end text-black font-cousine"
-          style={fluidStyle({
-            fontSize: isMobile ? fsm(25) : fs(25),
-            marginTop: isMobile ? fsm(40) : fs(20),
-            marginRight: isMobile ? fsm(20) : fs(0)
-          })}
+          className="w-full italic font-bold text-end text-black font-cousine text-25 mt-40 md:mt-20 mr-20 md:mr-0"
         >
           more+
         </Link>
       </div>
       <div
-        className="flex flex-col justify-center items-center w-full"
-        style={{
-          marginTop: isMobile ? fsm(154) : fs(224),
-          paddingLeft: isMobile ? fsm(20) : fs(90),
-          paddingRight: isMobile ? fsm(20) : fs(90)
-        }}
+        className="mt-154 md:mt-224 pl-20 md:pl-90 pr-20 md:pr-90 flex flex-col justify-center items-center w-full"
       >
         <div
-          className="w-full h-auto relative flex flex-col items-center border-2 border-black rounded-[30px] bg-white"
-          style={{
-            paddingBottom: autoSize(90),
-            paddingTop: autoSize(94)
-          }}
+          className="w-full h-auto relative flex flex-col items-center border-2 border-black rounded-[30px] bg-white pb-90 pt-94"
         >
           <span
-            className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap"
-            style={fluidStyle({
-              fontSize: isMobile ? fsm(31) : fs(61),
-              w: isMobile ? fsm(240) : "auto",
-              paddingLeft: isMobile ? fsm(0) : fs(24),
-              paddingRight: isMobile ? fsm(0) : fs(24)
-            })}
+            className="text-31 md:text-61 w-240 md:w-auto absolute pl-0 md:pl-24 pr-0 md:pr-24 top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap"
           >
             {"TRAVEL TIPS "}
             <span
-              className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0 not-italic"
-              style={fluidStyle({ fontSize: isMobile ? fsm(16) : fs(20) })}
+              className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0 not-italic text-16 md:text-20"
             >
               旅の情報
             </span>
           </span>
-          <div className="grid grid-cols-1 md:grid-cols-3 w-full" style={{ paddingLeft: isMobile ? fsm(33) : fs(46), paddingRight: isMobile ? fsm(33) : fs(46), gap: isMobile ? fsm(16) : fsm(24) }}>
+          <div className="grid grid-cols-1 md:grid-cols-3 w-full pl-33 md:pl-46 pr-33 md:pr-46 gap-16 md:gap-24" >
             {blogsLoading ? (
               <div className="col-span-full text-center p-4">Loading tips...</div>
             ) : blogsError ? (
@@ -649,12 +579,7 @@ export default function HomePage() {
         </div>
         <Link
           to="/BlogList"
-          className="w-full italic font-bold text-end text-black font-cousine"
-          style={fluidStyle({
-            fontSize: isMobile ? fsm(25) : fs(25),
-            marginTop: isMobile ? fsm(40) : fs(20),
-            marginRight: isMobile ? fsm(20) : fs(0)
-          })}
+          className="w-full italic font-bold text-end text-black font-cousine text-25 mt-40 md:mt-20 mr-20 md:mr-0"
         >
           more+
         </Link>
@@ -664,10 +589,10 @@ export default function HomePage() {
         backgroundColor="#000000"
         textColor="#FFFFFF"
         animationDuration="90s"
-        marginTop={131}
-        marginBottom={50}
+        marginBottomClass="mb-50"
+        marginTopClass="mt-131"
       />
-      <div className="grid grid-cols-1 md:grid-cols-2" style={{ marginTop: isMobile ? fsm(64) : fs(90), marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(72), marginBottom: isMobile ? fsm(56) : fs(170), gap: isMobile ? fsm(56) : fs(72) }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 mt-64 md:mt-90 ml-20 md:ml-90  mr-20 md:mr-72 mb-56 md:mb-170 gap-56 md:gap-72" >
         <div>
           <InstagramVideosAll />
         </div>

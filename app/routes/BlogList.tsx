@@ -121,8 +121,8 @@ export default function BlogList() {
         backgroundColor="#FFFFFF"
         textColor="#0000000"
         animationDuration="90s"
-        marginBottom={0}
-        marginTop={98}
+        marginBottomClass="mb-0"
+        marginTopClass="mt-0 md:mt-98"
       />.
       <ResponsiveGrid
         columns={isMobile ? "1fr" : "1fr 1fr"}
