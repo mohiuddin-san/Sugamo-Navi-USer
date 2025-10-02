@@ -399,7 +399,7 @@ export default function HomePage() {
             Error: {shopsError}
           </div>
         ) : (
-          <div className="relative flex flex-col items-center border-2 border-black" style={{ borderRadius: autoSize(30) }}>
+          <div className="w-full relative flex flex-col items-center border-2 border-black" style={{ borderRadius: autoSize(30) }}>
             <span
               className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-cousine italic font-bold"
               style={fluidStyle({
@@ -451,7 +451,7 @@ export default function HomePage() {
                   category_id= {topShops[0]?.category_id}
                   map_embed={topShops[0]?.map_embed || ''}
                   other_images={topShops[0]?.other_images || null}
-                  style={{ width: isMobile ? "auto" : fs(434), height: isMobile ? "auto" : fs(560) }}
+                  style={{ width: isMobile ? fsm(350) : fs(434), height: isMobile ? fsm(496) : fs(560) }}
                   imageHeight={262}
                   paddingText={54}
                 />
@@ -478,7 +478,7 @@ export default function HomePage() {
                   category_id= {(topShops[1]?.category_id ) || ''}
                   map_embed={topShops[1]?.map_embed || ''}
                   other_images={topShops[1]?.other_images || null}
-                  style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                  style={{ width: isMobile ? fsm(350) : fs(350), height: isMobile ? fsm(496) : fs(496) }}
                   imageHeight={210}
                 />
               </div>
@@ -504,7 +504,7 @@ export default function HomePage() {
                   category_id= {topShops[2]?.category_id }
                   map_embed={topShops[2]?.map_embed || ''}
                   other_images={topShops[2]?.other_images || null}
-                  style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                 style={{ width: isMobile ? fsm(350) : fs(350), height: isMobile ? fsm(496) : fs(496) }}
                   imageHeight={210}
                 />
               </div>
