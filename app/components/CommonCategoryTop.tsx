@@ -1,10 +1,10 @@
 import React from 'react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
-import { useDevice } from "~/routes/contexts/DeviceContext";
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const CommonCategoryTop = ({ title, subtitle, imageSrc, imageAlt}) => {
-  const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
-  const isMobile  = useDevice();
+  const { fs, fsm} = useUniversalFluid();
+  const { isMobile} = useIsMobile();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   return (
     <div

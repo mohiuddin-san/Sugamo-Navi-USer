@@ -218,7 +218,7 @@ export default function HomePage() {
     return <LoadingScreen />;
   }
   return (
-    <div className="w-full flex flex-col items-center">
+  <div className="w-full flex flex-col items-center">
       <Header />
       <div className=" md:bg-white w-full" style={{ paddingLeft: isMobile ? fsm(19) : fs(90), paddingRight: isMobile ? fsm(19) : fs(90) }}>
         <img

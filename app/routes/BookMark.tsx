@@ -5,7 +5,7 @@ import ProductCard from '~/components/ProductCard';
 import MarqueeHeader from '~/components/MarqueeHeader';
 import CommonCategoryTop from '~/components/CommonCategoryTop';
 import Footer from '~/components/Footer';
-import { useDevice } from '~/routes/contexts/DeviceContext';
+import { useIsMobile } from '~/hooks/useIsMobile';
 import { useUniversalFluid } from '~/hooks/useUniversalFluid';
 import supabase from '~/supabase';
 
@@ -33,7 +33,7 @@ export default function BookmarkPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const location = useLocation();
   const { fs, fsm } = useUniversalFluid();
-  const isMobile = useDevice();
+  const { isMobile} = useIsMobile();
 
   useEffect(() => {
     const fetchBookmarksAndShops = async () => {

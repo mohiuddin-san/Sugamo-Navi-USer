@@ -5,7 +5,7 @@ import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import MarqueeHeader from '~/components/MarqueeHeader';
 import CommonCategoryTop from '~/components/CommonCategoryTop';
 import Footer from '../components/Footer';
-import { useDevice } from '~/routes/contexts/DeviceContext';
+import { useIsMobile } from '~/hooks/useIsMobile';
 import ModelCourseDetailsItem from '../components/ModelCourseDetailsItem';
 import ShopItem from '~/components/ShopItem';
 import { json } from '@remix-run/node';
@@ -150,7 +150,7 @@ export default function ModelCourse() {
   const products = data?.products || [];
   const stops = data?.stops || [];
   const location = useLocation();
-  const isMobile = useDevice();
+   const { isMobile} = useIsMobile();
   const { fs, fsm } = useUniversalFluid();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
 

@@ -22,7 +22,7 @@ import Header from "../components/Header";
 
 import OGPPreview from "~/components/OGPPreview";
 
-import { useDevice } from "~/routes/contexts/DeviceContext";
+import { useIsMobile } from "~/hooks/useIsMobile";
 
 import MarqueeHeader from "../components/MarqueeHeader";
 
@@ -63,7 +63,7 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
   const [activeHeading, setActiveHeading] = useState<string | null>(null);
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState<string[]>([]);
   const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
-   const isMobile = useDevice();
+   const isMobile = useIsMobile();
   const tocContainerRef = useRef<HTMLDivElement>(null);
   const tocItemRefs = useRef<Record<string, HTMLLIElement | null>>({});
   const ulRef = useRef<HTMLUListElement>(null);
@@ -377,7 +377,7 @@ useEffect(() => {
       <CommonCategoryTop
         title="TRAVEL TIPS"
         subtitle="旅の情報"
-        imageSrc="/src/bookmark.png"
+        imageSrc="/src/bookmark.jpg"
         imageAlt="Travel tips Image"
       />
       <MarqueeHeader

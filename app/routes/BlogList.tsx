@@ -13,7 +13,7 @@ import Header from "../components/Header";
 import CommonCategoryTop from "../components/CommonCategoryTop";
 import TikTokVideoSlider from "../components/TikTokVideoSlider"
 import { getTikTokVideos } from "~/components/socialMediaFetcher";
-import { useDevice } from "~/routes/contexts/DeviceContext";
+import { useIsMobile } from '../hooks/useIsMobile';
 import Footer from '../components/Footer';
 
 export const loader = async () => {
@@ -26,8 +26,8 @@ export default function BlogList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState([]);
-  const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
-  const isMobile = useDevice();
+  const { fs, fsm } = useUniversalFluid();
+  const { isMobile } = useIsMobile();
   const { videos } = useLoaderData<{ videos: any[] }>();
   useEffect(() => {
     const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");

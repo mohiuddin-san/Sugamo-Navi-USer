@@ -1,6 +1,6 @@
 import { Link } from '@remix-run/react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
-import { useDevice } from '~/routes/contexts/DeviceContext';
+import { useIsMobile } from '~/hooks/useIsMobile';
 import React, { useState, useEffect } from 'react';
 import supabase from '~/supabase';
 
@@ -40,7 +40,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   opening_hours,
 }) => {
   const { fs, fsm } = useUniversalFluid();
-  const isMobile = useDevice();
+const { isMobile} = useIsMobile();
   const targetLink = `/ShopDetails?id=${id}&type=${type}s`; // Match ShopDetails loader expectation
   const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);

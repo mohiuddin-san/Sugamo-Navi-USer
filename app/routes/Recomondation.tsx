@@ -7,7 +7,7 @@ import CommonCategoryTop from '~/components/CommonCategoryTop';
 import Footer from '../components/Footer';
 import supabaseShops from '~/supabase';
 import { ResponsiveGrid, GridItem } from '../components/ResponsiveGrid';
-import { useDevice } from '~/routes/contexts/DeviceContext';
+import { useIsMobile } from '~/hooks/useIsMobile';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 
 type Shop = {
@@ -32,7 +32,7 @@ export default function Recommendation() {
   const [shopsLoading, setShopsLoading] = useState(true);
   const [shopsError, setShopsError] = useState<string | null>(null);
   const { fs, fsm } = useUniversalFluid();
-  const isMobile = useDevice();
+    const { isMobile} = useIsMobile();
 
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));

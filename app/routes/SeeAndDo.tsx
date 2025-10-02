@@ -7,7 +7,7 @@ import MarqueeHeader from '~/components/MarqueeHeader';
 import CommonCategoryTop from '~/components/CommonCategoryTop';
 
 import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
-import { useDevice } from "~/routes/contexts/DeviceContext";
+import { useIsMobile } from "~/hooks/useIsMobile";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import supabase from '~/supabase'; // আপনার Supabase client
 type place= {
@@ -28,7 +28,7 @@ type place= {
 export default function Shoppage() {
   const location = useLocation();
   const { fs, fsm } = useUniversalFluid();
-  const isMobile = useDevice();
+  const {isMobile} = useIsMobile();
   const [places, setPlaces] =  useState<place[]>([]);
   const [loading, setLoading] = useState(false); // Loading state
 

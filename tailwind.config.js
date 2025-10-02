@@ -9,7 +9,7 @@ export default {
     "./pages/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {
+     extend: {
       screens: {
         'xsm': '320px',
         'sm': '480px',
@@ -33,7 +33,7 @@ export default {
         cairo: ["'Cairo'", "sans-serif"],
         courierPrime: ["'Courier Prime'", "monospace"],
         courier: ["Courier", "monospace"],
-        cousine: ["Cousine", "monospace"]
+        cousine: ['Cousine', 'monospace'],
       },
     },
   },

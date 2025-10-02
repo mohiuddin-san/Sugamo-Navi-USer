@@ -331,7 +331,7 @@ const Header: React.FC = () => {
             onClick={() => setIsMenuOpen(true)}
             className="transition-transform duration-300 hover:scale-125"
           >
-            <img src="./src/menu.svg" alt="Menu Icon" />
+            <img src="./src/menu-mobile.svg" alt="Mohin" />
           </button>
         </div>
       </div>

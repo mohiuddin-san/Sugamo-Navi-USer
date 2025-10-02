@@ -5,7 +5,7 @@ import ShopItem from '~/components/ShopItem';
 import MarqueeHeader from '~/components/MarqueeHeader';
 import Footer from '~/components/Footer';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
-import { useDevice } from '~/routes/contexts/DeviceContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 import supabase from '~/supabase';
 
 interface Shop {
@@ -200,7 +200,7 @@ export default function ShopDetails() {
   const visitAttemptedRef = useRef<boolean>(false);
   const loveAttemptedRef = useRef<boolean>(false);
   const { fs, fsm } = useUniversalFluid();
-  const isMobile = useDevice();
+  const {isMobile }= useIsMobile();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   const visibleCards = 4;
 
