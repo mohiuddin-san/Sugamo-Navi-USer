@@ -66,13 +66,16 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
                                         </button>
                                     ))}
                                 </div>
-
+                                <Link 
+                                 to="/ModelCourse">
                                 <img
                                     className=" self-end p-0"
                                     src="./src/lets-go.svg"
                                     style={{ width: fs(205), height: "auto" }}
                                     alt="Lets Image"
                                 />
+                                </Link>
+                                
                             </div>
 
 
@@ -115,11 +118,15 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
                                     ))}
                                 </div>
                                 <div className="flex flex-col justify-end" style={{ width: fsm(225), height: fsm(100), marginLeft: fsm(38) }}>
+                                   <Link
+                                   to="/ModelCourse">
                                     <img
                                         className="w-full h-auto"
                                         src="./src/lets-go.svg"
                                         alt="Lets Image"
                                     />
+                                   </Link>
+                                    
                                 </div>
                             </div>
 

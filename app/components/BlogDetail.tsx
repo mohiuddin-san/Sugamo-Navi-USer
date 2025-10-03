@@ -63,7 +63,7 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
   const [activeHeading, setActiveHeading] = useState<string | null>(null);
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState<string[]>([]);
   const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
-   const isMobile = useIsMobile();
+   const {isMobile} = useIsMobile();
   const tocContainerRef = useRef<HTMLDivElement>(null);
   const tocItemRefs = useRef<Record<string, HTMLLIElement | null>>({});
   const ulRef = useRef<HTMLUListElement>(null);

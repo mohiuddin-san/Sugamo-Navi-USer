@@ -6,6 +6,9 @@
   html {
     font-family: "Noto Sans JP", "Hiragino Kaku Gothic Pro", sans-serif;
   }
+  .theme {
+    --animate-meteor-effect: meteor 5s linear infinite;
+  }
 }
 
 /* app/styles/app.css */
@@ -307,5 +310,106 @@
   }
   .desktop-only {
     display: block;
+  }
+}
+
+@keyframes slideInLeft {
+      0% {
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+      100% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .animate-slide-in-left {
+      animation: slideInLeft 1s ease-out forwards;
+    }
+
+    .hidden-left {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+
+    @keyframes slideInLeftText {
+      from {
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .animate-slide-in-left {
+      animation: slideInLeftText 1s ease-out forwards;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .animate-pulse {
+      animation: blink 1s infinite;
+    }
+
+     @keyframes bounceScale {
+      0%, 100% {
+        transform: scale(1) rotate(0deg);
+      }
+      25% {
+        transform: scale(1.2) rotate(-10deg);
+      }
+      50% {
+        transform: scale(1.1) rotate(10deg);
+      }
+      75% {
+        transform: scale(1.15) rotate(-5deg);
+      }
+    }
+
+    .animate-bounce-scale {
+      animation: bounceScale 0.6s ease-in-out infinite;
+    }
+
+    @layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+    @theme inline {
+  @keyframes meteor {
+  0% {
+    transform: rotate(215deg) translateX(0);
+    opacity: 1;
+    }
+  70% {
+    opacity: 1;
+    }
+  100% {
+    transform: rotate(215deg) translateX(-500px);
+    opacity: 0;
+    }
+  }
+  @keyframes meteor {
+  0% {
+    transform: rotate(215deg) translateX(0);
+    opacity: 1;
+    }
+  70% {
+    opacity: 1;
+    }
+  100% {
+    transform: rotate(215deg) translateX(-500px);
+    opacity: 0;
+    }
   }
 }

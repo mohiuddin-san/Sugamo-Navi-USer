@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from '@remix-run/react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { CountingNumber } from '../components/counting-number';
 import supabase from '~/supabase';
 
 interface ProductCardProps {
@@ -296,12 +297,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 e.currentTarget.src = '/src/shop.png'; // Fallback
               }}
             />
-            <p
+            <CountingNumber
               className="font-bold font-cairo"
               style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
+              number={likes}
             >
-              {likes}
-            </p>
+            </CountingNumber>
           </span>
           <span className="flex items-center gap-1">
             <img
@@ -309,12 +310,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
               alt="Views"
               style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
             />
-            <p
+            <CountingNumber
               className="font-bold font-cairo"
               style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
+              number={views}
             >
-              {views}
-            </p>
+            </CountingNumber>
           </span>
           <span className="flex items-center">
             <img

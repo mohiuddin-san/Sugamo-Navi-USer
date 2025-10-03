@@ -1,6 +1,7 @@
+
 import { Link } from '@remix-run/react';
 import Header from '~/components/Header';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useIsMobile } from '../hooks/useIsMobile';
 import Footer from './Footer';
@@ -13,7 +14,9 @@ import { useLoaderData } from '@remix-run/react';
 import supabaseShops from "~/supabase";
 import supabaseBlogs from "~/supabase_blog";
 import TikTokVideos from '~/components/TiktokVideos';
-import LoadingScreen from '~/components/LoadingScreen'
+import LoadingScreen from '~/components/LoadingScreen';
+import { useTypingEffect } from '~/hooks/useTypingEffect';
+import { Particles } from "../components/meteors";
 
 type LoaderData = {
   posts: any[];
@@ -23,7 +26,6 @@ type LoaderData = {
   title: string;
   details: string[];
   letsGOimg: string;
-
 };
 
 type Shop = {
@@ -42,7 +44,6 @@ type Shop = {
 };
 
 export function loader() {
-  // Dummy posts to avoid errors (replace with real data fetch later)
   const dummyPosts = [
     { id: '1', media_url: './src/video1.mp4', thumbnail_url: './src/thumb1.png', like_count: 100 },
     { id: '2', media_url: './src/video2.mp4', thumbnail_url: './src/thumb2.png', like_count: 200 },
@@ -52,11 +53,11 @@ export function loader() {
     imageUrl: "./src/sugamo-gate.jpg",
     title: "ABOUT SUGAMO",
     details: [
-      "「巣鴨」は、東京の中でも個性的な街のひとつです。",
-      "ここ「地蔵通り商店街」は、寺社や老舗の和菓子屋さん、薬局やグルメなお店が入り混じった賑やかな場所で、「おばあちゃんの原宿」として知られ、最近は懐かしい雰囲気が好きな若い人にも人気があります。",
-      "下町の雰囲気を味わいたい方の東京観光の際は、ぜひ巣鴨に足を運んでみてください！",
-      "また、毎月4日、14日、24日には「縁日」が開催されます。",
-      "骨董品やインテリア雑貨の露店、そして屋台グルメが並ぶ、巣鴨地蔵通り商店街での散策や食べ歩きにぴったりのイベントです。"
+      // Paragraph 1 - 3 lines together
+      "「巣鴨」は、東京の中でも個性的な街のひとつです。\nここ「地蔵通り商店街」は、寺社や老舗の和菓子屋さん、薬局やグルメなお店が入り混じった賑やかな場所で、「おばあちゃんの原宿」として知られ、最近は懐かしい雰囲気が好きな若い人にも人気があります。下町の雰囲気を味わいたい方の東京観光の際は、ぜひ巣鴨に足を運んでみてください！",
+
+      // Paragraph 2 - 2 lines together
+      "また、毎月4日、14日、24日には「縁日」が開催されます。\n骨董品やインテリア雑貨の露店、そして屋台グルメが並ぶ、巣鴨地蔵通り商店街での散策や食べ歩きにぴったりのイベントです。"
     ],
     letsGOimg: "./src/lets-g.svg",
     posts: dummyPosts,
@@ -66,7 +67,6 @@ export function loader() {
 
 export default function HomePage() {
   const { isMobile, mounted, isLoading } = useIsMobile();
-   console.log('isMobile:', isMobile, 'mounted:', mounted);
   const data = useLoaderData<LoaderData>();
   const { posts, tiktokVideos } = useLoaderData<{
     posts: any[];
@@ -75,9 +75,9 @@ export default function HomePage() {
   }>();
   const error = data?.error || null;
   const { topImg, imageUrl, title, details, letsGOimg } = loader();
- 
+
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
-  const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
+  const { fs, fsm, fluidStyle } = useUniversalFluid();
   const [topShops, setTopShops] = useState<Shop[]>([]);
   const [shopsLoading, setShopsLoading] = useState(true);
   const [shopsError, setShopsError] = useState<string | null>(null);
@@ -88,13 +88,134 @@ export default function HomePage() {
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [blogsError, setBlogsError] = useState<string | null>(null);
 
+  // States for animations
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [hasShownCelebration, setHasShownCelebration] = useState(false);
+  const firstPlaceRef = useRef<HTMLDivElement>(null);
+  const [isLetsGoVisible, setIsLetsGoVisible] = useState(false);
+  const letsGoRef = useRef<HTMLDivElement>(null);
+  // Component এর শুরুতে states add করুন
+  const [showTyping, setShowTyping] = useState(false);
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const detailsRef = useRef<HTMLDivElement>(null);
+
+  // Current line এর জন্য typing effect
+  const { displayedText, isComplete } = useTypingEffect(
+    details[currentLineIndex] || '',
+    10,
+    showTyping
+  );
+
+  // Scroll detection for typing effect
+  useEffect(() => {
+    if (!detailsRef.current || !mounted) return;
+
+    const handleScroll = () => {
+      if (!detailsRef.current) return;
+      const rect = detailsRef.current.getBoundingClientRect();
+      const isVisible = rect.top < window.innerHeight * 0.8 && rect.bottom > 0;
+
+      if (isVisible && !showTyping) {
+        setShowTyping(true);
+      }
+    };
+
+    setTimeout(handleScroll, 100);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [mounted, showTyping]);
+
+  // পরের line এ যাওয়ার জন্য
+  useEffect(() => {
+    if (isComplete && currentLineIndex < details.length - 1) {
+      setTimeout(() => {
+        setCurrentLineIndex(prev => prev + 1);
+      }, 500); // line এর মধ্যে 500ms pause
+    }
+  }, [isComplete, currentLineIndex, details.length]);
+
+
+  useEffect(() => {
+    if (!letsGoRef.current || !mounted) return; // mounted check যোগ করুন
+
+    let animationTriggered = false;
+
+    const handleScroll = () => {
+      if (!letsGoRef.current || animationTriggered) return;
+
+      const rect = letsGoRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      const isVisible = rect.top < windowHeight * 0.8 && rect.bottom > 0;
+
+      if (isVisible) {
+        setIsLetsGoVisible(true);
+        animationTriggered = true;
+
+        // যখন screen থেকে বের হবে তখন reset
+        const resetObserver = new IntersectionObserver((entries) => {
+          if (!entries[0].isIntersecting) {
+            setIsLetsGoVisible(false);
+            animationTriggered = false;
+            resetObserver.disconnect();
+          }
+        }, { threshold: 0 });
+
+        if (letsGoRef.current) {
+          resetObserver.observe(letsGoRef.current);
+        }
+      }
+    };
+
+    // Multiple checks করুন নিশ্চিত হতে
+    handleScroll(); // Immediate
+    setTimeout(handleScroll, 100);
+    setTimeout(handleScroll, 500);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [mounted]); // শুধু mounted dependency
+
+  // Celebration GIF
+  useEffect(() => {
+    if (!firstPlaceRef.current || topShops.length === 0) return;
+
+    const handleScroll = () => {
+      if (!firstPlaceRef.current) return;
+      const rect = firstPlaceRef.current.getBoundingClientRect();
+      const isVisible = rect.top < window.innerHeight * 0.7 && rect.bottom > 0;
+
+      if (isVisible && !hasShownCelebration) {
+        setShowCelebration(true);
+        setHasShownCelebration(true);
+        setTimeout(() => {
+          setShowCelebration(false);
+        }, 4000);
+      } else if (!isVisible && hasShownCelebration) {
+        setHasShownCelebration(false); // Reset when out of view
+      }
+    };
+
+    const timeoutId = setTimeout(handleScroll, 100);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [topShops, hasShownCelebration]);
+
   useEffect(() => {
     const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
     setBookmarkedBlogs(savedBookmarks);
 
     const fetchData = async () => {
       try {
-        console.log("Starting blogs fetch...");
         setBlogsLoading(true);
         setBlogsError(null);
         const { data: blogsData, error: blogError } = await supabaseBlogs
@@ -104,8 +225,6 @@ export default function HomePage() {
           .order("publish_date", { ascending: false });
 
         if (blogError) throw blogError;
-
-        console.log("Blogs data fetched:", blogsData);
 
         const categoryIds = [...new Set(blogsData.map((blog) => blog.category_id).filter(Boolean))];
 
@@ -123,11 +242,9 @@ export default function HomePage() {
           }, {});
 
           setCategories(categoriesMap);
-          console.log("Categories map:", categoriesMap);
         }
 
         setBlogs(blogsData || []);
-        console.log("Blogs data loaded in state:", blogsData || []);
       } catch (err) {
         console.error("Error fetching blogs:", err);
         setBlogsError(err.message || "Failed to load blogs");
@@ -145,7 +262,6 @@ export default function HomePage() {
         setShopsLoading(true);
         setShopsError(null);
 
-        console.log('Fetching recommendations...');
         const { data: recommendations, error: recError } = await supabaseShops
           .from('recommendations')
           .select('*')
@@ -175,6 +291,7 @@ export default function HomePage() {
         } catch (error) {
           console.error('Error fetching categories:', error.message);
         }
+
         const { data: shops, error: shopsError } = await supabaseShops
           .from('shops')
           .select('*')
@@ -183,6 +300,7 @@ export default function HomePage() {
         if (shopsError) {
           throw new Error(`Failed to fetch shops: ${shopsError.message} (Code: ${shopsError.code || 'unknown'})`);
         }
+
         const sortedShops = recommendations
           .map(rec => shops.find(shop => shop.id === rec.shop_id))
           .filter(shop => shop !== undefined) as Shop[];
@@ -210,74 +328,131 @@ export default function HomePage() {
       </div>
     );
   }
+
   const getCategoryName = (categoryId) => {
     const category = categoriesShop.find(cat => cat.id === categoryId);
     return category ? category.name : 'No Category';
   };
+
   if (isLoading || !mounted) {
     return <LoadingScreen />;
   }
+
   return (
-  <div className="w-full flex flex-col items-center">
+    <div className="w-full flex flex-col items-center">
+       <Particles
+              className="absolute inset-0"
+              quantity={100}
+              ease={80}
+              color="#"
+              refresh
+            />
+      <style>
+        {`
+          @keyframes slideInLeft {
+            from {
+              transform: translateX(-100%);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+
+          .animate-slide-in-left {
+            animation: slideInLeft 1s ease-out forwards;
+          }
+        `}
+      </style>
       <Header />
-      <div className=" md:bg-white w-full" style={{ paddingLeft: isMobile ? fsm(19) : fs(90), paddingRight: isMobile ? fsm(19) : fs(90) }}>
+      <div className="md:bg-white w-full" style={{marginTop: isMobile?fsm(28):fs(15), paddingLeft: isMobile ? fsm(19) : fs(90), paddingRight: isMobile ? fsm(19) : fs(90) }}>
         <img
-          className="w-full"
+          className="w-full bg-[#F7F7F7] md:bg-white rounded-t-[50px]"
           style={{ marginTop: autoSize(21), height: 'auto' }}
           src={isMobile ? "./src/sugamunavi-mobile.webp" : topImg}
           alt="Sugamo Japan"
         />
       </div>
       <div className="flex flex-col md:flex-row bg-[#F7F7F7]" style={{ gap: fs(54), marginLeft: isMobile ? fsm(20) : fs(130), marginRight: isMobile ? fsm(20) : fs(130), paddingTop: isMobile ? fsm(25) : fs(59), paddingLeft: isMobile ? fsm(40) : fs(83), paddingRight: isMobile ? fsm(40) : fs(55), paddingBottom: isMobile ? fsm(36) : fs(54) }}>
-        <div className="flex flex-col w-full md:w-1/2">
+        <div className="flex flex-col" style={{ width: isMobile ? "100%" : fs(507) }}>
           <p
-            className="text-center md:text-left font-cousine italic font-bold "
+            className="text-center md:text-left font-cousine italic font-bold"
             style={{ fontSize: isMobile ? fsm(44) : fs(48), letterSpacing: isMobile ? fsm(0) : fs(0) }}
           >
             {title}
           </p>
           <div
+            ref={detailsRef}
             className="font-semibold font-cairo text-[#313131] text-start"
             style={{
               fontSize: isMobile ? fsm(16) : fs(16),
               width: '100%',
+              height: isMobile ? fsm(450) : fs(300),
               lineHeight: 1.6,
-              marginTop: isMobile ? fsm(10) : fs(16)
+              marginTop: isMobile ? fsm(10) : fs(36),
             }}
           >
-            {details.map((line, index) => (
-              <p key={index} className="mb-6">{line}</p>
-            ))}
+            {showTyping ? (
+              <>
+                {details.slice(0, currentLineIndex).map((paragraph, index) => (
+                  <p
+                    key={`completed-${index}`}
+                    style={{
+                      marginBottom: isMobile ? fsm(48) : fs(56),
+                      whiteSpace: 'pre-line'
+                    }}
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+
+                {currentLineIndex < details.length && (
+                  <p style={{
+                    marginBottom: isMobile ? fsm(48) : fs(56),
+                    whiteSpace: 'pre-line'
+                  }}>
+                    {displayedText}
+                    <span className="inline-block w-[2px] h-[1em] bg-[#313131] ml-1 animate-pulse"></span>
+                  </p>
+                )}
+              </>
+            ) : null}
           </div>
 
-          <div className="mt-8 w-full flex justify-center md:justify-end">
-
+          <div className=" w-full flex justify-center md:justify-end">
             <div
-              className="relative w-full flex justify-center md:justify-end"
+              ref={letsGoRef}
+              className="relative w-full flex justify-center md:justify-end overflow-hidden"
               style={{
                 width: isMobile ? fsm(311) : fs(319),
                 height: isMobile ? fsm(100) : fs(95),
+                marginTop: isMobile ? fsm(32) : fs(48)
               }}
             >
-              <img
-                src={letsGOimg}
-                alt="Sugamo Japan"
-                className="absolute top-0 left-0 w-full h-full object-contain"
-              />
-            </div>
+              <Link
+                to="/ModelCourse"
+              >
+                <img
+                  src={letsGOimg}
+                  alt="Sugamo Japan"
+                  className={`absolute top-0 left-0 w-full h-full object-contain ${isLetsGoVisible ? 'animate-slide-in-left' : 'hidden-left'
+                    }`}
+                  style={{ transition: 'none' }}
+                />
+              </Link>
 
+            </div>
           </div>
         </div>
 
         {!isMobile && (
-          <div className="flex justify-center items-center w-full md:w-1/2 md:mt-0">
-            <div
-              className="relative w-full h-full">
+          <div className="flex justify-center items-center " style={{ width: fs(481), height: fs(565) }}>
+            <div className="relative w-full h-full">
               <img
                 src={imageUrl}
                 alt="Sugamo Japan"
-                className="w-full h-full absolute top-0 left-0 object-cover rounded-[30px] "
-
+                className="w-full h-full absolute top-0 left-0 object-cover rounded-[30px]"
               />
             </div>
           </div>
@@ -291,9 +466,9 @@ export default function HomePage() {
         marginBottom={0}
         marginTop={isMobile ? 0 : 124}
       />
-      <div className='w-full h-auto '>
-        <div className="flex md:flex-row flex-col " style={{ marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(90), paddingTop: isMobile ? fsm(40) : fs(70), paddingBottom: isMobile ? fsm(40) : fs(70), gap: isMobile ? fsm(40) : fs(58) }}>
-          <div className='flex flex-row justify-center md:items-center ' style={{ gap: isMobile ? fsm(26) : fs(24) }}>
+      <div className='w-full h-auto'>
+        <div className="flex md:flex-row flex-col" style={{ marginLeft: isMobile ? fsm(20) : fs(90), marginRight: isMobile ? fsm(20) : fs(90), paddingTop: isMobile ? fsm(40) : fs(70), paddingBottom: isMobile ? fsm(40) : fs(70), gap: isMobile ? fsm(40) : fs(58) }}>
+          <div className='flex flex-row justify-center md:items-center' style={{ gap: isMobile ? fsm(26) : fs(24) }}>
             <div key={posts[0]?.id || '1'} className="relative overflow-hidden rounded-lg" style={{ width: isMobile ? '45%' : fs(253), height: isMobile ? fsm(360) : fs(450), maxWidth: isMobile ? fsm(207) : fs(253) }}>
               <video
                 src={posts[0]?.media_url || './src/video1.mp4'}
@@ -325,7 +500,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <div className=' flex flex-col justify-center items-center md:items-start'>
+          <div className='flex flex-col justify-center items-center md:items-start'>
             {!isMobile && (
               <img
                 style={{ width: fs(200), height: fs(100) }}
@@ -336,10 +511,7 @@ export default function HomePage() {
 
             <div className='flex flex-col w-auto'>
               <p
-                className={`
-    font-cousine font-bold italic text-[#ED4548] underline 
-    decoration-[#ED4548] decoration-2 space-x-0 underline-offset-[3px]
-  `}
+                className="font-cousine font-bold italic text-[#ED4548] underline decoration-[#ED4548] decoration-2 space-x-0 underline-offset-[3px]"
                 style={{
                   fontSize: isMobile ? fsm(75) : fs(80),
                   textDecorationSkipInk: "none",
@@ -347,7 +519,6 @@ export default function HomePage() {
               >
                 INSTAGRAM
               </p>
-
 
               <div className='flex flex-row justify-center md:justify-start items-center gap-2'>
                 <p
@@ -360,19 +531,22 @@ export default function HomePage() {
                 >
                   TIKTOK
                 </p>
-
+                <a href="https://www.instagram.com/reel/DNfV4MozhwL/">
                 <img
                   style={{ width: isMobile ? fsm(58) : fs(58), height: isMobile ? fsm(58) : fs(58) }}
                   src='./src/instragram.svg'
                 />
-                <img
+                </a>
+                <a href="https://www.tiktok.com/@sugamo_japan">
+                 <img
                   style={{ width: isMobile ? fsm(58) : fs(58), height: isMobile ? fsm(58) : fs(58) }}
                   src='./src/titok.svg'
                 />
+                </a>
+               
               </div>
             </div>
           </div>
-
         </div>
       </div>
       <MarqueeHeader
@@ -383,11 +557,11 @@ export default function HomePage() {
         marginBottom={0}
       />
       <div
-        className="flex flex-col justify-center items-center"
+        className="w-full flex flex-col justify-center items-center "
         style={fluidStyle({
           marginTop: isMobile ? fsm(90) : fs(90),
-          marginLeft: isMobile ? fsm(20) : fs(90),
-          marginRight: isMobile ? fsm(20) : fs(90)
+          paddingLeft: isMobile ? fsm(20) : fs(90),
+          paddingRight: isMobile ? fsm(20) : fs(90)
         })}
       >
         {shopsLoading ? (
@@ -407,7 +581,7 @@ export default function HomePage() {
                 w: isMobile ? fsm(338) : "75%"
               })}
             >
-              {"SUGAMO’S BEST SHOP"}
+              {"SUGAMO'S BEST SHOP"}
               <span
                 className="w-auto font-cairo font-semibold block md:inline md:mt-0 not-italic"
                 style={fluidStyle({
@@ -429,13 +603,43 @@ export default function HomePage() {
                 gap: isMobile ? fsm(32) : fs(42)
               })}
             >
+
               {/* 1st Card */}
-              <div className="flex flex-col items-center transform order-1 md:order-2" style={{ gap: isMobile ? fsm(16) : fs(25) }}>
+              <div
+                ref={firstPlaceRef}
+                className="flex flex-col items-center transform order-1 md:order-2 relative"
+                style={{ gap: isMobile ? fsm(16) : fs(25) }}
+              >
+                {showCelebration && (
+                  <div
+                    className="absolute inset-0 z-[60] flex items-center justify-center pointer-events-none"
+                    style={{
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                    }}
+                  >
+                    <img
+                      src="./src/congratulations-13773_512.gif"
+                      alt="Celebration"
+                      className="object-contain"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        maxWidth: isMobile ? fsm(350) : fs(500),
+                        maxHeight: isMobile ? fsm(500) : fs(650),
+                        objectFit: 'cover'
+
+                      }}
+                    />
+                  </div>
+                )}
                 <img
                   src="./src/first.svg"
                   alt="First Place"
                   style={{ width: autoSize(116), height: autoSize(113) }}
-                  className="object-cover rounded-lg"
+                  className={`object-cover rounded-lg ${showCelebration ? 'animate-bounce-scale' : ''}`}
                 />
                 <ProductCard
                   title={topShops[0]?.name || "ブーランジェリーボヌール"}
@@ -447,8 +651,8 @@ export default function HomePage() {
                   opening_hours={topShops[0]?.opening_hours || ''}
                   near_station={topShops[0]?.near_station || ''}
                   address={topShops[0]?.address || ''}
-                  category={getCategoryName(topShops[0]?.category_id )|| ''}
-                  category_id= {topShops[0]?.category_id}
+                  category={getCategoryName(topShops[0]?.category_id) || ''}
+                  category_id={topShops[0]?.category_id}
                   map_embed={topShops[0]?.map_embed || ''}
                   other_images={topShops[0]?.other_images || null}
                   style={{ width: isMobile ? fsm(350) : fs(434), height: isMobile ? fsm(496) : fs(560) }}
@@ -474,8 +678,8 @@ export default function HomePage() {
                   opening_hours={topShops[1]?.opening_hours || ''}
                   near_station={topShops[1]?.near_station || ''}
                   address={topShops[1]?.address || ''}
-                  category={(getCategoryName( topShops[1]?.category_id )) || ''}
-                  category_id= {(topShops[1]?.category_id ) || ''}
+                  category={getCategoryName(topShops[1]?.category_id) || ''}
+                  category_id={topShops[1]?.category_id || ''}
                   map_embed={topShops[1]?.map_embed || ''}
                   other_images={topShops[1]?.other_images || null}
                   style={{ width: isMobile ? fsm(350) : fs(350), height: isMobile ? fsm(496) : fs(496) }}
@@ -500,11 +704,11 @@ export default function HomePage() {
                   opening_hours={topShops[2]?.opening_hours || ''}
                   near_station={topShops[2]?.near_station || ''}
                   address={topShops[2]?.address || ''}
-                  category={getCategoryName(topShops[2]?.category_id ) || ''}
-                  category_id= {topShops[2]?.category_id }
+                  category={getCategoryName(topShops[2]?.category_id) || ''}
+                  category_id={topShops[2]?.category_id}
                   map_embed={topShops[2]?.map_embed || ''}
                   other_images={topShops[2]?.other_images || null}
-                 style={{ width: isMobile ? fsm(350) : fs(350), height: isMobile ? fsm(496) : fs(496) }}
+                  style={{ width: isMobile ? fsm(350) : fs(350), height: isMobile ? fsm(496) : fs(496) }}
                   imageHeight={210}
                 />
               </div>
@@ -538,7 +742,7 @@ export default function HomePage() {
           </div>
         )}
         <Link
-          to="/Recommendation"
+          to="/Recomondation"
           className="w-full italic font-bold text-end text-black font-cousine"
           style={fluidStyle({
             fontSize: isMobile ? fsm(25) : fs(25),
@@ -618,6 +822,7 @@ export default function HomePage() {
               paddingRight: isMobile ? fsm(0) : fs(24)
             })}
           >
+
             {"TRAVEL TIPS "}
             <span
               className="w-auto font-cairo font-semibold block md:inline mt-1 md:mt-0 not-italic"
@@ -632,16 +837,16 @@ export default function HomePage() {
             ) : blogsError ? (
               <div className="col-span-full text-red-600 text-center p-4">Error loading tips: {blogsError}</div>
             ) : blogs.length > 0 ? (
-              blogs.slice(0, 3).map((blog) => (
+              blogs.slice(0, 9).map((blog) => (
                 <TravelsTipsItem
                   key={blog.id}
                   categories={categories[blog.category_id] || ["General"]}
-                  blog={blog}  // New: Single blog data pass
+                  blog={blog}
                 />
               ))
             ) : (
               Array.from({ length: 3 }).map((_, index) => (
-                <TravelsTipsItem key={index} categories={["Travel", "Tips"]} />  // Fallback without blog
+                <TravelsTipsItem key={index} categories={["Travel", "Tips"]} />
               ))
             )}
           </div>
@@ -658,6 +863,8 @@ export default function HomePage() {
           more+
         </Link>
       </div>
+
+
       <MarqueeHeader
         text="FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE! FOLLOW US AND SEE MORE!"
         backgroundColor="#000000"

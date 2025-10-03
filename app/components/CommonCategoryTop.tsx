@@ -1,7 +1,8 @@
 import React from 'react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useIsMobile } from '../hooks/useIsMobile';
-
+import {RollingText} from '../components/text-3d'
+import { Particles } from "../components/meteors";
 const CommonCategoryTop = ({ title, subtitle, imageSrc, imageAlt}) => {
   const { fs, fsm} = useUniversalFluid();
   const { isMobile} = useIsMobile();
@@ -10,6 +11,13 @@ const CommonCategoryTop = ({ title, subtitle, imageSrc, imageAlt}) => {
     <div
       className={`flex flex-col md:flex-row items-center justify-center`}
     >
+       <Particles
+        className="absolute inset-0"
+        quantity={100}
+        ease={80}
+        color="#"
+        refresh
+      />
       <div className="justify-center" style={{display: 'block', width: isMobile ? '100%' : '49%'}}>
         <div className="flex justify-center">
           <div
@@ -23,12 +31,13 @@ const CommonCategoryTop = ({ title, subtitle, imageSrc, imageAlt}) => {
               {subtitle}
             </span>
             <div className='h-full w-full flex justify-center items-center'>
-              <p
+              <RollingText
                 className={`text-black font-bold italic font-cousine`}
                 style={{display: 'block', fontSize: isMobile? fsm(48): fs(61) }}
+                text= {title}
               >
-                {title}
-              </p>
+                
+              </RollingText>
             </div>
           </div>
         </div>
