@@ -16,7 +16,6 @@ import supabaseBlogs from "~/supabase_blog";
 import TikTokVideos from '~/components/TiktokVideos';
 import LoadingScreen from '~/components/LoadingScreen';
 import { useTypingEffect } from '~/hooks/useTypingEffect';
-import { Particles } from "../components/meteors";
 
 type LoaderData = {
   posts: any[];
@@ -340,13 +339,7 @@ export default function HomePage() {
 
   return (
     <div className="w-full flex flex-col items-center">
-       <Particles
-              className="absolute inset-0"
-              quantity={100}
-              ease={80}
-              color="#"
-              refresh
-            />
+      
       <style>
         {`
           @keyframes slideInLeft {

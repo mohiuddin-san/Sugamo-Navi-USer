@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
+import {useUniversalFluid} from '../hooks/useUniversalFluid'
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface MapProps {
   onPinClick: (title: string) => void;
@@ -8,10 +10,11 @@ interface MapProps {
 
 const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
   const [svgContent, setSvgContent] = useState<string>('');
+  const { isMobile } = useIsMobile();
   const [containerSize, setContainerSize] = useState({ width: "100%", height: 600 });
   const svgContainerRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
-  
+  const { fs, fsm, fluidStyle } = useUniversalFluid();
   useEffect(() => {
     const setVh = () => {
       const vh = window.innerHeight * 0.01;
@@ -220,11 +223,11 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
   }, [svgContent, onPinClick]);
 
   return (
-    <div className="relative w-full border-2 border-black bg-white" >
+    <div className="relative w-full bg-white" >
       <TransformWrapper
         ref={transformRef}
-        initialScale={1}
-        minScale={0.5}
+        initialScale={1.1}
+        minScale={1.1}
         maxScale={3}
         initialPositionX={0}
         initialPositionY={0}
@@ -246,13 +249,15 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
             <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
               <button
                 onClick={() => zoomIn()}
-                className="bg-blue-500 text-white w-10 h-10 rounded-full hover:bg-blue-600 flex items-center justify-center shadow-lg"
+                className="bg-white text-black rounded-full flex items-center justify-center shadow-lg border-2 border-black "
+                style={{width: isMobile? fsm(25):fs(40), height: isMobile? fsm(25):fs(40),fontSize: isMobile? fsm(16):fs(25)}}
               >
                 +
               </button>
               <button
                 onClick={() => zoomOut()}
-                className="bg-blue-500 text-white w-10 h-10 rounded-full hover:bg-blue-600 flex items-center justify-center shadow-lg"
+                className="bg-red-600 text-white rounded-full hover:bg-red-600 flex items-center justify-center shadow-lg"
+                style={{width: isMobile? fsm(25):fs(40), height: isMobile? fsm(25):fs(40),fontSize: isMobile? fsm(16):fs(25)}}
               >
                 –
               </button>
@@ -261,7 +266,8 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
                   resetTransform();
                   setTimeout(() => centerView(), 100);
                 }}
-                className="bg-green-500 text-white w-10 h-10 rounded-full hover:bg-green-600 flex items-center justify-center text-xs shadow-lg"
+                className="bg-green-500 text-white rounded-full hover:bg-green-600 flex items-center justify-center text-xs shadow-lg"
+                style={{width: isMobile? fsm(25):fs(40), height: isMobile? fsm(25):fs(40),fontSize: isMobile? fsm(16):fs(25)}}
                 title="Reset View"
               >
                 ↻

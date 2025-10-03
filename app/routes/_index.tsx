@@ -1,5 +1,4 @@
-import BlogList from "~/routes/BlogList";
-import BookMark from "./BookMark";
+
 import Home from "~/components/Home";
 import { json } from '@remix-run/node';
 import { getInstagramVideos, getTikTokVideos } from '~/components/socialMediaFetcher';
