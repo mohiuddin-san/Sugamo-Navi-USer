@@ -33,7 +33,7 @@ const CommonCategoryTop = ({ title, subtitle, imageSrc, imageAlt}) => {
             <div className='h-full w-full flex justify-center items-center'>
               <RollingText
                 className={`text-black font-bold italic font-cousine`}
-                style={{display: 'block', fontSize: isMobile? fsm(48): fs(61) }}
+                style={{display: 'block', fontSize: isMobile? fsm(48): fs(61)}}
                 text= {title}
               >
                 

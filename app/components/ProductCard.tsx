@@ -91,83 +91,69 @@ const ProductCard: React.FC<ProductCardProps> = ({
     return category ? category.name : 'No Category';
   };
 
-  const handleLoveIncrement = async (e: React.MouseEvent) => {
+  // Toggle love: increment if not loved, decrement if already loved
+  const handleLoveToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!shopId) {
-      console.error('ProductCard: No shopId provided for love increment');
-      alert('Cannot like shop: Invalid shop ID');
+      console.error('ProductCard: No shopId provided for love toggle');
+      alert('Cannot like/unlike shop: Invalid shop ID');
       return;
     }
     
-    console.log('ProductCard: shopId for increment:', shopId, 'type:', typeof shopId, 'hasLoved:', hasLoved);
+    console.log('ProductCard: shopId for toggle:', shopId, 'type:', typeof shopId, 'hasLoved:', hasLoved);
     
     if (hasLoved) {
-      console.log('ProductCard: Already loved, ignoring increment');
-      return;
-    }
-
-    try {
-      console.log('ProductCard: Calling increment_love_count RPC for shopId:', shopId);
-      const { error, data } = await supabase.rpc('increment_love_count', { shop_id: shopId });
-      
-      if (error) {
-        console.error('ProductCard: RPC error:', error);
-        alert(`Failed to like shop: ${error.message}`);
-        return;
+      // Decrement
+      try {
+        console.log('ProductCard: Calling decrement_love_count RPC for shopId:', shopId);
+        const { error, data } = await supabase.rpc('decrement_love_count', { shop_id: shopId });
+        
+        if (error) {
+          console.error('ProductCard: RPC error:', error);
+          alert(`Failed to unlike shop: ${error.message}`);
+          return;
+        }
+        
+        console.log('ProductCard: RPC success:', data);
+        setLikes(prev => Math.max(prev - 1, 0));
+        setHasLoved(false);
+        
+        // Remove from localStorage
+        const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+        delete lovedShops[shopId];
+        localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
+        
+        console.log('ProductCard: Successfully unliked shopId:', shopId, 'new likes:', Math.max(likes - 1, 0));
+      } catch (err) {
+        console.error('ProductCard: Unexpected error in decrement:', err);
+        alert('Failed to unlike shop: Unexpected error');
       }
-      
-      console.log('ProductCard: RPC success:', data);
-      setLikes(prev => prev + 1);
-      setHasLoved(true);
-      
-      // Save to localStorage
-      const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
-      lovedShops[shopId] = true;
-      localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
-      
-      console.log('ProductCard: Successfully liked shopId:', shopId, 'new likes:', likes + 1);
-    } catch (err) {
-      console.error('ProductCard: Unexpected error in increment:', err);
-      alert('Failed to like shop: Unexpected error');
-    }
-  };
-
-  const handleLoveDecrement = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!shopId) {
-      console.error('ProductCard: No shopId provided for love decrement');
-      alert('Cannot unlike shop: Invalid shop ID');
-      return;
-    }
-    
-    if (!hasLoved) {
-      console.log('ProductCard: Not loved yet, ignoring decrement');
-      return;
-    }
-
-    try {
-      console.log('ProductCard: Calling decrement_love_count RPC for shopId:', shopId);
-      const { error, data } = await supabase.rpc('decrement_love_count', { shop_id: shopId });
-      
-      if (error) {
-        console.error('ProductCard: RPC error:', error);
-        alert(`Failed to unlike shop: ${error.message}`);
-        return;
+    } else {
+      // Increment
+      try {
+        console.log('ProductCard: Calling increment_love_count RPC for shopId:', shopId);
+        const { error, data } = await supabase.rpc('increment_love_count', { shop_id: shopId });
+        
+        if (error) {
+          console.error('ProductCard: RPC error:', error);
+          alert(`Failed to like shop: ${error.message}`);
+          return;
+        }
+        
+        console.log('ProductCard: RPC success:', data);
+        setLikes(prev => prev + 1);
+        setHasLoved(true);
+        
+        // Save to localStorage
+        const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+        lovedShops[shopId] = true;
+        localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
+        
+        console.log('ProductCard: Successfully liked shopId:', shopId, 'new likes:', likes + 1);
+      } catch (err) {
+        console.error('ProductCard: Unexpected error in increment:', err);
+        alert('Failed to like shop: Unexpected error');
       }
-      
-      console.log('ProductCard: RPC success:', data);
-      setLikes(prev => Math.max(prev - 1, 0));
-      setHasLoved(false);
-      
-      // Remove from localStorage
-      const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
-      delete lovedShops[shopId];
-      localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
-      
-      console.log('ProductCard: Successfully unliked shopId:', shopId, 'new likes:', Math.max(likes - 1, 0));
-    } catch (err) {
-      console.error('ProductCard: Unexpected error in decrement:', err);
-      alert('Failed to unlike shop: Unexpected error');
     }
   };
 
@@ -285,8 +271,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <img
               src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'}
               alt="Love"
-              onClick={handleLoveIncrement}
-              onDoubleClick={handleLoveDecrement}
+              onClick={handleLoveToggle}
               style={{
                 width: isMobile ? fsm(20) : fs(20),
                 height: isMobile ? fsm(20) : fs(20),

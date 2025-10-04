@@ -8,7 +8,7 @@ type TikTokVideosProps = {
 
 
 export default function TikTokVideos({ videos }: TikTokVideosProps) {
-  const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
+  const { fs, fsm} = useUniversalFluid();
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
 
@@ -34,20 +34,20 @@ export default function TikTokVideos({ videos }: TikTokVideosProps) {
                 key={`${video.id}`}
                 className="relative flex-shrink-0 overflow-hidden shadow-md snap-center transition-transform duration-300"
               >
-                <img
+                 <video
+                  src={video.webVideoUrl}
+                  controls
+                  muted
+                  poster={video.videoMeta?.coverUrl}
+                  className="w-full h-auto"
+                >
+                  Your browser does not support the video tag.
+                </video>
+                {/* <img
                  onClick={() => window.open(video.webVideoUrl, "_blank", "noopener,noreferrer")}
                   src={video.videoMeta.coverUrl}
                   className="w-full h-auto object-cover"
-                />
-                {/* Overlay Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => window.open(video.webVideoUrl, "_blank", "noopener,noreferrer")}
-                    className="text-white text-4xl"
-                  >
-                    ▶️
-                  </button>
-                </div>
+                /> */}
               </div>
             ))
           ) : (
