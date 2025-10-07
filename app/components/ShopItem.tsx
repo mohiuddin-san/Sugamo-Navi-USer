@@ -15,11 +15,11 @@ interface ProductCardProps {
   type: 'place' | 'shop';
   id: string;
   style?: React.CSSProperties;
-  near_station?: string; // Added from schema
-  address?: string; // Added from schema
-  map_embed?: string; // Added from schema
-  other_images?: string[]; // Added from schema
-  opening_hours?: string; // Added from schema
+  near_station?: string;
+  address?: string;
+  map_embed?: string;
+  other_images?: string[];
+  opening_hours?: string;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -40,29 +40,32 @@ const ProductCard: React.FC<ProductCardProps> = ({
   opening_hours,
 }) => {
   const { fs, fsm } = useUniversalFluid();
-const { isMobile} = useIsMobile();
-  const targetLink = `/ShopDetails?id=${id}&type=${type}s`; // Match ShopDetails loader expectation
+  const { isMobile } = useIsMobile();
+  const targetLink = `/ShopDetails?id=${id}&type=${type}s`;
   const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
   const [likesCount, setLikesCount] = useState<number>(initialLikes);
   const [hasLoved, setHasLoved] = useState<boolean>(false);
 
   useEffect(() => {
-    // Load bookmark state
-    const bookmarkKey = `bookmarked_${type}s`; // e.g., bookmarked_shops, bookmarked_places
-    const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
-    if (savedBookmarks[id]) {
-      setIsBookmarked(true);
+    if (!['shop', 'place'].includes(type)) {
+      console.error('ProductCard: Invalid type provided:', type);
+      return;
     }
 
-    // Load love state
-    const loveKey = `love:${type}s:${id}`;
-    const lovedItems = JSON.parse(localStorage.getItem('lovedShops') || '{}');
-    if (lovedItems[loveKey]) {
+    // Unified bookmark check
+    const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+    if (savedBookmarks[id]) {
+      setIsBookmarked(true);
+      console.log(`ProductCard: Bookmark found for ${type} id: ${id}`);
+    }
+
+    // Unified love check
+    const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+    if (lovedItems[id]) {
       setHasLoved(true);
     }
 
-    // Fetch categories
     const fetchData = async () => {
       try {
         const { data, error } = await supabase
@@ -70,9 +73,9 @@ const { isMobile} = useIsMobile();
           .select('id, name')
           .order('name');
         if (error) throw error;
-        setCategoriesShop(data);
+        setCategoriesShop(data || []);
       } catch (error) {
-        console.error('Error fetching categories:', error.message);
+        console.error('ProductCard: Error fetching categories:', error);
       }
     };
     fetchData();
@@ -86,17 +89,16 @@ const { isMobile} = useIsMobile();
   const handleLoveIncrement = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!id) {
-      console.error('No id provided for love increment');
+      console.error('ProductCard: No id provided for love increment');
       alert('Cannot like item: Invalid ID');
       return;
     }
 
     if (hasLoved) {
-      console.log('Already loved, ignoring increment');
+      console.log('ProductCard: Already loved, ignoring increment');
       return;
     }
 
-    const loveKey = `love:${type}s:${id}`;
     try {
       let rpcName, param;
       if (type === 'shop') {
@@ -104,29 +106,29 @@ const { isMobile} = useIsMobile();
         param = { shop_id: id };
       } else {
         rpcName = 'increment_love_count_place';
-        param = { place_id: id }; // Use place_id for tourist_places
+        param = { place_id: id };
       }
 
       const { error, data } = await supabase.rpc(rpcName, param);
 
       if (error) {
-        console.error('RPC error:', error);
+        console.error('ProductCard: RPC error:', error);
         alert(`Failed to like ${type}: ${error.message}`);
         return;
       }
 
-      console.log('RPC success:', data);
+      console.log('ProductCard: RPC success:', data);
       setLikesCount(prev => prev + 1);
       setHasLoved(true);
 
-      // Save to localStorage
-      const lovedItems = JSON.parse(localStorage.getItem('lovedShops') || '{}');
-      lovedItems[loveKey] = true;
-      localStorage.setItem('lovedShops', JSON.stringify(lovedItems));
+      // Unified localStorage
+      const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+      lovedItems[id] = true;
+      localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
 
-      console.log('Successfully liked', type, id, 'new likes:', likesCount + 1);
+      console.log(`ProductCard: Successfully liked ${type} id: ${id}, new likes: ${likesCount + 1}`);
     } catch (err) {
-      console.error('Unexpected error in increment:', err);
+      console.error('ProductCard: Unexpected error in increment:', err);
       alert('Failed to like item: Unexpected error');
     }
   };
@@ -134,17 +136,16 @@ const { isMobile} = useIsMobile();
   const handleLoveDecrement = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!id) {
-      console.error('No id provided for love decrement');
+      console.error('ProductCard: No id provided for love decrement');
       alert('Cannot unlike item: Invalid ID');
       return;
     }
 
     if (!hasLoved) {
-      console.log('Not loved yet, ignoring decrement');
+      console.log('ProductCard: Not loved yet, ignoring decrement');
       return;
     }
 
-    const loveKey = `love:${type}s:${id}`;
     try {
       let rpcName, param;
       if (type === 'shop') {
@@ -152,29 +153,29 @@ const { isMobile} = useIsMobile();
         param = { shop_id: id };
       } else {
         rpcName = 'decrement_love_count_place';
-        param = { place_id: id }; // Use place_id for tourist_places
+        param = { place_id: id };
       }
 
       const { error, data } = await supabase.rpc(rpcName, param);
 
       if (error) {
-        console.error('RPC error:', error);
+        console.error('ProductCard: RPC error:', error);
         alert(`Failed to unlike ${type}: ${error.message}`);
         return;
       }
 
-      console.log('RPC success:', data);
+      console.log('ProductCard: RPC success:', data);
       setLikesCount(prev => Math.max(prev - 1, 0));
       setHasLoved(false);
 
-      // Remove from localStorage
-      const lovedItems = JSON.parse(localStorage.getItem('lovedShops') || '{}');
-      delete lovedItems[loveKey];
-      localStorage.setItem('lovedShops', JSON.stringify(lovedItems));
+      // Unified localStorage
+      const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+      delete lovedItems[id];
+      localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
 
-      console.log('Successfully unliked', type, id, 'new likes:', Math.max(likesCount - 1, 0));
+      console.log(`ProductCard: Successfully unliked ${type} id: ${id}, new likes: ${Math.max(likesCount - 1, 0)}`);
     } catch (err) {
-      console.error('Unexpected error in decrement:', err);
+      console.error('ProductCard: Unexpected error in decrement:', err);
       alert('Failed to unlike item: Unexpected error');
     }
   };
@@ -182,17 +183,24 @@ const { isMobile} = useIsMobile();
   const handleBookmarkClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!id) {
-      console.error('No id provided for bookmark');
+      console.error('ProductCard: No id provided for bookmark');
+      alert('Cannot bookmark item: Invalid ID');
+      return;
+    }
+
+    if (!['shop', 'place'].includes(type)) {
+      console.error('ProductCard: Invalid type for bookmark:', type);
+      alert('Cannot bookmark item: Invalid type');
       return;
     }
 
     const productData = {
       id,
-      title,
-      imageUrl,
-      description,
+      title: title || 'Untitled',
+      imageUrl: imageUrl || (type === 'place' ? '/src/see-do.png' : '/src/shop.png'),
+      description: description || 'No description available',
       likes: likesCount,
-      views,
+      views: views || 0,
       category_id,
       category: getCategoryName(category_id),
       type,
@@ -203,17 +211,19 @@ const { isMobile} = useIsMobile();
       opening_hours: opening_hours || '',
     };
 
-    const bookmarkKey = `bookmarked_${type}s`;
-    const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
+    // Unified key
+    const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
 
     if (isBookmarked) {
       delete savedBookmarks[id];
-      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
+      localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
       setIsBookmarked(false);
+      console.log(`ProductCard: Removed bookmark for ${type} id: ${id}`);
     } else {
       savedBookmarks[id] = productData;
-      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
+      localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
       setIsBookmarked(true);
+      console.log(`ProductCard: Added bookmark for ${type} id: ${id}`);
     }
   };
 
@@ -301,7 +311,8 @@ const { isMobile} = useIsMobile();
               {likesCount || 0}
             </p>
           </span>
-          <span className="flex items-center" style={{ gap: isMobile ? fsm(5) : fs(5) }}>
+          <span className="flex items-center" style={{ gap: isMobile ? fsm(5) : fs(5) }}
+          >
             <img
               src="/src/eye.svg"
               alt="Views"
@@ -343,14 +354,14 @@ const { isMobile} = useIsMobile();
         <Link
           to={targetLink}
           state={{
-            type: `${type}s`, // Match ShopDetails loader (shops or places)
+            type: `${type}s`,
             item: {
               id,
-              title,
-              imageUrl,
-              description,
+              title: title || 'Untitled',
+              imageUrl: imageUrl || (type === 'place' ? '/src/see-do.png' : '/src/shop.png'),
+              description: description || 'No description available',
               likes: likesCount,
-              views,
+              views: views || 0,
               category_id,
               category: getCategoryName(category_id),
               near_station: near_station || '',

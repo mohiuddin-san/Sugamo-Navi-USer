@@ -11,13 +11,6 @@ const CommonCategoryTop = ({ title, subtitle, imageSrc, imageAlt}) => {
     <div
       className={`flex flex-col md:flex-row items-center justify-center`}
     >
-       <Particles
-        className="absolute inset-0"
-        quantity={100}
-        ease={80}
-        color="#"
-        refresh
-      />
       <div className="justify-center" style={{display: 'block', width: isMobile ? '100%' : '49%'}}>
         <div className="flex justify-center">
           <div

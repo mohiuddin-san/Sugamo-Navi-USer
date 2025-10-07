@@ -223,7 +223,7 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
   }, [svgContent, onPinClick]);
 
   return (
-    <div className="relative w-full bg-white" >
+    <div className="relative w-full bg-white" style={{height:isMobile?fsm(265):fs(493)}} >
       <TransformWrapper
         ref={transformRef}
         initialScale={1.1}
@@ -246,10 +246,10 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
       >
         {({ zoomIn, zoomOut, resetTransform, centerView }) => (
           <>
-            <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
+            <div className={`absolute flex gap-2 z-10 ${isMobile ? 'bottom-4 left-1/2 -translate-x-1/2 flex-row' : 'top-4 right-4 flex-col'}`}>
               <button
                 onClick={() => zoomIn()}
-                className="bg-white text-black rounded-full flex items-center justify-center shadow-lg border-2 border-black "
+                className="bg-white text-black rounded-full flex items-center justify-center shadow-lg border-2 border-black"
                 style={{width: isMobile? fsm(25):fs(40), height: isMobile? fsm(25):fs(40),fontSize: isMobile? fsm(16):fs(25)}}
               >
                 +

@@ -23,6 +23,7 @@ interface ProductCardProps {
   other_images: string[];
   imageHeight?: number;
   paddingText?: number;
+  type: 'shops' | 'travels'; // Added type prop
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -43,6 +44,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   style,
   imageHeight = 210,
   paddingText = 38,
+  type, // Added type to props
 }) => {
   const { fs, fsm } = useUniversalFluid();
   const navigate = useNavigate();
@@ -54,17 +56,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   useEffect(() => {
     console.log('ProductCard: Initializing for shopId:', shopId, 'initialLikes:', initialLikes);
-    
-    // Check bookmark status
-    const bookmarkKey = getCategoryName(category_id) || 'Uncategorized';
-    const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
+
+    // Unified bookmark check
+    const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
     if (shopId && savedBookmarks[shopId]) {
       setIsBookmarked(true);
     }
 
     // Check if user has already loved this shop
-    const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
-    if (shopId && lovedShops[shopId]) {
+    const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+    if (shopId && lovedItems[shopId]) {
       setHasLoved(true);
       console.log('ProductCard: Shop already loved for shopId:', shopId);
     }
@@ -99,30 +100,30 @@ const ProductCard: React.FC<ProductCardProps> = ({
       alert('Cannot like/unlike shop: Invalid shop ID');
       return;
     }
-    
+
     console.log('ProductCard: shopId for toggle:', shopId, 'type:', typeof shopId, 'hasLoved:', hasLoved);
-    
+
     if (hasLoved) {
       // Decrement
       try {
         console.log('ProductCard: Calling decrement_love_count RPC for shopId:', shopId);
         const { error, data } = await supabase.rpc('decrement_love_count', { shop_id: shopId });
-        
+
         if (error) {
           console.error('ProductCard: RPC error:', error);
           alert(`Failed to unlike shop: ${error.message}`);
           return;
         }
-        
+
         console.log('ProductCard: RPC success:', data);
         setLikes(prev => Math.max(prev - 1, 0));
         setHasLoved(false);
-        
+
         // Remove from localStorage
-        const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
-        delete lovedShops[shopId];
-        localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
-        
+        const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+        delete lovedItems[shopId];
+        localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
+
         console.log('ProductCard: Successfully unliked shopId:', shopId, 'new likes:', Math.max(likes - 1, 0));
       } catch (err) {
         console.error('ProductCard: Unexpected error in decrement:', err);
@@ -133,22 +134,22 @@ const ProductCard: React.FC<ProductCardProps> = ({
       try {
         console.log('ProductCard: Calling increment_love_count RPC for shopId:', shopId);
         const { error, data } = await supabase.rpc('increment_love_count', { shop_id: shopId });
-        
+
         if (error) {
           console.error('ProductCard: RPC error:', error);
           alert(`Failed to like shop: ${error.message}`);
           return;
         }
-        
+
         console.log('ProductCard: RPC success:', data);
         setLikes(prev => prev + 1);
         setHasLoved(true);
-        
+
         // Save to localStorage
-        const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
-        lovedShops[shopId] = true;
-        localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
-        
+        const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+        lovedItems[shopId] = true;
+        localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
+
         console.log('ProductCard: Successfully liked shopId:', shopId, 'new likes:', likes + 1);
       } catch (err) {
         console.error('ProductCard: Unexpected error in increment:', err);
@@ -163,7 +164,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
       console.error('ProductCard: No shopId provided for bookmark');
       return;
     }
-    
+
+    const normalizedType = type === 'shops' ? 'shop' : 'place'; // Standardize type for consistency
+
     const productData = {
       id: shopId,
       title,
@@ -178,18 +181,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
       other_images,
       opening_hours,
       category: getCategoryName(category_id),
+      type: normalizedType, // Use normalized type
     };
-    
-    const bookmarkKey = getCategoryName(category_id) || 'Uncategorized';
-    const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
-    
+
+    // Unified key
+    const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+
     if (isBookmarked) {
       delete savedBookmarks[shopId];
-      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
+      localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
       setIsBookmarked(false);
     } else {
       savedBookmarks[shopId] = productData;
-      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
+      localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
       setIsBookmarked(true);
     }
   };
@@ -199,7 +203,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
       console.error('ProductCard: No shopId provided for navigation');
       return;
     }
-    navigate(`${linkTo}?id=${shopId}&type=shops`, {
+
+    // Use original type for URL param to match details page expectation
+    navigate(`${linkTo}?id=${shopId}&type=${type}`, {
       state: {
         shop: {
           id: shopId,
@@ -215,8 +221,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
           opening_hours,
           category: getCategoryName(category_id),
           category_id,
+          type, // Keep original type in state if needed
         },
-        type: 'shops',
+        type,
       },
     });
   };

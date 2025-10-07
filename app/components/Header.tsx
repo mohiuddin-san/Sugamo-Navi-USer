@@ -20,13 +20,13 @@ const Header: React.FC = () => {
   const location = useLocation();
   const isMobile = useMediaQuery({ maxWidth: 767 });
 
-
   const menuItems = [
     "食べる",
     "観る・遊ぶ",
     "モデルコース",
     "旅の情報",
     "おすすめの店",
+    "ブックマーク", // Added new menu item for mobile view
   ];
 
   const menuRoutes: Record<string, string> = {
@@ -35,6 +35,7 @@ const Header: React.FC = () => {
     モデルコース: "/ModelCourse",
     旅の情報: "/BlogList",
     おすすめの店: "/Recomondation",
+    ブックマーク: "/BookMark", // Route for the new bookmark item
   };
 
   const handleSearchClick = () => setIsSearchOpen(true);
@@ -86,7 +87,6 @@ const Header: React.FC = () => {
   const filteredShops = shops.filter((shop) =>
     shop.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
 
   const handleShopClick = (shopId: string, shopName: string) => {
     navigate("/ShopDetails", {
@@ -158,7 +158,7 @@ const Header: React.FC = () => {
             className="flex flex-nowrap items-center justify-center"
             style={{ gap: isMobile ? fsm(48) : fs(17) }}
           >
-            {menuItems.map((item) => (
+            {menuItems.slice(0, -1).map((item) => ( // Exclude bookmark item for desktop
               <Link
                 key={item}
                 to={menuRoutes[item]}
@@ -203,18 +203,17 @@ const Header: React.FC = () => {
               />
             </button>
             <div className="relative flex items-center justify-center">
-              {/* <div
+              <div
                 className="flex items-center justify-center bg-white cursor-pointer transition-transform duration-300 hover:scale-125"
                 style={{ width: fs(27), height: fs(27) }}
                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
               >
                 <img
-                className="w-full j-full object-cover"
+                  className="w-full h-full object-cover"
                   src="/src/world.svg"
                   alt="World Icon"
-                  
                 />
-              </div> */}
+              </div>
               {isLanguageDropdownOpen && (
                 <div
                   className="absolute inset-0 flex flex-col items-center justify-start bg-white border rounded-full shadow-md"
@@ -234,10 +233,11 @@ const Header: React.FC = () => {
                     <div
                       key={lang}
                       onClick={() => handleLanguageSelect(lang)}
-                      className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${selectedLanguage === lang
+                      className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${
+                        selectedLanguage === lang
                           ? "bg-black text-white"
                           : "border border-black text-black"
-                        } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
+                      } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
                       style={{
                         width: fs(28),
                         height: fs(28),
@@ -262,12 +262,12 @@ const Header: React.FC = () => {
             style={{ width: fsm(27), height: fsm(27) }}
             onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
           >
-            {/* <img
+            <img
               src="/src/world.svg"
               alt="World Icon"
               className="w-full h-full object-cover"
               style={{ marginLeft: fsm(6) }}
-            /> */}
+            />
           </div>
           {isLanguageDropdownOpen && (
             <div
@@ -292,10 +292,11 @@ const Header: React.FC = () => {
                 <div
                   key={lang}
                   onClick={() => handleLanguageSelect(lang)}
-                  className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${selectedLanguage === lang
+                  className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${
+                    selectedLanguage === lang
                       ? "bg-black text-white"
                       : "border border-black text-black"
-                    } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
+                  } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
                   style={{
                     height: fsm(27),
                     width: fsm(27),
@@ -331,7 +332,7 @@ const Header: React.FC = () => {
             onClick={() => setIsMenuOpen(true)}
             className="transition-transform duration-300 hover:scale-125"
           >
-            <img src="./src/menu-mobile.svg" alt="Mohin" />
+            <img src="./src/menu-mobile.svg" alt="Menu" />
           </button>
         </div>
       </div>
@@ -354,7 +355,7 @@ const Header: React.FC = () => {
               alt="close menu"
             />
           </div>
-          <div className="w-full h-full left-0 bg-white flex flex-row">
+          <div className="w-full h-full left-0 bg-white flex flex-col items-center">
             <nav
               className="flex flex-col items-center w-full h-full justify-center"
               style={{ gap: fsm(38) }}
@@ -363,30 +364,25 @@ const Header: React.FC = () => {
                 <div key={item} className="flex justify-between items-center">
                   <Link
                     to={menuRoutes[item]}
-                    className="text-black font-bold cursor-pointer fsm-[16]"
+                    className="text-black font-bold cursor-pointer fsm-[16] flex items-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
+                    {item === "ブックマーク" && (
+                      <img
+                        src="/src/bookmark.svg"
+                        alt="Bookmark Icon"
+                        style={{
+                          height: fsm(20),
+                          width: fsm(20),
+                          marginRight: fsm(8),
+                        }}
+                      />
+                    )}
                     {item}
                   </Link>
                 </div>
               ))}
             </nav>
-            <div>
-              <button
-                className="transition-transform duration-300 hover:scale-125"
-                onClick={handleBookmarkClick}
-              >
-                <img
-                  src="/src/bookmark.svg"
-                  alt="Bookmark Icon"
-                  style={{
-                    height: fsm(20),
-                    width: fsm(20),
-                    marginTop: fsm(75),
-                  }}
-                />
-              </button>
-            </div>
           </div>
         </div>
       )}

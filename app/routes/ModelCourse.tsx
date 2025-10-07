@@ -150,18 +150,19 @@ export default function ModelCourse() {
   const products = data?.products || [];
   const stops = data?.stops || [];
   const location = useLocation();
-   const { isMobile} = useIsMobile();
+  const { isMobile } = useIsMobile();
   const { fs, fsm } = useUniversalFluid();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
-
-  const [currentIndex, setCurrentIndex] = useState(1);
   const [currentIndexM, setCurrentIndexM] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(1);
   const [selectedStop, setSelectedStop] = useState<typeof stops[0] | null>(null);
   const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
   const [hasSvgAnimated, setHasSvgAnimated] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const stopsRef = useRef<(HTMLDivElement | null)[]>([]);
-
+  const infiniteItems = [...modelCourse, ...modelCourse, ...modelCourse];
+  const startIndex = modelCourse.length; // Start from middle copy
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % modelCourse.length);
   };
@@ -170,16 +171,42 @@ export default function ModelCourse() {
     setCurrentIndex((prev) => (prev - 1 + modelCourse.length) % modelCourse.length);
   };
 
-  const handleNextM = () => {
-    setCurrentIndexM((prev) => (prev + 1) % modelCourse.length);
-  };
+// Desktop: 3টা পুরো দেখাবে, Mobile: মাঝেরটা পুরো + দুই পাশে আধা
+const itemWidth = isMobile ? 70 : 33.33; // Mobile 70%, Desktop 33.33%
 
-  const handlePrevM = () => {
-    setCurrentIndexM((prev) => (prev - 1 + modelCourse.length) % modelCourse.length);
-  };
+const handleNextM = () => {
+  setIsTransitioning(true);
+  setCurrentIndexM((prev) => prev + 1);
+};
+
+const handlePrevM = () => {
+  setIsTransitioning(true);
+  setCurrentIndexM((prev) => prev - 1);
+};
+
+const handleTransitionEnd = () => {
+  const length = modelCourse.length;
+  
+  if (currentIndexM >= length * 2) {
+    setIsTransitioning(false);
+    setCurrentIndexM(currentIndexM - length);
+  } else if (currentIndexM < length) {
+    setIsTransitioning(false);
+    setCurrentIndexM(currentIndexM + length);
+  }
+};
+
+useEffect(() => {
+  if (!isTransitioning) {
+    setTimeout(() => setIsTransitioning(true), 50);
+  }
+}, [isTransitioning]);
+
+useEffect(() => {
+  setCurrentIndexM(modelCourse.length);
+}, []);
 
   const handlePinClick = (title: string) => {
-    console.log('পিন ক্লিক করা হয়েছে, টাইটেল:', title);
     setSelectedTitle(title);
 
     const matchingStop = stops.find(
@@ -187,8 +214,6 @@ export default function ModelCourse() {
     );
     if (matchingStop) {
       setSelectedStop(matchingStop);
-      console.log('ম্যাচিং স্টপ:', matchingStop);
-
       // Scroll to the corresponding stop
       const stopIndex = stops.findIndex((stop) => stop.title.trim() === title.trim());
       if (stopIndex !== -1 && stopsRef.current[stopIndex]) {
@@ -231,6 +256,9 @@ export default function ModelCourse() {
     };
   }, [hasSvgAnimated]);
 
+  const itemsVisible = isMobile ? 4 : 3;
+  const percentage = 100 / itemsVisible;
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -248,63 +276,63 @@ export default function ModelCourse() {
         marginBottom={43}
         marginTop={98}
       />
-      <div
-        className="relative border-2 border-black rounded-[30px]"
-        style={{
-          marginLeft: isMobile ? fsm(20) : fs(90),
-          marginRight: isMobile ? fsm(20) : fs(90),
-          paddingTop: isMobile ? fsm(61) : fs(25),
-        }}
-      >
-        <div className="rounded-lg overflow-hidden">
-          <div
-            className="flex transition-transform duration-300 ease-in-out overflow-x-auto"
-            style={{
-              transform: isMobile
-                ? `translateX(-${currentIndexM * 25}%)`
-                : `translateX(-${currentIndexM * 33.33}%)`,
-              width: isMobile
-                ? `${modelCourse.length * 25}%`
-                : `${modelCourse.length * 33.33}%`,
-            }}
-          >
-            {modelCourse.map((modelC, index) => (
-              <div
-                key={index}
-                className="flex-shrink-0 flex flex-row"
-                style={{ paddingLeft: isMobile ? fsm(16) : fs(42) }}
-              >
-                <ModelCourseDetailsItem
-                  title={modelC.title}
-                  imageUrl={modelC.imageUrl}
-                  itemNumber={modelC.itemNumber}
-                />
-                {index !== modelCourse.length - 1 && (
-                  <div
-                    className="w-[2px] h-full bg-black"
-                    style={{ marginLeft: isMobile ? fsm(16) : fs(42) }}
-                  ></div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+<div
+  className="relative border-2 border-black rounded-[30px]"
+  style={{
+    marginLeft: isMobile ? fsm(20) : fs(90),
+    marginRight: isMobile ? fsm(20) : fs(90),
+    paddingTop: isMobile ? fsm(61) : fs(25),
+  }}
+>
+  <div className="rounded-lg overflow-hidden">
+    <div
+      className="flex ease-in-out"
+      style={{
+        transform: `translateX(-${currentIndexM * itemWidth}%)`,
+        transition: isTransitioning ? 'transform 300ms ease-in-out' : 'none',
+      }}
+      onTransitionEnd={handleTransitionEnd}
+    >
+      {infiniteItems.map((modelC, index) => (
         <div
-          className="flex justify-between"
-          style={{
-            height: isMobile ? fsm(61) : fs(68),
-            paddingLeft: isMobile ? fsm(20) : fs(23),
-            paddingRight: isMobile ? fsm(20) : fs(23),
+          key={index}
+          className="flex-shrink-0 flex flex-row"
+          style={{ 
+            width: `${itemWidth}%`,
+            paddingLeft: isMobile ? fsm(16) : fs(42) 
           }}
         >
-          <button onClick={handlePrevM} className="text-4xl">
-            ←
-          </button>
-          <button onClick={handleNextM} className="text-4xl">
-            →
-          </button>
+          <ModelCourseDetailsItem
+            title={modelC.title}
+            imageUrl={modelC.imageUrl}
+            itemNumber={modelC.itemNumber}
+          />
+          {index !== infiniteItems.length - 1 && (
+            <div
+              className="w-[2px] h-full bg-black"
+              style={{ marginLeft: isMobile ? fsm(16) : fs(42) }}
+            ></div>
+          )}
         </div>
-      </div>
+      ))}
+    </div>
+  </div>
+  <div
+    className="flex justify-between"
+    style={{
+      height: isMobile ? fsm(61) : fs(68),
+      paddingLeft: isMobile ? fsm(20) : fs(23),
+      paddingRight: isMobile ? fsm(20) : fs(23),
+    }}
+  >
+    <button onClick={handlePrevM} className="text-4xl">
+      ←
+    </button>
+    <button onClick={handleNextM} className="text-4xl">
+      →
+    </button>
+  </div>
+</div>
 
       <div
         className="relative border-black border-2 rounded-[30px] overflow-hidden"
@@ -317,7 +345,7 @@ export default function ModelCourse() {
         <div className="bg-white overflow-hidden">
           <div
             className="flex flex-col justify-between"
-            style={{ marginLeft: fs(33), marginRight: fs(33) }}
+            style={{ marginLeft: isMobile?fsm(20): fs(33), marginRight: isMobile?fsm(20): fs(33) }}
           >
             <div className="flex items-center justify-between">
               <span className="flex items-center">
@@ -343,7 +371,7 @@ export default function ModelCourse() {
                 )}
               </span>
               <span
-                className="font-cousine font-bold italic ml-2"
+                className="font-cousine font-bold italic "
                 style={{
                   fontSize: isMobile ? fsm(21) : fs(31),
                   color: '#000000',
@@ -354,12 +382,12 @@ export default function ModelCourse() {
             </div>
           </div>
           <div
-            className="border-t-2 border-black"
-            style={{ marginBottom: isMobile ? fsm(33) : fs(33), marginRight: fs(33) }}
+            className="border-t-2 border-black bg"
+            style={{ marginBottom: isMobile ? fsm(33) : fs(33), marginRight: isMobile?fsm(20):fs(33),marginLeft:isMobile?fsm(20):fs(33) }}
           ></div>
           <div
             className="border-l-2 border-r-2 border-black rounded-lg overflow-hidden"
-            style={{ marginLeft: fs(33), marginRight: fs(33) }}
+            style={{ marginLeft: isMobile?fsm(20):fs(33), marginRight: isMobile? fsm(20):fs(33) }}
           >
             <MarqueeHeader
               text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
@@ -369,7 +397,7 @@ export default function ModelCourse() {
               marginBottom={0}
               marginTop={0}
             />
-            <div style={{ position: 'relative'}} ref={mapRef}>
+            <div style={{position: 'relative'}} ref={mapRef}>
               <MapSVG
                 svgPath="/src/map-pin.svg"
                 onPinClick={handlePinClick}
@@ -380,14 +408,14 @@ export default function ModelCourse() {
               text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
               backgroundColor="#FFFFFF"
               textColor="#000000"
-              animationDuration="40s"
+              animationDuration="90s"
               marginBottom={0}
               marginTop={0}
             />
           </div>
           <div
             className="border-t-2 border-black"
-            style={{ marginTop: isMobile ? fsm(16) : fs(26), marginRight: fs(33) }}
+            style={{ marginTop: isMobile ? fsm(16) : fs(26), marginRight:isMobile?fsm(20): fs(33),marginLeft: isMobile?fsm(20):fs(33) }}
           ></div>
           <div
             className="min-h-screen"
@@ -433,23 +461,23 @@ export default function ModelCourse() {
                 </p>
               </div>
               <div
-                className="w-[2px] bg-black h-auto"
-                style={{ marginRight: isMobile ? fsm(0) : fs(36) }}
+                className="w-auto md:w-[2px] bg-black h-[2px] md:h-auto"
+                style={{ marginRight: isMobile ? fsm(20) : fs(36), marginLeft: isMobile? fsm(20):0, marginTop:isMobile?fsm(48):0}}
               ></div>
-              <div className="w-full md:w-1/3 flex flex-col items-center">
+              <div className="w-auto md:w-1/3 flex flex-col items-cente" style={{marginLeft: isMobile?fsm(20):0, marginRight: isMobile?fsm(20):fs(4)}}>
                 <div className="text-start w-full">
                   <h2
                     className="text-start font-cousine font-bold italic text-black"
                     style={{
                       fontSize: isMobile ? fsm(31) : fs(31),
-                      paddingTop: isMobile ? fsm(32) : fs(14),
+                      paddingTop: isMobile ? fsm(48) : fs(14),
                     }}
                   >
                     START!
                   </h2>
                 </div>
                 <div
-                  className="w-full pr-2"
+                  className="w-full"
                   style={{
                     height: isMobile ? 'auto' : fs(645),
                     overflowY: isMobile ? 'visible' : 'scroll',
@@ -459,7 +487,7 @@ export default function ModelCourse() {
                     <div
                       key={stop.id}
                       ref={(el) => (stopsRef.current[index] = el)}
-                      className={`flex flex-col items-center `}
+                      className={`flex flex-col items-center  `}
                       style={{
                         height: isMobile ? fsm(115) : fs(115),
                         marginBottom: isMobile ? fsm(16) : fs(16),

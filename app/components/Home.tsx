@@ -52,10 +52,7 @@ export function loader() {
     imageUrl: "./src/sugamo-gate.jpg",
     title: "ABOUT SUGAMO",
     details: [
-      // Paragraph 1 - 3 lines together
       "「巣鴨」は、東京の中でも個性的な街のひとつです。\nここ「地蔵通り商店街」は、寺社や老舗の和菓子屋さん、薬局やグルメなお店が入り混じった賑やかな場所で、「おばあちゃんの原宿」として知られ、最近は懐かしい雰囲気が好きな若い人にも人気があります。下町の雰囲気を味わいたい方の東京観光の際は、ぜひ巣鴨に足を運んでみてください！",
-
-      // Paragraph 2 - 2 lines together
       "また、毎月4日、14日、24日には「縁日」が開催されます。\n骨董品やインテリア雑貨の露店、そして屋台グルメが並ぶ、巣鴨地蔵通り商店街での散策や食べ歩きにぴったりのイベントです。"
     ],
     letsGOimg: "./src/lets-g.svg",
@@ -651,6 +648,7 @@ export default function HomePage() {
                   style={{ width: isMobile ? fsm(350) : fs(434), height: isMobile ? fsm(496) : fs(560) }}
                   imageHeight={262}
                   paddingText={54}
+                  type={'shops'}
                 />
               </div>
               {/* 2nd Card */}
@@ -677,6 +675,7 @@ export default function HomePage() {
                   other_images={topShops[1]?.other_images || null}
                   style={{ width: isMobile ? fsm(350) : fs(350), height: isMobile ? fsm(496) : fs(496) }}
                   imageHeight={210}
+                  type={'shops'}
                 />
               </div>
               {/* 3rd Card */}
@@ -703,6 +702,7 @@ export default function HomePage() {
                   other_images={topShops[2]?.other_images || null}
                   style={{ width: isMobile ? fsm(350) : fs(350), height: isMobile ? fsm(496) : fs(496) }}
                   imageHeight={210}
+                  type={'shops'}
                 />
               </div>
             </div>

@@ -21,8 +21,9 @@ interface Shop {
   map_embed?: string;
   other_images?: string[];
   opening_hours?: string;
-  category?: string; // Added for clarity
+  category?: string;
 }
+
 
 export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
@@ -44,7 +45,6 @@ export async function loader({ request }: { request: Request }) {
   const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours';
 
   try {
-    // Fetch the current shop
     console.log(`Loader: Fetching from ${table} with id: ${id}`);
     const { data: itemData, error: itemError } = await supabase
       .from(table)
@@ -59,7 +59,6 @@ export async function loader({ request }: { request: Request }) {
 
     console.log(`Loader: Fetched ${table} data:`, itemData);
 
-    // Fetch category name
     let categoryName = 'No Category';
     if (itemData.category_id) {
       const { data: categoryData, error: categoryError } = await supabase
@@ -74,7 +73,6 @@ export async function loader({ request }: { request: Request }) {
       }
     }
 
-    // Fetch all related items of the same type (excluding current id)
     const { data: relatedData, error: relatedError } = await supabase
       .from(table)
       .select(selectFields)
@@ -137,6 +135,7 @@ export async function loader({ request }: { request: Request }) {
         other_images: item.other_images,
         opening_hours: item.opening_hours,
         category_id: item.category_id,
+        category: categoryName,
       })),
       type,
       error: null,
@@ -200,7 +199,7 @@ export default function ShopDetails() {
   const visitAttemptedRef = useRef<boolean>(false);
   const loveAttemptedRef = useRef<boolean>(false);
   const { fs, fsm } = useUniversalFluid();
-  const {isMobile }= useIsMobile();
+  const { isMobile } = useIsMobile();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   const visibleCards = 4;
 
@@ -219,14 +218,12 @@ export default function ShopDetails() {
 
     // Load bookmark and love state
     if (shop?.id) {
-      const bookmarkKey = `bookmarked_${effectiveType}`;
-      const loveKey = `love:${effectiveType}:${shop.id}`;
-      const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
-      const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+      const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+      const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
       setIsBookmarked(!!savedBookmarks[shop.id]);
-      setHasLoved(!!lovedShops[loveKey]);
+      setHasLoved(!!lovedItems[shop.id]);
     }
-  }, [shop?.id, effectiveType]);
+  }, [shop?.id]);
 
   useEffect(() => {
     if (!shop?.id || visitAttemptedRef.current) {
@@ -287,13 +284,12 @@ export default function ShopDetails() {
       return;
     }
 
-    const loveKey = `love:${effectiveType}:${shop.id}`;
-    const lovedShops = JSON.parse(localStorage.getItem('lovedShops') || '{}');
+    const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
 
     if (hasLoved) {
       try {
         loveAttemptedRef.current = true;
-        console.log('ShopDetails: Decrementing love_count for:', loveKey);
+        console.log('ShopDetails: Decrementing love_count for:', shop.id);
         const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
         const rpcName = effectiveType === 'places' ? 'decrement_love_count_place' : 'decrement_love_count';
         const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
@@ -303,7 +299,7 @@ export default function ShopDetails() {
           alert(`Failed to unlike ${effectiveType}: ${error.message}`);
           return;
         }
-        console.log('ShopDetails: Successfully decremented love_count for:', loveKey);
+        console.log('ShopDetails: Successfully decremented love_count for:', shop.id);
         const { data: updatedData, error: fetchError } = await supabase
           .from(table)
           .select('love_count')
@@ -319,8 +315,8 @@ export default function ShopDetails() {
             prevShop ? { ...prevShop, likes: updatedData.love_count } : prevShop
           );
         }
-        delete lovedShops[loveKey];
-        localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
+        delete lovedItems[shop.id];
+        localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
         setHasLoved(false);
         loveAttemptedRef.current = false;
       } catch (err) {
@@ -330,7 +326,7 @@ export default function ShopDetails() {
     } else {
       try {
         loveAttemptedRef.current = true;
-        console.log('ShopDetails: Incrementing love_count for:', loveKey);
+        console.log('ShopDetails: Incrementing love_count for:', shop.id);
         const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
         const rpcName = effectiveType === 'places' ? 'increment_love_count_place' : 'increment_love_count';
         const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
@@ -340,7 +336,7 @@ export default function ShopDetails() {
           alert(`Failed to like ${effectiveType}: ${error.message}`);
           return;
         }
-        console.log('ShopDetails: Successfully incremented love_count for:', loveKey);
+        console.log('ShopDetails: Successfully incremented love_count for:', shop.id);
         const { data: updatedData, error: fetchError } = await supabase
           .from(table)
           .select('love_count')
@@ -356,8 +352,8 @@ export default function ShopDetails() {
             prevShop ? { ...prevShop, likes: updatedData.love_count } : prevShop
           );
         }
-        lovedShops[loveKey] = true;
-        localStorage.setItem('lovedShops', JSON.stringify(lovedShops));
+        lovedItems[shop.id] = true;
+        localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
         setHasLoved(true);
         loveAttemptedRef.current = false;
       } catch (err) {
@@ -373,12 +369,12 @@ export default function ShopDetails() {
       return;
     }
 
-    const bookmarkKey = `bookmarked_${effectiveType}`;
-    const savedBookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || '{}');
+    const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+    const normalizedType = effectiveType === 'places' ? 'place' : 'shop';
 
     if (isBookmarked) {
       delete savedBookmarks[shop.id];
-      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
+      localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
       setIsBookmarked(false);
     } else {
       savedBookmarks[shop.id] = {
@@ -395,15 +391,16 @@ export default function ShopDetails() {
         map_embed: shop.map_embed,
         other_images: shop.other_images,
         opening_hours: shop.opening_hours,
-        type: effectiveType === 'places' ? 'place' : 'shop',
+        type: normalizedType,
       };
-      localStorage.setItem(bookmarkKey, JSON.stringify(savedBookmarks));
+      localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
       setIsBookmarked(true);
     }
   };
 
   useEffect(() => {
-    if (!shop && location.state?.item?.id && location.state?.type) {
+    console.log('ShopDetails: Checking location.state for shop update', location.state);
+    if (location.state?.item?.id) {
       const fetchShop = async () => {
         try {
           setLoading(true);
@@ -423,7 +420,6 @@ export default function ShopDetails() {
           }
           console.log(`useEffect: Fetched ${table} data:`, shopData);
 
-          // Fetch category name
           let categoryName = location.state.item.category || 'No Category';
           if (shopData.category_id && !location.state.item.category) {
             const { data: categoryData, error: categoryError } = await supabase
@@ -438,7 +434,7 @@ export default function ShopDetails() {
             }
           }
 
-          setShop({
+          const newShop = {
             id: shopData.id,
             title: shopData.name,
             imageUrl: shopData.image_url || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
@@ -452,21 +448,47 @@ export default function ShopDetails() {
             category_id: shopData.category_id || 'Unknown',
             category: categoryName,
             opening_hours: shopData.opening_hours || 'OPEN 10:00 ~ 22:00',
-          });
+          };
+
+          setShop(newShop);
+          setLoading(false);
+
+          // Reset bookmark and love state for new shop
+          const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+          const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+          setIsBookmarked(!!savedBookmarks[newShop.id]);
+          setHasLoved(!!lovedItems[newShop.id]);
         } catch (err) {
           console.log('useEffect: Error:', err);
           setError(err instanceof Error ? err.message : 'Unknown error');
-          setShop(location.state.item); // Fallback to navigation state
-        } finally {
+          setShop(location.state.item);
           setLoading(false);
         }
       };
 
       fetchShop();
+    } else if (menu && !shop) {
+      setShop({
+        id: menu.id,
+        title: menu.name,
+        imageUrl: menu.image,
+        description: menu.description,
+        likes: menu.likes || 0,
+        views: menu.views || 0,
+        near_station: menu.lastText,
+        address: menu.address,
+        category_id: menu.category_id,
+        map_embed: menu.map_embed,
+        other_images: menu.other_images,
+        opening_hours: menu.hours,
+        category: menu.category,
+      });
+      setLoading(false);
     } else {
       console.log('ShopDetails: No fetch needed, shop state:', shop);
+      setLoading(false);
     }
-  }, [location.state, effectiveType]);
+  }, [location.state?.item?.id, effectiveType, menu]);
 
   if (loading) {
     return <div className="container mx-auto p-4">Loading...</div>;
@@ -775,7 +797,7 @@ export default function ShopDetails() {
                       other_images={product.other_images}
                       opening_hours={product.opening_hours}
                       category_id={product.category_id}
-                      category={product.category} // Pass category if available
+                      category={product.category}
                     />
                   </div>
                 ))}

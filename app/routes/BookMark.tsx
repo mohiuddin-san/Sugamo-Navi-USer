@@ -14,106 +14,128 @@ interface Shop {
   name: string;
   imageUrl: string;
   description: string;
-  likes: number;
-  views: number;
-  near_station: string;
-  address: string;
-  map_embed: string;
-  other_images: string[];
-  opening_hours: string;
+  love_count: number;
+  review_count: number;
+  near_station?: string;
+  address?: string;
+  map_embed?: string;
+  other_images?: string[];
+  opening_hours?: string;
   category: string;
   category_id: string;
+  type?: 'shop' | 'place';
 }
 
+type ItemType = 'shops' | 'places';
+
 export default function BookmarkPage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<ItemType>('shops');
   const [bookmarkedProducts, setBookmarkedProducts] = useState<Shop[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [availableTypes, setAvailableTypes] = useState<ItemType[]>(['shops', 'places']);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const location = useLocation();
   const { fs, fsm } = useUniversalFluid();
-  const { isMobile} = useIsMobile();
+  const { isMobile } = useIsMobile();
 
   useEffect(() => {
-    const fetchBookmarksAndShops = async () => {
+    const fetchBookmarksAndItems = async () => {
       try {
         setLoading(true);
         setErrorMsg(null);
-        const localCategories = [];
-        const shopIds = [];
+        const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+        console.log('Unified Bookmarks:', savedBookmarks);
 
-        // Step 1: Extract categories and shop IDs from localStorage
-        Object.keys(localStorage).forEach((key) => {
-          if (!key.startsWith('sb-')) {
-            const bookmarks = JSON.parse(localStorage.getItem(key) || '{}');
-            console.log(`Category: ${key}, Bookmarks:`, bookmarks);
-            if (Object.keys(bookmarks).length > 0) {
-              localCategories.push(key);
-              Object.keys(bookmarks).forEach((shopId) => {
-                const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-                if (uuidRegex.test(shopId) && !shopIds.includes(shopId)) {
-                  shopIds.push(shopId);
-                }
-              });
-            }
-          }
-        });
-
-        console.log('Shop IDs:', shopIds);
-
-        if (localCategories.length === 0) {
-          setCategories([]);
+        if (Object.keys(savedBookmarks).length === 0) {
+          setAvailableTypes([]);
           setBookmarkedProducts([]);
           setErrorMsg('No bookmarked items found.');
           setLoading(false);
           return;
         }
 
-        // Set default category
-        if (!selectedCategory && localCategories.length > 0) {
-          setSelectedCategory(localCategories[0]);
-        }
-        setCategories(localCategories);
+        // Group by type and extract IDs
+        const typeGroups: { [key in ItemType]: string[] } = { shops: [], places: [] };
 
-        if (shopIds.length === 0) {
+        Object.keys(savedBookmarks).forEach((itemId) => {
+          const bookmark = savedBookmarks[itemId];
+          if (bookmark && bookmark.type) {
+            const normalizedType = bookmark.type === 'shop' ? 'shops' : 'places';
+            if (!typeGroups[normalizedType as ItemType].includes(itemId)) {
+              typeGroups[normalizedType as ItemType].push(itemId);
+            }
+          } else {
+            if (!typeGroups['shops'].includes(itemId)) {
+              typeGroups['shops'].push(itemId);
+            }
+          }
+        });
+
+        console.log('Type Groups:', typeGroups);
+
+        const typesWithData = Object.keys(typeGroups).filter((t) => typeGroups[t as ItemType].length > 0) as ItemType[];
+        if (typesWithData.length === 0) {
+          setAvailableTypes([]);
           setBookmarkedProducts([]);
-          setErrorMsg('No valid bookmarked shops found.');
+          setErrorMsg('No valid bookmarked items found.');
           setLoading(false);
           return;
         }
 
-        // Step 2: Fetch shop details from Supabase
+        if (!typesWithData.includes(selectedType)) {
+          setSelectedType(typesWithData[0]);
+        }
+        setAvailableTypes(typesWithData);
+
+        const currentType = selectedType;
+        const itemIds = typeGroups[currentType];
+
+        if (itemIds.length === 0) {
+          setBookmarkedProducts([]);
+          setErrorMsg(`No bookmarked ${currentType} found.`);
+          setLoading(false);
+          return;
+        }
+
         const { data: shops, error: shopsError } = await supabase
           .from('shops')
           .select('*')
-          .in('id', shopIds);
+          .in('id', itemIds);
 
         if (shopsError) {
           throw new Error(`Failed to fetch shops: ${shopsError.message}`);
         }
 
-        if (!shops || shops.length === 0) {
+        let items: Shop[] = [];
+        if (shops && shops.length > 0) {
+          items = shops.map(shop => ({
+            ...shop,
+            imageUrl: shop.image_url || shop.imageUrl || '/src/shop.png',
+            other_images: typeof shop.other_images === 'string' ? JSON.parse(shop.other_images) : (shop.other_images || []),
+            type: shop.type || 'shop',
+            likes: Number.isFinite(shop.likes) ? shop.likes : 0, // Fallback
+            views: Number.isFinite(shop.views) ? shop.views : 0, // Fallback
+          }));
+        }
+
+        if (items.length === 0) {
           setBookmarkedProducts([]);
-          setErrorMsg('No matching shops found in database.');
+          setErrorMsg(`No matching ${currentType} found in database.`);
           setLoading(false);
           return;
         }
 
-        // Step 3: Parse other_images and filter shops by selected category
-        const filteredShops = shops.map(shop => ({
-          ...shop,
-          other_images: typeof shop.other_images === 'string' ? JSON.parse(shop.other_images) : shop.other_images,
-        })).filter((shop) => {
-          const categoryBookmarks = JSON.parse(localStorage.getItem(shop.category) || '{}');
-          console.log('Shop Category:', shop.category, 'Selected Category:', selectedCategory);
-          return selectedCategory ? shop.category === selectedCategory && categoryBookmarks[shop.id] : categoryBookmarks[shop.id];
+        const filteredItems = items.filter((item) => {
+          const bookmark = savedBookmarks[item.id];
+          if (!bookmark) return false;
+          const bookmarkType = bookmark.type === 'shop' ? 'shops' : 'places';
+          return bookmarkType === currentType;
         });
 
-        console.log('Filtered Shops:', filteredShops);
-        setBookmarkedProducts(filteredShops);
+        console.log('Filtered Items:', filteredItems);
+        setBookmarkedProducts(filteredItems);
       } catch (error) {
-        const errMsg = error instanceof Error ? error.message : 'Unknown error fetching bookmarked shops';
+        const errMsg = error instanceof Error ? error.message : 'Unknown error fetching bookmarked items';
         setErrorMsg(errMsg);
         console.error('Error details:', error);
       } finally {
@@ -121,16 +143,20 @@ export default function BookmarkPage() {
       }
     };
 
-    console.log('Fetching bookmarks for category:', selectedCategory);
-    fetchBookmarksAndShops();
-  }, [selectedCategory]);
+    console.log('Fetching bookmarks for type:', selectedType);
+    fetchBookmarksAndItems();
+  }, [selectedType]);
 
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
   }, [location]);
 
-  const handleCategoryClick = (category: string) => {
-    setSelectedCategory(category);
+  const handleTypeClick = (type: ItemType) => {
+    setSelectedType(type);
+  };
+
+  const getDisplayName = (type: ItemType) => {
+    return type === 'shops' ? 'Shops' : 'Places';
   };
 
   return (
@@ -154,21 +180,21 @@ export default function BookmarkPage() {
         className="w-full items-center text-center mb-8 px-4 flex justify-center gap-4 font-sawarabi"
         style={{ marginBottom: isMobile ? fsm(56) : fs(72) }}
       >
-        {categories.length > 0 ? (
-          categories.map((category) => (
+        {availableTypes.length > 0 ? (
+          availableTypes.map((type) => (
             <p
-              key={category}
+              key={type}
               className={`text-center h-auto cursor-pointer ${
-                selectedCategory === category ? 'bg-black text-white' : 'text-black border'
+                selectedType === type ? 'bg-black text-white' : 'text-black border'
               }`}
               style={{
                 fontSize: isMobile ? fsm(20) : fs(20),
                 fontFamily: 'sans-serif',
                 width: isMobile ? fsm(159) : fs(159),
               }}
-              onClick={() => handleCategoryClick(category)}
+              onClick={() => handleTypeClick(type)}
             >
-              {category}
+              {getDisplayName(type)}
             </p>
           ))
         ) : (
@@ -176,7 +202,7 @@ export default function BookmarkPage() {
             className="text-center font-sawarabi"
             style={{ fontSize: isMobile ? fsm(20) : fs(20), color: '#313131' }}
           >
-            No categories found.
+            No types found.
           </p>
         )}
       </div>
@@ -201,8 +227,8 @@ export default function BookmarkPage() {
             className="grid grid-cols-2 lg:grid-cols-3"
             style={{
               gap: isMobile ? fsm(19) : fs(32),
-              paddingLeft: isMobile ? fsm(20) : fsm(163),
-              paddingRight: isMobile ? fsm(20) : fsm(163),
+              paddingLeft: isMobile ? fsm(20) : fs(163),
+              paddingRight: isMobile ? fsm(20) : fs(163),
             }}
           >
             {bookmarkedProducts.map((product) => (
@@ -211,19 +237,20 @@ export default function BookmarkPage() {
                 title={product.name}
                 imageUrl={product.imageUrl}
                 description={product.description}
-                likes={product.likes}
-                views={product.views}
+                likes={product.love_count}
+                views={product.review_count}
                 shopId={product.id}
-                near_station={product.near_station}
-                address={product.address}
-                map_embed={product.map_embed}
-                other_images={product.other_images}
-                opening_hours={product.opening_hours}
+                near_station={product.near_station || ''}
+                address={product.address || ''}
+                map_embed={product.map_embed || ''}
+                other_images={product.other_images || []}
+                opening_hours={product.opening_hours || ''}
                 category={product.category}
                 category_id={product.category_id}
                 linkTo="/ShopDetails"
-                style={{ width: isMobile ? "auto" : fs(350), height: isMobile ? "auto" : fs(496) }}
+                style={{ width: isMobile ? 'auto' : fs(350), height: isMobile ? 'auto' : fs(496) }}
                 imageHeight={210}
+                type={product.type === 'place' ? 'travels' : 'shops'}
               />
             ))}
           </div>
@@ -232,7 +259,7 @@ export default function BookmarkPage() {
             className="text-center font-sawarabi"
             style={{ fontSize: isMobile ? fsm(20) : fs(20), color: '#313131' }}
           >
-            No bookmarks found for {selectedCategory || 'any category'}.
+            No bookmarks found for {getDisplayName(selectedType)}.
           </p>
         )}
       </div>
