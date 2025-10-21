@@ -2,7 +2,15 @@ import { Link } from "@remix-run/react";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useMediaQuery } from "react-responsive";
 
-export default function ModelCourseItem({ title, details, categories, itemNumber, imageUrl }) {
+interface ModelCourseItemProps {
+    title: string;
+    details: string;
+    categories: string[];
+    itemNumber: number;
+    imageUrl: string;
+}
+
+export default function ModelCourseItem({ title, details, categories, itemNumber, imageUrl }: ModelCourseItemProps) {
     const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
     const isMobile = useMediaQuery({ maxWidth: 767 });
     return (
@@ -51,7 +59,7 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
                                 style={{ height: fs(74) }}
                             >
                                 <div className="flex flex-wrap justify-start" style={{ gap: fs(8) }}>
-                                    {categories.map((category, index) => (
+                                    {categories.map((category: string, index: number) => (
                                         <button
                                             key={index}
                                             className="bg-red-500 text-white rounded-full italic font-cousine font-bold"
@@ -101,7 +109,7 @@ export default function ModelCourseItem({ title, details, categories, itemNumber
                             </p>
                             <div className="flex flex-row text-start" style={{ marginTop: fsm(32) }}>
                                 <div className="flex flex-col justify-start ">
-                                    {categories.map((category, index) => (
+                                    {categories.map((category: string, index: number) => (
                                         <button
                                             key={index}
                                             className="bg-red-500 text-white rounded-full italic font-cairo"

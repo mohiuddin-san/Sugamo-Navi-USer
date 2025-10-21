@@ -5,10 +5,14 @@ import { getInstagramVideos, getTikTokVideos } from '~/components/socialMediaFet
 
 export const loader = async () => {
   try {
+    console.log('Starting loader - fetching social media data...');
     const [instagramPosts, tiktokVideos] = await Promise.all([
       getInstagramVideos(),
       getTikTokVideos(),
     ]);
+    console.log('Instagram posts count:', instagramPosts?.length || 0);
+    console.log('TikTok videos count:', tiktokVideos?.length || 0);
+    
     return json({
       posts: Array.isArray(instagramPosts) ? instagramPosts : [],
       tiktokVideos: Array.isArray(tiktokVideos) ? tiktokVideos : [],

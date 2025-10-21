@@ -13,6 +13,7 @@ type Shop = {
   id: string;
   name: string;
   category_id: string;
+  category: string;
   description: string;
   address: string;
   image_url: string;
@@ -86,7 +87,7 @@ export default function Shoppage() {
       ) : (
         <ResponsiveGrid
           columns={isMobile ? "1fr 1fr" : "1fr 1fr 1fr"}
-          isMobile={isMobile}
+          rows="auto"
           className="flex justify-center"
           style={{
             gap: isMobile ? fsm(19) : fs(32),
@@ -118,8 +119,13 @@ export default function Shoppage() {
                   likes={shop.love_count || 0}
                   views={shop.review_count || 0}
                   type={'shop'}
+                  category={shop.category || 'shop'}
                   category_id={shop.category_id}
-                  linkTo={`/shops/${shop.id}`}
+                  opening_hours={shop.opening_hours || 'Not specified'}
+                  near_station={shop.near_station || 'Not specified'}
+                  address={shop.address || 'Not specified'}
+                  map_embed={shop.map_embed || ''}
+                  other_images={shop.other_images ? [JSON.stringify(shop.other_images)] : []}
                 />
 
               </GridItem>

@@ -14,6 +14,7 @@ type place= {
   id: string;
   name: string;
   category_id: string;
+  category: string;
   description: string;
   address: string;
   image_url: string;
@@ -88,7 +89,7 @@ export default function Shoppage() {
       ) : (
         <ResponsiveGrid
           columns={isMobile ? "1fr 1fr" : "1fr 1fr 1fr"}
-          isMobile={isMobile}
+          rows="auto"
           className="flex justify-center"
           style={{
             gap: isMobile ? fsm(19) : fs(32),
@@ -116,13 +117,18 @@ export default function Shoppage() {
                 <ProductCard
                   id={place.id}
                   title={place.name}
-                  imageUrl={place.image_url || '/src/shop.png'}
+                  imageUrl={place.image_url || "/src/shop.png"}
                   description={place.description || 'No description available'}
                   likes={place.love_count || 0}
                   views={place.review_count || 0}
                   type={'place'}
+                  category={place.category || 'tourist_place'}
                   category_id={place.category_id}
-                  linkTo={`/shops/${place.id}`}
+                  opening_hours={place.opening_hours || 'Not specified'}
+                  near_station={place.near_station || 'Not specified'}
+                  address={place.address || 'Not specified'}
+                  map_embed={place.map_embed || ''}
+                  other_images={place.other_images ? [JSON.stringify(place.other_images)] : []}
                 />
               </GridItem>
             ))

@@ -27,6 +27,21 @@ type LoaderData = {
   letsGOimg: string;
 };
 
+type Blog = {
+  id: any;
+  title: any;
+  details: any;
+  status: any;
+  category_id: any;
+  top_image: any;
+  publish_date: any;
+};
+
+type Category = {
+  id: any;
+  name: string;
+};
+
 type Shop = {
   id: string;
   name: string;
@@ -38,7 +53,7 @@ type Shop = {
   review_count: number;
   near_station: string;
   map_embed: string;
-  other_images: JSON;
+  other_images: string[] | JSON;
   opening_hours: string;
 };
 
@@ -62,7 +77,7 @@ export function loader() {
 }
 
 export default function HomePage() {
-  const { isMobile, mounted, isLoading } = useIsMobile();
+  const { isMobile, mounted } = useIsMobile();
   const data = useLoaderData<LoaderData>();
   const { posts, tiktokVideos } = useLoaderData<{
     posts: any[];
@@ -77,10 +92,10 @@ export default function HomePage() {
   const [topShops, setTopShops] = useState<Shop[]>([]);
   const [shopsLoading, setShopsLoading] = useState(true);
   const [shopsError, setShopsError] = useState<string | null>(null);
-  const [blogs, setBlogs] = useState([]);
-  const [categories, setCategories] = useState({});
-  const [categoriesShop, setCategoriesShop] = useState({});
-  const [bookmarkedBlogs, setBookmarkedBlogs] = useState([]);
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [categories, setCategories] = useState<Record<string, string>>({});
+  const [categoriesShop, setCategoriesShop] = useState<Category[]>([]);
+  const [bookmarkedBlogs, setBookmarkedBlogs] = useState<Blog[]>([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [blogsError, setBlogsError] = useState<string | null>(null);
 
@@ -232,10 +247,10 @@ export default function HomePage() {
 
           if (categoriesError) throw categoriesError;
 
-          const categoriesMap = categoriesData.reduce((acc, cat) => {
+          const categoriesMap = categoriesData.reduce((acc: Record<string, string>, cat: Category) => {
             acc[cat.id] = cat.name;
             return acc;
-          }, {});
+          }, {} as Record<string, string>);
 
           setCategories(categoriesMap);
         }
@@ -243,7 +258,7 @@ export default function HomePage() {
         setBlogs(blogsData || []);
       } catch (err) {
         console.error("Error fetching blogs:", err);
-        setBlogsError(err.message || "Failed to load blogs");
+        setBlogsError(err instanceof Error ? err.message : "Failed to load blogs");
       } finally {
         setBlogsLoading(false);
       }
@@ -285,7 +300,7 @@ export default function HomePage() {
           if (error) throw error;
           setCategoriesShop(data);
         } catch (error) {
-          console.error('Error fetching categories:', error.message);
+          console.error('Error fetching categories:', error instanceof Error ? error.message : 'Unknown error');
         }
 
         const { data: shops, error: shopsError } = await supabaseShops
@@ -325,12 +340,12 @@ export default function HomePage() {
     );
   }
 
-  const getCategoryName = (categoryId) => {
-    const category = categoriesShop.find(cat => cat.id === categoryId);
+  const getCategoryName = (categoryId: any) => {
+    const category = categoriesShop.find((cat: Category) => cat.id === categoryId);
     return category ? category.name : 'No Category';
   };
 
-  if (isLoading || !mounted) {
+  if (!mounted) {
     return <LoadingScreen />;
   }
 
@@ -644,7 +659,7 @@ export default function HomePage() {
                   category={getCategoryName(topShops[0]?.category_id) || ''}
                   category_id={topShops[0]?.category_id}
                   map_embed={topShops[0]?.map_embed || ''}
-                  other_images={topShops[0]?.other_images || null}
+                  other_images={(topShops[0]?.other_images as string[]) || []}
                   style={{ width: isMobile ? fsm(350) : fs(434), height: isMobile ? fsm(496) : fs(560) }}
                   imageHeight={262}
                   paddingText={54}
@@ -672,7 +687,7 @@ export default function HomePage() {
                   category={getCategoryName(topShops[1]?.category_id) || ''}
                   category_id={topShops[1]?.category_id || ''}
                   map_embed={topShops[1]?.map_embed || ''}
-                  other_images={topShops[1]?.other_images || null}
+                  other_images={(topShops[1]?.other_images as string[]) || []}
                   style={{ width: isMobile ? fsm(350) : fs(350), height: isMobile ? fsm(496) : fs(496) }}
                   imageHeight={210}
                   type={'shops'}
@@ -699,7 +714,7 @@ export default function HomePage() {
                   category={getCategoryName(topShops[2]?.category_id) || ''}
                   category_id={topShops[2]?.category_id}
                   map_embed={topShops[2]?.map_embed || ''}
-                  other_images={topShops[2]?.other_images || null}
+                  other_images={(topShops[2]?.other_images as string[]) || []}
                   style={{ width: isMobile ? fsm(350) : fs(350), height: isMobile ? fsm(496) : fs(496) }}
                   imageHeight={210}
                   type={'shops'}
@@ -833,7 +848,7 @@ export default function HomePage() {
               blogs.slice(0, 9).map((blog) => (
                 <TravelsTipsItem
                   key={blog.id}
-                  categories={categories[blog.category_id] || ["General"]}
+                  categories={[categories[blog.category_id] || "General"]}
                   blog={blog}
                 />
               ))

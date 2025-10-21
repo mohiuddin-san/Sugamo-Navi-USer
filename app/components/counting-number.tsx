@@ -7,7 +7,7 @@ import {
   useMotionValue,
   useSpring,
 } from 'motion/react';
-type CountingNumberProps = React.ComponentProps<'span'> & {
+type CountingNumberProps = Omit<React.ComponentProps<'span'>, 'ref'> & {
   number: number;
   fromNumber?: number;
   padStart?: boolean;
@@ -18,22 +18,21 @@ type CountingNumberProps = React.ComponentProps<'span'> & {
   transition?: SpringOptions;
   decimalPlaces?: number;
 };
-function CountingNumber({
-  ref,
+const CountingNumber = React.forwardRef<HTMLSpanElement, CountingNumberProps>(({
   number,
   fromNumber = 0,
   padStart = false,
   inView = false,
-  inViewMargin = '0px',
+  inViewMargin = '-50px',
   inViewOnce = true,
   decimalSeparator = '.',
   transition = { stiffness: 90, damping: 50 },
   decimalPlaces = 0,
   className,
   ...props
-}: CountingNumberProps) {
+}, ref) => {
   const localRef = React.useRef<HTMLSpanElement>(null);
-  React.useImperativeHandle(ref, () => localRef.current as HTMLSpanElement);
+  React.useImperativeHandle(ref, () => localRef.current!);
   const numberStr = number.toString();
   const decimals =
     typeof decimalPlaces === 'number'
@@ -89,5 +88,8 @@ function CountingNumber({
       {initialText}
     </span>
   );
-}
+});
+
+CountingNumber.displayName = "CountingNumber";
+
 export { CountingNumber, type CountingNumberProps };

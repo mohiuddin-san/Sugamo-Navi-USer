@@ -6,12 +6,13 @@ import { useIsMobile } from '../hooks/useIsMobile';
 interface MapProps {
   onPinClick: (title: string) => void;
   svgPath: string;
+  startAnimation: boolean;
 }
 
-const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
+const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => {
   const [svgContent, setSvgContent] = useState<string>('');
   const { isMobile } = useIsMobile();
-  const [containerSize, setContainerSize] = useState({ width: "100%", height: 600 });
+  const [containerSize, setContainerSize] = useState<{ width: number | string; height: number }>({ width: "100%", height: 600 });
   const svgContainerRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const { fs, fsm, fluidStyle } = useUniversalFluid();

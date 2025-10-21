@@ -85,60 +85,92 @@ export async function loader() {
     ],
     products: [
       {
+        id: '1',
         title: 'ナンジェリー・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1000,
         views: 1000,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '2',
         title: 'ボストール・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1500,
         views: 1200,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '3',
         title: 'ナンジェリー・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1000,
         views: 1000,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '4',
         title: 'ボストール・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1500,
         views: 1200,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '5',
         title: 'ナンジェリー・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1000,
         views: 1000,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '6',
         title: 'ボストール・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1500,
         views: 1200,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '7',
         title: 'ナンジェリー・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1000,
         views: 1000,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '8',
         title: 'ボストール・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1500,
         views: 1200,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
     ],
   });
@@ -609,11 +641,15 @@ useEffect(() => {
                   }}
                 >
                   <ShopItem
+                    id={product.id}
                     title={product.title}
                     imageUrl="/src/burger.png"
                     description={product.description}
                     likes={product.likes}
                     views={product.views}
+                    category_id={product.category_id}
+                    category={product.category}
+                    type={product.type}
                   />
                 </div>
               ))}

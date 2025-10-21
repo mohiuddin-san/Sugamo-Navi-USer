@@ -28,15 +28,14 @@ type RollingTextProps = Omit<React.ComponentProps<'span'>, 'children'> & {
   text: string;
 };
  
-function RollingText({
-  ref,
+const RollingText = React.forwardRef<HTMLSpanElement, RollingTextProps>(function RollingText({
   transition = { duration: 0.5, delay: 0.1, ease: 'easeOut' },
   inView = false,
   inViewMargin = '0px',
   inViewOnce = true,
   text,
   ...props
-}: RollingTextProps) {
+}, ref) {
   const localRef = React.useRef<HTMLSpanElement>(null);
   React.useImperativeHandle(ref, () => localRef.current!);
  
@@ -49,7 +48,7 @@ function RollingText({
   const characters = React.useMemo(() => text.split(''), [text]);
  
   return (
-    <span data-slot="rolling-text" {...props} ref={ref}>
+    <span data-slot="rolling-text" {...props} ref={localRef}>
       {characters.map((char, idx) => (
         <span
           key={idx}
@@ -85,6 +84,7 @@ function RollingText({
       <span className="sr-only">{text}</span>
     </span>
   );
-}
+});
  
-export { RollingText, type RollingTextProps };
+export { RollingText };
+export type { RollingTextProps };

@@ -1,5 +1,4 @@
 
-import React from "react";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useMediaQuery } from "react-responsive";
 import Header from '~/components/Header';
@@ -7,7 +6,7 @@ import Footer from '../components/Footer';
 
 const PrivacyPolicy = () => {
   const isMobile = useMediaQuery({ maxWidth: 768 });
-  const { fs, fsm, fluidStyle } = useUniversalFluid();
+  const { fs, fsm } = useUniversalFluid();
 
   return (
     <div className="w-full min-h-screen bg-white text-black p-4 md:p-8" style={{ fontFamily: 'Cousine, monospace' }}>
@@ -23,7 +22,7 @@ const PrivacyPolicy = () => {
         <div className="space-y-6 text-sm md:text-base leading-relaxed" style={{ lineHeight: 1.6 }}>
           <p><strong>Effective Date: September 25, 2025</strong></p>
           
-          <p>Sugamo Navi ("we", "us", or "our") respects your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our App for solo travelers to find shops, travel spots, and publish blogs. By using the App, you consent to this policy.</p>
+          <p>Sugamo Navi (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) respects your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our App for solo travelers to find shops, travel spots, and publish blogs. By using the App, you consent to this policy.</p>
           
           <section>
             <h2 className="text-xl font-semibold mt-8 mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>1. Information We Collect</h2>
@@ -52,7 +51,7 @@ const PrivacyPolicy = () => {
           </section>
           
           <section>
-            <h2 className="text-xl font-semibold mt-8 mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>6. Children's Privacy</h2>
+            <h2 className="text-xl font-semibold mt-8 mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>6. Children&apos;s Privacy</h2>
             <p>The App is not for children under 13. We do not knowingly collect their data.</p>
           </section>
           

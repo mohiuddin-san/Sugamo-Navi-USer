@@ -6,6 +6,15 @@ import { resolve } from "path";
 
 export default defineConfig({
   plugins: [remix(), netlifyPlugin(), tsconfigPaths()],
+  server: {
+    watch: {
+      usePolling: true,
+      interval: 300,
+    },
+    hmr: {
+      overlay: true,
+    },
+  },
   resolve: {
     alias: {
       "~": resolve(__dirname, "app"), // Explicitly map ~ to app directory

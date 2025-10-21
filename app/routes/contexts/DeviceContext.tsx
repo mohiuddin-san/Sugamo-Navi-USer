@@ -1,11 +1,16 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useMediaQuery } from "react-responsive";
 
-// Create a Device Context
-const DeviceContext = createContext();
+// Define the context type
+interface DeviceContextType {
+  isMobile: boolean;
+}
+
+// Create a Device Context with default value
+const DeviceContext = createContext<DeviceContextType | undefined>(undefined);
 
 // Device Provider Component
-export function DeviceProvider({ children }) {
+export function DeviceProvider({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
   const isMobile = useMediaQuery({ maxWidth: 480 });
   
@@ -14,7 +19,9 @@ export function DeviceProvider({ children }) {
   }, []);
   
   // Only provide the actual value after component has mounted
-  const value = isMounted ? isMobile : false;
+  const value: DeviceContextType = { 
+    isMobile: isMounted ? isMobile : false 
+  };
   
   return (
     <DeviceContext.Provider value={value}>
