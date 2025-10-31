@@ -15,6 +15,7 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
   const svgContainerRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const { fs, fsm, fluidStyle } = useUniversalFluid();
+  
   useEffect(() => {
     const setVh = () => {
       const vh = window.innerHeight * 0.01;
@@ -73,16 +74,13 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
     const parent = wrapper.parentElement;
     if (!parent) return;
 
-    // Use the full available width
     const availableWidth = parent.clientWidth;
-    const availableHeight = window.innerHeight * 0.8; // 80% of viewport height
+    const availableHeight = window.innerHeight * 0.8;
 
-    // Calculate height based on SVG aspect ratio (800x600 = 4:3)
     const aspectRatio = 0.4;
     let calculatedWidth = availableWidth;
     let calculatedHeight = availableWidth * aspectRatio;
 
-    // If calculated height is more than available height, adjust
     if (calculatedHeight > availableHeight) {
       calculatedHeight = availableHeight;
       calculatedWidth = availableHeight / aspectRatio;
@@ -93,7 +91,6 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
       height: calculatedHeight
     });
 
-    // Reset transform after resize
     setTimeout(() => {
       if (transformRef.current) {
         transformRef.current.resetTransform();
@@ -101,6 +98,7 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
       }
     }, 100);
   };
+
   useEffect(() => {
     if (!svgContainerRef.current) return;
 
@@ -140,7 +138,6 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
       text.addEventListener('click', handleClick);
     });
 
-    // ক্লিনআপ
     return () => {
       paths.forEach((path) => {
         path.removeEventListener('click', handleClick);
@@ -156,6 +153,7 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
       });
     };
   }, [svgContent, onPinClick]);
+
   useEffect(() => {
     if (svgContent) {
       calculateContainerSize();
@@ -184,7 +182,6 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
     const handleSvgClick = (event: MouseEvent) => {
       const target = event.target as SVGElement;
       
-      // Check if clicked element is a pin or has data-title
       const pinElement = target.closest('.pin') || 
                         target.closest('[data-title]') || 
                         (target.hasAttribute('data-title') ? target : null);
@@ -196,7 +193,6 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
         
         console.log('ক্লিক করা এলিমেন্ট:', title);
 
-        // Animation effect
         if (pinElement instanceof SVGElement) {
           pinElement.animate(
             [
@@ -226,11 +222,11 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
     <div className="relative w-full bg-white" style={{height:isMobile?fsm(265):fs(493)}} >
       <TransformWrapper
         ref={transformRef}
-        initialScale={1.1}
+        initialScale={isMobile?3.5:1.1} 
         minScale={1.1}
-        maxScale={3}
+        maxScale={2}
         initialPositionX={0}
-        initialPositionY={0}
+        initialPositionY={isMobile?1:0}
         centerOnInit={true}
         centerZoomedOut={true}
         wheel={{ step: 0.1 }}
@@ -246,33 +242,35 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath }) => {
       >
         {({ zoomIn, zoomOut, resetTransform, centerView }) => (
           <>
-            <div className={`absolute flex gap-2 z-10 ${isMobile ? 'bottom-4 left-1/2 -translate-x-1/2 flex-row' : 'top-4 right-4 flex-col'}`}>
-              <button
-                onClick={() => zoomIn()}
-                className="bg-white text-black rounded-full flex items-center justify-center shadow-lg border-2 border-black"
-                style={{width: isMobile? fsm(25):fs(40), height: isMobile? fsm(25):fs(40),fontSize: isMobile? fsm(16):fs(25)}}
-              >
-                +
-              </button>
-              <button
-                onClick={() => zoomOut()}
-                className="bg-red-600 text-white rounded-full hover:bg-red-600 flex items-center justify-center shadow-lg"
-                style={{width: isMobile? fsm(25):fs(40), height: isMobile? fsm(25):fs(40),fontSize: isMobile? fsm(16):fs(25)}}
-              >
-                –
-              </button>
-              <button
-                onClick={() => {
-                  resetTransform();
-                  setTimeout(() => centerView(), 100);
-                }}
-                className="bg-green-500 text-white rounded-full hover:bg-green-600 flex items-center justify-center text-xs shadow-lg"
-                style={{width: isMobile? fsm(25):fs(40), height: isMobile? fsm(25):fs(40),fontSize: isMobile? fsm(16):fs(25)}}
-                title="Reset View"
-              >
-                ↻
-              </button>
-            </div>
+            {!isMobile && (
+              <div className="flex absolute gap-2 z-10 top-4 right-4 flex-col">
+                <button
+                  onClick={() => zoomIn()}
+                  className="bg-white text-black rounded-full flex items-center justify-center shadow-lg border-2 border-black"
+                  style={{width: fs(40), height: fs(40), fontSize: fs(25)}}
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => zoomOut()}
+                  className="bg-red-600 text-white rounded-full hover:bg-red-600 flex items-center justify-center shadow-lg"
+                  style={{width: fs(40), height: fs(40), fontSize: fs(25)}}
+                >
+                  –
+                </button>
+                <button
+                  onClick={() => {
+                    resetTransform();
+                    setTimeout(() => centerView(), 100);
+                  }}
+                  className="bg-green-500 text-white rounded-full hover:bg-green-600 flex items-center justify-center text-xs shadow-lg"
+                  style={{width: fs(40), height: fs(40), fontSize: fs(25)}}
+                  title="Reset View"
+                >
+                  ↻
+                </button>
+              </div>
+            )}
             <TransformComponent
               wrapperStyle={{
                 width: '100%',

@@ -1,31 +1,17 @@
 import { Link } from '@remix-run/react';
-
 import ReactMarkdown from "react-markdown";
-
 import remarkGfm from "remark-gfm";
-
 import { BookmarkIcon } from "@heroicons/react/24/outline";
-
 import { useState, useRef, useEffect } from "react";
-
 import rehypeHighlight from "rehype-highlight";
-
 import rehypeRaw from "rehype-raw";
-
 import rehypeSlug from "rehype-slug";
-
 import CommonCategoryTop from "../components/CommonCategoryTop";
-
 import { useUniversalFluid } from "../hooks/useUniversalFluid";
-
 import Header from "../components/Header";
-
 import OGPPreview from "~/components/OGPPreview";
-
 import { useIsMobile } from "~/hooks/useIsMobile";
-
 import MarqueeHeader from "../components/MarqueeHeader";
-
 
 interface BlogDetailProps {
   blog: {
@@ -38,13 +24,11 @@ interface BlogDetailProps {
   categoryName: string;
 }
 
-
 interface Heading {
   id: string;
   text: string;
   level: number;
 }
-
 
 export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -63,11 +47,10 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
   const [activeHeading, setActiveHeading] = useState<string | null>(null);
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState<string[]>([]);
   const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
-   const {isMobile} = useIsMobile();
+  const { isMobile } = useIsMobile();
   const tocContainerRef = useRef<HTMLDivElement>(null);
   const tocItemRefs = useRef<Record<string, HTMLLIElement | null>>({});
   const ulRef = useRef<HTMLUListElement>(null);
-
 
   const registerHeading = (id: string, element: HTMLElement | null, text: string, level: number) => {
     if (element && text && id) {
@@ -78,7 +61,6 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
       }
     }
   };
-
 
   const scrollToHeading = (id: string) => {
     const element = headingElements.current[id];
@@ -100,14 +82,12 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     }
   };
 
-
   const extractText = (children: any): string => {
     if (typeof children === 'string') return children;
     if (Array.isArray(children)) return children.map(extractText).join('');
     if (children?.props?.children) return extractText(children.props.children);
     return '';
   };
-
 
   useEffect(() => {
     const handleScroll = () => {
@@ -134,7 +114,6 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [headings]);
 
-
   useEffect(() => {
     if (activeHeading && tocItemRefs.current[activeHeading] && tocContainerRef.current) {
       const tocItem = tocItemRefs.current[activeHeading];
@@ -151,7 +130,6 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     }
   }, [activeHeading]);
 
-
   useEffect(() => {
     if (ulRef.current && headings.length > 0) {
       const firstLi = ulRef.current.querySelector('li');
@@ -167,7 +145,6 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
       }
     }
   }, [headings, tocKey]);
-
 
   const markdownComponents: any = {
     h1: ({ node, children, ...props }: any) => null,
@@ -242,39 +219,212 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
       </div>
     ),
     p: ({ node, children, ...props }: any) => {
-      // Robustly detect a special [side-by-side: ...] paragraph.
-      // We inspect the raw AST node children to find if the paragraph starts with the marker
       const nodeChildren = node?.children || [];
-      const combinedText = nodeChildren.map((c: any) => {
-        if (c.type === 'text') return c.value || '';
-        if (c.type === 'image') return `![](${c.url})`;
-        if (c.type === 'link' && c.children) return (c.children.map((ch: any) => ch.value || '').join(''));
-        return '';
-      }).join('');
 
+      // Extract images (Markdown images and raw URLs) and non-image content
+      const images: { url: string; alt?: string }[] = [];
+      const nonImageContent: any[] = [];
+
+      // Debug: Log entire node and children
+      console.log('=== PARAGRAPH DEBUG ===');
+      console.log('Paragraph node:', node);
+      console.log('Paragraph children prop:', children);
+      console.log('nodeChildren:', nodeChildren);
+
+      // Check if children is a string containing an image URL
+      if (typeof children === 'string') {
+        const urlRegex = /(https?:\/\/[^\s]+\.(?:jpeg|jpg|png|webp|gif|svg)(?:\?[^\s]*)?)/gi;
+        const matches = children.match(urlRegex);
+        if (matches && matches.length > 0) {
+          console.log('Found image URLs in string children:', matches);
+          matches.forEach((url, idx) => {
+            images.push({ url, alt: `Image ${idx + 1}` });
+          });
+          // Get text without URLs
+          let remainingText = children;
+          matches.forEach(url => {
+            remainingText = remainingText.replace(url, '');
+          });
+          if (remainingText.trim()) {
+            nonImageContent.push(remainingText.trim());
+          }
+        } else {
+          nonImageContent.push(children);
+        }
+      }
+
+      nodeChildren.forEach((child: any, index: number) => {
+        if (child.type === 'image') {
+          console.log('Found image node:', child);
+          images.push({ url: child.url, alt: child.alt || `Image ${index + 1}` });
+        } else if (child.type === 'text') {
+          const text = (child.value || '').trim();
+          // Updated regex to support jpeg, jpg, png, webp
+          const urlRegex = /(https?:\/\/[^\s]+\.(?:jpeg|jpg|png|webp|gif|svg)(?:\?[^\s]*)?)/gi;
+          let lastIndex = 0;
+          let match;
+
+          console.log('Processing text:', text);
+
+          // Check if the entire text is just an image URL
+          const trimmedText = text.trim();
+          const isStandaloneImageUrl = urlRegex.test(trimmedText) && trimmedText.match(urlRegex)?.[0] === trimmedText;
+          urlRegex.lastIndex = 0; // Reset regex
+
+          if (isStandaloneImageUrl) {
+            // If it's just an image URL, add it as an image
+            images.push({ url: trimmedText, alt: `Image ${images.length + 1}` });
+            console.log('Added standalone image URL:', trimmedText);
+          } else {
+            // Split text around URLs
+            while ((match = urlRegex.exec(text)) !== null) {
+              const url = match[0];
+              const start = match.index;
+              const end = start + url.length;
+
+              // Add text before the URL
+              if (start > lastIndex) {
+                const beforeText = text.slice(lastIndex, start).trim();
+                if (beforeText) {
+                  nonImageContent.push(beforeText);
+                  console.log('Added beforeText:', beforeText);
+                }
+              }
+
+              // Add URL as image
+              images.push({ url, alt: `Image ${images.length + 1}` });
+              console.log('Added image URL:', url);
+
+              lastIndex = end;
+            }
+
+            // Add remaining text (including non-image URLs)
+            if (lastIndex < text.length) {
+              const remainingText = text.slice(lastIndex).trim();
+              if (remainingText) {
+                nonImageContent.push(remainingText);
+                console.log('Added remainingText:', remainingText);
+              }
+            }
+          }
+        } else if (child.type === 'link') {
+          nonImageContent.push(
+            <a key={`link-${index}`} href={child.url} {...child.properties}>
+              {child.children?.map((c: any, i: number) => (
+                c.type === 'text' ? c.value : (
+                  c.type === 'strong' ? <strong key={`strong-${i}`}>{c.children?.map((sc: any) => sc.value || '')}</strong> :
+                  c.type === 'emphasis' ? <em key={`em-${i}`}>{c.children?.map((sc: any) => sc.value || '')}</em> :
+                  c.value || ''
+                )
+              ))}
+            </a>
+          );
+          console.log('Added link:', child.url);
+        } else if (child.type === 'strong') {
+          nonImageContent.push(
+            <strong key={`strong-${index}`}>
+              {child.children?.map((c: any, i: number) => (
+                c.type === 'text' ? c.value : (
+                  c.type === 'link' ? <a key={`link-${i}`} href={c.url} {...c.properties}>{c.children?.map((sc: any) => sc.value || '')}</a> :
+                  c.type === 'emphasis' ? <em key={`em-${i}`}>{c.children?.map((sc: any) => sc.value || '')}</em> :
+                  c.value || ''
+                )
+              ))}
+            </strong>
+          );
+          console.log('Added strong:', child);
+        } else if (child.type === 'emphasis') {
+          nonImageContent.push(
+            <em key={`em-${index}`}>
+              {child.children?.map((c: any, i: number) => (
+                c.type === 'text' ? c.value : (
+                  c.type === 'link' ? <a key={`link-${i}`} href={c.url} {...c.properties}>{c.children?.map((sc: any) => sc.value || '')}</a> :
+                  c.type === 'strong' ? <strong key={`strong-${i}`}>{c.children?.map((sc: any) => sc.value || '')}</strong> :
+                  c.value || ''
+                )
+              ))}
+            </em>
+          );
+          console.log('Added emphasis:', child);
+        } else {
+          // Fallback for other nodes
+          if (child.value) {
+            nonImageContent.push(child.value);
+            console.log('Added fallback text:', child.value);
+          }
+        }
+      });
+
+      // Debug: Log final arrays
+      console.log('Images:', images);
+      console.log('NonImageContent:', nonImageContent);
+
+      // Handle side-by-side images
+      const combinedText = nodeChildren
+        .map((c: any) => {
+          if (c.type === 'text') return c.value || '';
+          if (c.type === 'image') return `![](${c.url})`;
+          if (c.type === 'link') return (c.children?.map((ch: any) => ch.value || '').join('')) || '';
+          return '';
+        })
+        .join('');
       const startsWithSideBySide = combinedText.trim().startsWith('[side-by-side:');
 
-      if (startsWithSideBySide) {
-        // collect image nodes inside this paragraph
-        const images = nodeChildren.filter((c: any) => c.type === 'image').map((img: any) => ({ url: img.url, alt: img.alt }));
+      if (startsWithSideBySide || images.length === 2) {
         if (images.length === 2) {
-          // render two images side-by-side, left and right
+          console.log('Rendering side-by-side images:', images);
           return (
-            <div className="image-pair-container" {...props}>
-              <div className={`image-pair-item image-left`}>
-                <img src={images[0].url} alt={images[0].alt || ''} className="markdown-image" />
+            <div className="image-pair-container" {...props} style={{ marginTop: '10px', marginBottom: '10px' }}>
+              <div className="image-pair-item image-left">
+                <img src={images[0].url} alt={images[0].alt || ''} className="markdown-image" style={{ width: '100%' }} />
               </div>
-              <div className={`image-pair-item image-right`}>
-                <img src={images[1].url} alt={images[1].alt || ''} className="markdown-image" />
+              <div className="image-pair-item image-right">
+                <img src={images[1].url} alt={images[1].alt || ''} className="markdown-image" style={{ width: '100%' }} />
               </div>
             </div>
           );
         }
-        // if marker present but images not exactly 2 — don't render the marker text, just skip
-        return null;
+        // Fallback for side-by-side marker with wrong number of images
+        if (images.length > 0) {
+          console.log('Rendering individual images (side-by-side fallback):', images);
+          return (
+            <div>
+              {images.map((img, idx) => (
+                <div key={`image-${idx}`} style={{ marginTop: '10px', marginBottom: '10px' }}>
+                  <img src={img.url} alt={img.alt || ''} className="markdown-image" style={{ width: '100%' }} />
+                </div>
+              ))}
+              {nonImageContent.length > 0 && (
+                <p {...props}>
+                  {nonImageContent}
+                </p>
+              )}
+            </div>
+          );
+        }
       }
 
-      // default paragraph rendering
+      // Handle images (one or more)
+      if (images.length > 0) {
+        console.log('Rendering individual images:', images);
+        return (
+          <div>
+            {images.map((img, idx) => (
+              <div key={`image-${idx}`} style={{ marginTop: '10px', marginBottom: '10px' }}>
+                <img src={img.url} alt={img.alt || ''} className="markdown-image" style={{ width: '100%' }} />
+              </div>
+            ))}
+            {nonImageContent.length > 0 && (
+              <p {...props}>
+                {nonImageContent}
+              </p>
+            )}
+          </div>
+        );
+      }
+
+      // Default paragraph rendering
+      console.log('Rendering default paragraph with nonImageContent:', nonImageContent);
       return (
         <p {...props}>
           {cursorNode && cursorNode.parentElement === node && typeof children === "string" ? (
@@ -284,14 +434,15 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
               {children.substring(cursorOffset)}
             </>
           ) : (
-            children
+            nonImageContent.length > 0 ? nonImageContent : children
           )}
         </p>
       );
     },
     img: ({ node, ...props }: any) => (
-      // Outside of the special side-by-side block, images render full width
-      <img {...props} className="markdown-image" />
+      <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+        <img {...props} className="markdown-image" style={{ width: '100%' }} />
+      </div>
     ),
     span: ({ node, ...props }: any) => <span {...props} style={props.style} />,
     a: ({ node, href, children, ...props }: any) => {
@@ -322,34 +473,32 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
     },
   };
 
-
   useEffect(() => {
     const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
     setBookmarkedBlogs(savedBookmarks);
   }, []);
 
-const [linePosition, setLinePosition] = useState({ top: 0, height: 0 });
+  const [linePosition, setLinePosition] = useState({ top: 0, height: 0 });
 
-useEffect(() => {
-  if (!headings.length) return;
+  useEffect(() => {
+    if (!headings.length) return;
 
-  // Find first and last item (based on refs)
-  const firstId = headings[0].id;
-  const lastId = headings[headings.length - 1].id;
-  const firstEl = tocItemRefs.current[firstId];
-  const lastEl = tocItemRefs.current[lastId];
+    const firstId = headings[0].id;
+    const lastId = headings[headings.length - 1].id;
+    const firstEl = tocItemRefs.current[firstId];
+    const lastEl = tocItemRefs.current[lastId];
 
-  if (firstEl && lastEl) {
-    const containerTop = ulRef.current?.getBoundingClientRect().top ?? 0;
-    const firstTop = firstEl.offsetTop + firstEl.offsetHeight / 2;
-    const lastTop = lastEl.offsetTop + lastEl.offsetHeight / 2;
+    if (firstEl && lastEl) {
+      const containerTop = ulRef.current?.getBoundingClientRect().top ?? 0;
+      const firstTop = firstEl.offsetTop + firstEl.offsetHeight / 2;
+      const lastTop = lastEl.offsetTop + lastEl.offsetHeight / 2;
 
-    setLinePosition({
-      top: firstTop,
-      height: lastTop - firstTop,
-    });
-  }
-}, [headings]);
+      setLinePosition({
+        top: firstTop,
+        height: lastTop - firstTop,
+      });
+    }
+  }, [headings]);
 
   const toggleBookmark = (blogId: string) => {
     const updatedBookmarks = bookmarkedBlogs.includes(blogId)
@@ -358,7 +507,6 @@ useEffect(() => {
     setBookmarkedBlogs(updatedBookmarks);
     localStorage.setItem("bookmarkedBlogs", JSON.stringify(updatedBookmarks));
   };
-
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
@@ -369,7 +517,6 @@ useEffect(() => {
       day: "numeric",
     });
   };
-
 
   return (
     <div>
@@ -394,13 +541,12 @@ useEffect(() => {
 
           {!isMobile && ( <div className="p-2 flex flex-col gap-[31px] justify-center items-center rounded-r-lg border-t-2 border-b-2 border-l-0 border-r-2 border-black overflow-hidden" style={{width: fs(114),height: fs(205) }}>
             <a href="https://www.instagram.com/reel/DNfV4MozhwL/">
-              <img src="/src/instagram-icon.svg" alt="Instagram" style={{width: fs(40), height: fs(39)}}/>
+              <img src="/src/instagram-icon.svg" alt="Instagram" style={{width: fs(40), height: fs(40)}}/>
             </a>
             <a href="https://www.tiktok.com/@sugamo_japan">
-              <img src="/src/titok.svg" alt="TikTok" style={{width: fs(40), height: fs(39)}} />
+              <img src="/src/titok.svg" alt="TikTok" style={{width: fs(40), height: fs(40)}} />
             </a>
           </div>)}
-         
 
           <div className={`bg-white overflow-hidden ${headings.length > 0 ? 'lg:w-3/4 lg:order-1' : 'w-full'}`}>
             {blog.top_image && (
@@ -411,7 +557,7 @@ useEffect(() => {
 
             <div className="pt-2">
               <h1 className="font-semibold font-cairo text-black mb-2" style={{fontSize: isMobile? fsm(31): fs(61)}}>{blog.title}</h1>
-              <span className="font-courierPrime text-gray-500" style={{font: isMobile? fsm(16): fs(20)}}>
+              <span className="font-courierPrime text-gray-500" style={{fontSize: isMobile? fsm(16): fs(20)}}>
                 {formatDate(blog.publish_date)} | {categoryName}
               </span>
 
@@ -438,9 +584,7 @@ useEffect(() => {
             </div>
           </div>
 
-
-          {headings.length > 0 && !isMobile &&(
-            
+          {headings.length > 0 && !isMobile && (
             <div className="lg:w-1/4 mb-8 lg:mb-0 lg:order-2">
               <div className="sticky top-28 bg-transparent p-6 rounded-l-[30px] border-t-2 border-b-2 border-l-2 border-black">
                 <h3 className="text-xl font-semibold font-cairo text-black mb-4 text-center">目次</h3>
@@ -449,7 +593,6 @@ useEffect(() => {
                   ref={tocContainerRef}
                 >
                   <ul className="space-y-1 relative" ref={ulRef}>
-                    {/* Dynamic Line */}
                     <div
                       className="toc-line absolute left-[9px] w-[2px] bg-black"
                       style={{ top: linePosition.top, height: linePosition.height }}
