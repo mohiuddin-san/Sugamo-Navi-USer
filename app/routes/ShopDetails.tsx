@@ -199,7 +199,7 @@ export default function ShopDetails() {
   );
   const [loading, setLoading] = useState(!shopFromState && !menu);
   const [error, setError] = useState<string | null>(loaderError || null);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(1);
   const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
   const [hasLoved, setHasLoved] = useState<boolean>(false);
@@ -815,14 +815,14 @@ export default function ShopDetails() {
               <button
                 onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
                 className="text-4xl disabled:opacity-30"
-                disabled={currentIndex === 0}
+                disabled={currentIndex <= 0}
               >
                 ←
               </button>
               <button
                 onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, products.length - visibleCards))}
                 className="text-4xl disabled:opacity-30"
-                disabled={currentIndex >= products.length - visibleCards}
+                disabled={currentIndex >= (products.length - 1) - visibleCards}
               >
                 →
               </button>
