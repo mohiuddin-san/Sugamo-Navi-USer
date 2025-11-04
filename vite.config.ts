@@ -32,8 +32,18 @@ export default defineConfig({
       "~": resolve(__dirname, "app"), // Explicitly map ~ to app directory
     },
   },
+  build: {
+    sourcemap: false, // Disable source maps to avoid build issues on Netlify
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress source map warnings
+        if (warning.code === 'SOURCEMAP_ERROR') return;
+        warn(warning);
+      }
+    }
+  },
   ssr: {
-    noExternal: ['react-responsive', 'react-markdown', 'remark-gfm'], // Bundle dependencies for SSR
+    noExternal: ['react-responsive', 'react-markdown', 'remark-gfm', 'motion'], // Bundle dependencies for SSR
   },
   optimizeDeps: {
     include: ["leaflet", "react-leaflet"],

@@ -2,6 +2,10 @@
 command = "npm run build"
 publish = "build/client"
 
+[build.environment]
+NODE_VERSION = "18"
+NPM_FLAGS = "--production=false"
+
 [dev]
 command = "npm run dev"
 framework = "vite"
