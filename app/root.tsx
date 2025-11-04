@@ -11,6 +11,7 @@ export const links = () => [
   },
   { rel: "preload", href: "~/styles/app.css", as: "style" },
   { rel: "preload", href: "https://cdn.example.com/sugamo-navi.webp", as: "image" },
+  { rel: "preload", href: "/src/map-pin.svg", as: "image", type: "image/svg+xml" },
 ];
 
 export const meta = () => [

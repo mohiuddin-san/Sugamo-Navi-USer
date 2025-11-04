@@ -77,7 +77,7 @@ const OGPPreview = ({ url }: { url: string }) => {
   }, [url]);
 
   if (loading) return <div className="ogp-loading">Loading preview...</div>;
-  if (error) return <a href={url} target="_blank" rel="noopener">{url}</a>;
+  if (error) return <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>;
 
   return (
     <div className="ogp-card">

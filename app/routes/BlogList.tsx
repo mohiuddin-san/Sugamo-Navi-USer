@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link } from "@remix-run/react";
+import { Link , useLoaderData } from "@remix-run/react";
 import supabase from "~/supabase_blog";
 import { json } from "@remix-run/node";
 import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
 import { useMediaQuery } from "react-responsive";
-import { useLoaderData } from "@remix-run/react";
+
 import MarkdownClamp from "../components/MarkdownClamp";
 import ShimmerLayout from "../components/ShimmerLayout/SlBlogList";
 import MarqueeHeader from "~/components/MarqueeHeader";

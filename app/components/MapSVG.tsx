@@ -11,6 +11,8 @@ interface MapProps {
 
 const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => {
   const [svgContent, setSvgContent] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const { isMobile } = useIsMobile();
   const [containerSize, setContainerSize] = useState<{ width: number | string; height: number }>({ width: "100%", height: 600 });
   const svgContainerRef = useRef<HTMLDivElement>(null);
@@ -33,6 +35,9 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
 
   // Load SVG file
   useEffect(() => {
+    setIsLoading(true);
+    setError(null);
+    
     fetch(svgPath)
       .then((response) => {
         if (!response.ok) {
@@ -47,21 +52,24 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
           `<svg$1 viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">`
         );
         setSvgContent(modifiedSvg);
+        setIsLoading(false);
       })
       .catch((error) => {
         console.error('Error loading SVG:', error);
+        setError(error.message);
         setSvgContent(`
           <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100%" height="100%" fill="gray"/>
-            <path d="M100 300 L400 300" stroke="red" stroke-width="10" fill="none"/>
+            <rect width="100%" height="100%" fill="#f3f4f6"/>
+            <path d="M100 300 L400 300" stroke="#e5e7eb" stroke-width="10" fill="none"/>
             <g class="pin" data-title="マルジ">
-              <circle cx="250" cy="300" r="15" fill="white" stroke="black"/>
-              <text x="250" y="305" text-anchor="middle" font-size="12" fill="black">マルジ</text>
+              <circle cx="250" cy="300" r="15" fill="white" stroke="#9ca3af"/>
+              <text x="250" y="305" text-anchor="middle" font-size="12" fill="#6b7280">マルジ</text>
             </g>
-            <text x="50" y="50" font-size="20" fill="black">come to Sugamo! Pick your fav</text>
-            <text x="50" y="550" font-size="20" fill="black">our faves! Welcome to Sugamo!</text>
+            <text x="50" y="50" font-size="20" fill="#6b7280">Loading map...</text>
+            <text x="50" y="550" font-size="16" fill="#9ca3af">Please wait while the map loads</text>
           </svg>
         `);
+        setIsLoading(false);
       });
   }, [svgPath]);
 
@@ -295,7 +303,19 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
                 }}
                 className="flex items-center justify-center"
               >
-                {svgContent ? (
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center w-full h-full bg-gray-50">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                    <p className="text-gray-600 font-medium">Loading map...</p>
+                    <p className="text-gray-400 text-sm mt-2">Please wait a moment</p>
+                  </div>
+                ) : error ? (
+                  <div className="flex flex-col items-center justify-center w-full h-full bg-red-50">
+                    <div className="text-red-500 text-4xl mb-4">⚠️</div>
+                    <p className="text-red-600 font-medium">Failed to load map</p>
+                    <p className="text-red-400 text-sm mt-2">{error}</p>
+                  </div>
+                ) : svgContent ? (
                   <div
                     dangerouslySetInnerHTML={{ __html: svgContent }}
                     style={{
@@ -307,8 +327,8 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
                     }}
                   />
                 ) : (
-                  <div className="flex items-center justify-center w-full h-full bg-gray-200">
-                    <p>Loading SVG...</p>
+                  <div className="flex items-center justify-center w-full h-full bg-gray-100">
+                    <p className="text-gray-500">No map data available</p>
                   </div>
                 )}
               </div>
