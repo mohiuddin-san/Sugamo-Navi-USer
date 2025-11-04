@@ -1,618 +1,849 @@
-import { Link } from '@remix-run/react';
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { BookmarkIcon } from "@heroicons/react/24/outline";
-import { useState, useRef, useEffect } from "react";
-import rehypeHighlight from "rehype-highlight";
-import rehypeRaw from "rehype-raw";
-import rehypeSlug from "rehype-slug";
-import CommonCategoryTop from "../components/CommonCategoryTop";
-import { useUniversalFluid } from "../hooks/useUniversalFluid";
-import Header from "../components/Header";
-import OGPPreview from "~/components/OGPPreview";
-import { useIsMobile } from "~/hooks/useIsMobile";
-import MarqueeHeader from "../components/MarqueeHeader";
+import { useLoaderData, useLocation } from '@remix-run/react';
+import Header from '~/components/Header';
+import React, { useState, useEffect, useRef } from 'react';
+import ShopItem from '~/components/ShopItem';
+import MarqueeHeader from '~/components/MarqueeHeader';
+import Footer from '~/components/Footer';
+import { useUniversalFluid } from '../hooks/useUniversalFluid';
+import { useIsMobile } from '../hooks/useIsMobile';
+import supabase from '~/supabase';
 
-interface BlogDetailProps {
-  blog: {
-    id: string;
-    title: string;
-    details: string;
-    top_image?: string;
-    publish_date: string;
-  };
-  categoryName: string;
-}
-
-interface Heading {
+interface Shop {
   id: string;
-  text: string;
-  level: number;
+  title: string;
+  imageUrl: string;
+  description: string;
+  likes: number;
+  views: number;
+  category_id?: string;
+  near_station?: string;
+  address?: string;
+  map_embed?: string;
+  other_images?: string[];
+  opening_hours?: string;
+  category?: string;
 }
 
-export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
-  const editorContainerRef = useRef<HTMLDivElement>(null);
-  const headingElements = useRef<{ [key: string]: HTMLElement | null }>({});
-  const scrollRef = useRef<number>(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const topImageInputRef = useRef<HTMLInputElement>(null);
-  const cursorRef = useRef<HTMLSpanElement | null>(null);
-  const [cursorPosition, setCursorPosition] = useState(0);
-  const [cursorNode, setCursorNode] = useState<Node | null>(null);
-  const [cursorOffset, setCursorOffset] = useState(0);
-  const [headings, setHeadings] = useState<Heading[]>([]);
-  const [tocKey, setTocKey] = useState(0);
-  const [activeHeading, setActiveHeading] = useState<string | null>(null);
-  const [bookmarkedBlogs, setBookmarkedBlogs] = useState<string[]>([]);
-  const { fs, fsm, fsVw, fluidStyle, fluidClass } = useUniversalFluid();
-  const { isMobile } = useIsMobile();
-  const tocContainerRef = useRef<HTMLDivElement>(null);
-  const tocItemRefs = useRef<Record<string, HTMLLIElement | null>>({});
-  const ulRef = useRef<HTMLUListElement>(null);
 
-  const registerHeading = (id: string, element: HTMLElement | null, text: string, level: number) => {
-    if (element && text && id) {
-      headingElements.current[id] = element;
-      if ((level === 2 || level === 3) && !headings.some(h => h.id === id)) {
-        setHeadings(prev => [...prev, { id, text, level }]);
-        setTocKey(prev => prev + 1);
+export async function loader({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const id = url.searchParams.get('id');
+  const type = url.searchParams.get('type') || 'shops';
+  console.log('Loader: Fetching with type:', type, 'id:', id);
+
+  if (!id) {
+    console.log('Loader: Missing id');
+    return { type, menu: null, products: [], error: 'Missing id' };
+  }
+
+  if (!['shops', 'places'].includes(type)) {
+    console.log('Loader: Invalid type:', type);
+    return { type, menu: null, products: [], error: `Invalid type: ${type}` };
+  }
+
+  const table = type === 'places' ? 'tourist_places' : 'shops';
+  const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours';
+
+  try {
+    console.log(`Loader: Fetching from ${table} with id: ${id}`);
+    const { data: itemData, error: itemError } = await supabase
+      .from(table)
+      .select(selectFields)
+      .eq('id', id)
+      .single();
+
+    if (itemError || !itemData) {
+      console.log(`Loader: Supabase ${table} error or no data:`, itemError);
+      return { type, menu: null, products: [], error: itemError?.message || `${type} not found` };
+    }
+
+    console.log(`Loader: Fetched ${table} data:`, itemData);
+
+    let categoryName = 'No Category';
+    if (itemData.category_id) {
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('id', itemData.category_id)
+        .single();
+      if (categoryError) {
+        console.error('Error fetching category:', categoryError);
+      } else {
+        categoryName = categoryData.name || 'No Category';
       }
     }
-  };
 
-  const scrollToHeading = (id: string) => {
-    const element = headingElements.current[id];
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const elementTop = rect.top + scrollTop;
-      const headerHeight = 180;
-      const targetPosition = elementTop - headerHeight;
-      window.scrollTo({
-        top: targetPosition,
-        behavior: 'smooth'
-      });
-      element.classList.add('highlighted-heading');
-      setTimeout(() => {
-        element.classList.remove('highlighted-heading');
-      }, 2000);
-      setActiveHeading(id);
+    const { data: relatedData, error: relatedError } = await supabase
+      .from(table)
+      .select(selectFields)
+      .neq('id', id)
+      .order('name', { ascending: true })
+      .limit(8);
+
+    if (relatedError) {
+      console.log(`Loader: Supabase related ${table} error:`, relatedError);
+      return {
+        type,
+        menu: {
+          id: itemData.id,
+          name: itemData.name,
+          image: itemData.image_url || (type === 'places' ? '/src/see-do.png' : '/src/shop.png'),
+          description: itemData.description || 'No description available',
+          hours: itemData.opening_hours || 'OPEN 10:00 ~ 22:00',
+          category_id: itemData.category_id || 'Unknown',
+          category: categoryName,
+          lastText: itemData.near_station || 'Unknown station',
+          address: itemData.address || 'Unknown address',
+          map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
+          other_images: itemData.other_images || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
+          likes: itemData.love_count || 0,
+          views: itemData.review_count || 0,
+        },
+        products: [],
+        error: `Failed to fetch related ${type}s: ${relatedError.message}`,
+      };
     }
-  };
 
-  const extractText = (children: any): string => {
-    if (typeof children === 'string') return children;
-    if (Array.isArray(children)) return children.map(extractText).join('');
-    if (children?.props?.children) return extractText(children.props.children);
-    return '';
-  };
+    console.log(`Loader: Fetched related ${table} data:`, relatedData);
+
+    return {
+      menu: {
+        id: itemData.id,
+        name: itemData.name,
+        image: itemData.image_url || (type === 'places' ? '/src/see-do.png' : '/src/shop.png'),
+        description: itemData.description || 'No description available',
+        hours: itemData.opening_hours || 'OPEN 10:00 ~ 22:00',
+        category_id: itemData.category_id || 'Unknown',
+        category: categoryName,
+        lastText: itemData.near_station || 'Unknown station',
+        address: itemData.address || 'Unknown address',
+        map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
+        other_images: itemData.other_images || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
+        likes: itemData.love_count || 0,
+        views: itemData.review_count || 0,
+      },
+      products: relatedData.map((item) => ({
+        id: item.id,
+        title: item.name,
+        imageUrl: item.image_url || (type === 'places' ? '/src/see-do.png' : '/src/shop.png'),
+        description: item.description || 'No description available',
+        likes: item.love_count || 0,
+        views: item.review_count || 0,
+        near_station: item.near_station,
+        address: item.address,
+        map_embed: item.map_embed,
+        other_images: item.other_images,
+        opening_hours: item.opening_hours,
+        category_id: item.category_id,
+        category: categoryName,
+      })),
+      type,
+      error: null,
+    };
+  } catch (error) {
+    console.log('Loader: Error:', error);
+    return { type, menu: null, products: [], error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export default function ShopDetails() {
+  const { menu, products, type, error: loaderError } = useLoaderData();
+  const location = useLocation();
+  console.log('ShopDetails: Loader data:', { menu, products, type, loaderError });
+  console.log('ShopDetails: Navigation state:', location.state);
+  const shopFromState = location.state?.item as Shop | undefined;
+  const typeFromState = location.state?.type as 'shops' | 'places' | undefined;
+  const effectiveType = type || typeFromState || 'shops';
+
+  const [shop, setShop] = useState<Shop | null>(
+    shopFromState
+      ? {
+          id: shopFromState.id,
+          title: shopFromState.title,
+          imageUrl: shopFromState.imageUrl || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
+          description: shopFromState.description || 'No description available',
+          likes: shopFromState.likes || 0,
+          views: shopFromState.views || 0,
+          near_station: shopFromState.near_station || 'Unknown station',
+          address: shopFromState.address || 'Unknown address',
+          map_embed: shopFromState.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
+          other_images: shopFromState.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
+          category_id: shopFromState.category_id || 'Unknown',
+          opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
+          category: shopFromState.category || 'No Category',
+        }
+      : menu
+      ? {
+          id: menu.id,
+          title: menu.name,
+          imageUrl: menu.image,
+          description: menu.description,
+          likes: menu.likes || 0,
+          views: menu.views || 0,
+          near_station: menu.lastText,
+          address: menu.address,
+          category_id: menu.category_id,
+          map_embed: menu.map_embed,
+          other_images: menu.other_images,
+          opening_hours: menu.hours,
+          category: menu.category,
+        }
+      : null
+  );
+  const [loading, setLoading] = useState(!shopFromState && !menu);
+  const [error, setError] = useState<string | null>(loaderError);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
+  const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
+  const [hasLoved, setHasLoved] = useState<boolean>(false);
+  const visitAttemptedRef = useRef<boolean>(false);
+  const loveAttemptedRef = useRef<boolean>(false);
+  const { fs, fsm } = useUniversalFluid();
+  const { isMobile } = useIsMobile();
+  const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
+  const visibleCards = 4;
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-      let closestHeading: string | null = null;
-      let minDistance = Infinity;
+    // Fetch categories
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase.from('categories').select('id, name').order('name');
+        if (error) throw error;
+        setCategoriesShop(data || []);
+      } catch (error) {
+        console.error('Error fetching categories:', error instanceof Error ? error.message : 'Unknown error');
+      }
+    };
+    fetchCategories();
 
-      Object.entries(headingElements.current).forEach(([id, element]) => {
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const elementTop = rect.top + scrollPosition;
-          const distance = Math.abs(scrollPosition + 180 - elementTop);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestHeading = id;
-          }
+    // Load bookmark and love state
+    if (shop?.id) {
+      const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+      const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+      setIsBookmarked(!!savedBookmarks[shop.id]);
+      setHasLoved(!!lovedItems[shop.id]);
+    }
+  }, [shop?.id]);
+
+  useEffect(() => {
+    if (!shop?.id || visitAttemptedRef.current) {
+      console.log('ShopDetails: Skipping visit increment:', { shopId: shop?.id, visitAttempted: visitAttemptedRef.current });
+      return;
+    }
+
+    const visitKey = `${effectiveType}:${shop.id}`;
+    const visitedShops = JSON.parse(localStorage.getItem('visitedShops') || '{}');
+    if (visitedShops[visitKey]) {
+      console.log('ShopDetails: Already visited:', visitKey);
+      visitAttemptedRef.current = true;
+      return;
+    }
+
+    const incrementVisit = async () => {
+      try {
+        visitAttemptedRef.current = true;
+        console.log('ShopDetails: Incrementing review_count for:', visitKey);
+        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+        const rpcName = effectiveType === 'places' ? 'increment_review_count_place' : 'increment_review_count';
+        const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
+        const { error } = await supabase.rpc(rpcName, param);
+        if (error) {
+          console.error('Error incrementing review_count:', error);
+          return;
         }
-      });
-
-      setActiveHeading(closestHeading);
+        console.log('ShopDetails: Successfully incremented review_count for:', visitKey);
+        const { data: updatedData, error: fetchError } = await supabase
+          .from(table)
+          .select('review_count')
+          .eq('id', shop.id)
+          .single();
+        if (fetchError) {
+          console.error('Error fetching updated review_count:', fetchError);
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, views: prevShop.views + 1 } : prevShop
+          );
+        } else {
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, views: updatedData.review_count } : prevShop
+          );
+        }
+        visitedShops[visitKey] = true;
+        localStorage.setItem('visitedShops', JSON.stringify(visitedShops));
+      } catch (err) {
+        console.error('Unexpected error in incrementVisit:', err);
+      }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [headings]);
+    incrementVisit();
+  }, [shop?.id, effectiveType]);
 
-  useEffect(() => {
-    if (activeHeading && tocItemRefs.current[activeHeading] && tocContainerRef.current) {
-      const tocItem = tocItemRefs.current[activeHeading];
-      const tocContainer = tocContainerRef.current;
-      const tocRect = tocContainer.getBoundingClientRect();
-      const itemRect = tocItem.getBoundingClientRect();
-
-      if (itemRect.bottom > tocRect.bottom || itemRect.top < tocRect.top) {
-        tocItem.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-        });
-      }
+  const handleLoveClick = async () => {
+    if (!shop?.id) {
+      console.error('No id provided for love action');
+      alert('Cannot like item: Invalid ID');
+      return;
     }
-  }, [activeHeading]);
 
-  useEffect(() => {
-    if (ulRef.current && headings.length > 0) {
-      const firstLi = ulRef.current.querySelector('li');
-      const lastLi = ulRef.current.querySelector('li:last-child');
-      if (firstLi && lastLi) {
-        const firstRect = firstLi.getBoundingClientRect();
-        const lastRect = lastLi.getBoundingClientRect();
-        const lineHeight = lastRect.bottom - firstRect.top;
-        const line = ulRef.current.querySelector('.toc-line');
-        if (line) {
-          (line as HTMLElement).style.height = `${Math.max(lineHeight, 20)}px`;
+    const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+
+    if (hasLoved) {
+      try {
+        loveAttemptedRef.current = true;
+        console.log('ShopDetails: Decrementing love_count for:', shop.id);
+        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+        const rpcName = effectiveType === 'places' ? 'decrement_love_count_place' : 'decrement_love_count';
+        const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
+        const { error } = await supabase.rpc(rpcName, param);
+        if (error) {
+          console.error('Error decrementing love_count:', error);
+          alert(`Failed to unlike ${effectiveType}: ${error.message}`);
+          return;
         }
-      }
-    }
-  }, [headings, tocKey]);
-
-  const markdownComponents: any = {
-    h1: ({ node, children, ...props }: any) => null,
-    h2: ({ node, children, ...props }: any) => {
-      const text = extractText(children);
-      return (
-        <h2
-          id={props.id}
-          ref={(el) => registerHeading(props.id || "", el, text, 2)}
-          {...props}
-          className="markdown-heading markdown-h2"
-        >
-          {children}
-        </h2>
-      );
-    },
-    h3: ({ node, children, ...props }: any) => {
-      const text = extractText(children);
-      return (
-        <h3
-          id={props.id}
-          ref={(el) => registerHeading(props.id || "", el, text, 3)}
-          {...props}
-          className="markdown-heading markdown-h3"
-        >
-          {children}
-        </h3>
-      );
-    },
-    h4: ({ node, children, ...props }: any) => {
-      const text = extractText(children);
-      return (
-        <h4
-          id={props.id}
-          ref={(el) => registerHeading(props.id || "", el, text, 4)}
-          {...props}
-          className="markdown-heading markdown-h4"
-        >
-          {children}
-        </h4>
-      );
-    },
-    h5: ({ node, children, ...props }: any) => {
-      const text = extractText(children);
-      return (
-        <h5
-          id={props.id}
-          ref={(el) => registerHeading(props.id || "", el, text, 5)}
-          {...props}
-          className="markdown-heading markdown-h5"
-        >
-          {children}
-        </h5>
-      );
-    },
-    h6: ({ node, children, ...props }: any) => {
-      const text = extractText(children);
-      return (
-        <h6
-          id={props.id}
-          ref={(el) => registerHeading(props.id || "", el, text, 6)}
-          {...props}
-          className="markdown-heading markdown-h6"
-        >
-          {children}
-        </h6>
-      );
-    },
-    table: ({ node, ...props }: any) => (
-      <div className="table-container">
-        <table {...props} />
-      </div>
-    ),
-    p: ({ node, children, ...props }: any) => {
-      const nodeChildren = node?.children || [];
-
-      // Extract images (Markdown images and raw URLs) and non-image content
-      const images: { url: string; alt?: string }[] = [];
-      const nonImageContent: any[] = [];
-
-      // Debug: Log entire node and children
-      console.log('Paragraph node:', JSON.stringify(node, null, 2));
-      console.log('nodeChildren:', JSON.stringify(nodeChildren, null, 2));
-
-      nodeChildren.forEach((child: any, index: number) => {
-        if (child.type === 'image') {
-          console.log('Found image node:', child);
-          images.push({ url: child.url, alt: child.alt || `Image ${index + 1}` });
-        } else if (child.type === 'text') {
-          const text = (child.value || '').trim();
-          const urlRegex = /(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif)(?:\?[^\s]*)?)/gi;
-          let lastIndex = 0;
-          let match;
-
-          console.log('Processing text:', text);
-
-          // Split text around URLs
-          while ((match = urlRegex.exec(text)) !== null) {
-            const url = match[0];
-            const start = match.index;
-            const end = start + url.length;
-
-            // Add text before the URL
-            if (start > lastIndex) {
-              const beforeText = text.slice(lastIndex, start).trim();
-              if (beforeText) {
-                nonImageContent.push(beforeText);
-                console.log('Added beforeText:', beforeText);
-              }
-            }
-
-            // Add URL as image
-            images.push({ url, alt: `Image ${images.length + 1}` });
-            console.log('Added image URL:', url);
-
-            lastIndex = end;
-          }
-
-          // Add remaining text (including non-image URLs)
-          if (lastIndex < text.length) {
-            const remainingText = text.slice(lastIndex).trim();
-            if (remainingText) {
-              nonImageContent.push(remainingText);
-              console.log('Added remainingText:', remainingText);
-            }
-          }
-        } else if (child.type === 'link') {
-          nonImageContent.push(
-            <a key={`link-${index}`} href={child.url} {...child.properties}>
-              {child.children?.map((c: any, i: number) => (
-                c.type === 'text' ? c.value : (
-                  c.type === 'strong' ? <strong key={`strong-${i}`}>{c.children?.map((sc: any) => sc.value || '')}</strong> :
-                  c.type === 'emphasis' ? <em key={`em-${i}`}>{c.children?.map((sc: any) => sc.value || '')}</em> :
-                  c.value || ''
-                )
-              ))}
-            </a>
+        console.log('ShopDetails: Successfully decremented love_count for:', shop.id);
+        const { data: updatedData, error: fetchError } = await supabase
+          .from(table)
+          .select('love_count')
+          .eq('id', shop.id)
+          .single();
+        if (fetchError) {
+          console.error('Error fetching updated love_count:', fetchError);
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, likes: Math.max(prevShop.likes - 1, 0) } : prevShop
           );
-          console.log('Added link:', child.url);
-        } else if (child.type === 'strong') {
-          nonImageContent.push(
-            <strong key={`strong-${index}`}>
-              {child.children?.map((c: any, i: number) => (
-                c.type === 'text' ? c.value : (
-                  c.type === 'link' ? <a key={`link-${i}`} href={c.url} {...c.properties}>{c.children?.map((sc: any) => sc.value || '')}</a> :
-                  c.type === 'emphasis' ? <em key={`em-${i}`}>{c.children?.map((sc: any) => sc.value || '')}</em> :
-                  c.value || ''
-                )
-              ))}
-            </strong>
-          );
-          console.log('Added strong:', child);
-        } else if (child.type === 'emphasis') {
-          nonImageContent.push(
-            <em key={`em-${index}`}>
-              {child.children?.map((c: any, i: number) => (
-                c.type === 'text' ? c.value : (
-                  c.type === 'link' ? <a key={`link-${i}`} href={c.url} {...c.properties}>{c.children?.map((sc: any) => sc.value || '')}</a> :
-                  c.type === 'strong' ? <strong key={`strong-${i}`}>{c.children?.map((sc: any) => sc.value || '')}</strong> :
-                  c.value || ''
-                )
-              ))}
-            </em>
-          );
-          console.log('Added emphasis:', child);
         } else {
-          // Fallback for other nodes
-          if (child.value) {
-            nonImageContent.push(child.value);
-            console.log('Added fallback text:', child.value);
-          }
-        }
-      });
-
-      // Debug: Log final arrays
-      console.log('Images:', images);
-      console.log('NonImageContent:', nonImageContent);
-
-      // Handle side-by-side images
-      const combinedText = nodeChildren
-        .map((c: any) => {
-          if (c.type === 'text') return c.value || '';
-          if (c.type === 'image') return `![](${c.url})`;
-          if (c.type === 'link') return (c.children?.map((ch: any) => ch.value || '').join('')) || '';
-          return '';
-        })
-        .join('');
-      const startsWithSideBySide = combinedText.trim().startsWith('[side-by-side:');
-
-      if (startsWithSideBySide || images.length === 2) {
-        if (images.length === 2) {
-          console.log('Rendering side-by-side images:', images);
-          return (
-            <div className="image-pair-container" {...props} style={{ marginTop: '10px', marginBottom: '10px' }}>
-              <div className="image-pair-item image-left">
-                <img src={images[0].url} alt={images[0].alt || ''} className="markdown-image" style={{ width: '100%' }} />
-              </div>
-              <div className="image-pair-item image-right">
-                <img src={images[1].url} alt={images[1].alt || ''} className="markdown-image" style={{ width: '100%' }} />
-              </div>
-            </div>
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, likes: updatedData.love_count } : prevShop
           );
         }
-        // Fallback for side-by-side marker with wrong number of images
-        if (images.length > 0) {
-          console.log('Rendering individual images (side-by-side fallback):', images);
-          return (
-            <div>
-              {images.map((img, idx) => (
-                <div key={`image-${idx}`} style={{ marginTop: '10px', marginBottom: '10px' }}>
-                  <img src={img.url} alt={img.alt || ''} className="markdown-image" style={{ width: '100%' }} />
-                </div>
-              ))}
-              {nonImageContent.length > 0 && (
-                <p {...props}>
-                  {nonImageContent}
-                </p>
-              )}
-            </div>
+        delete lovedItems[shop.id];
+        localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
+        setHasLoved(false);
+        loveAttemptedRef.current = false;
+      } catch (err) {
+        console.error('Unexpected error in decrementLove:', err);
+        alert('Failed to unlike item: Unexpected error');
+      }
+    } else {
+      try {
+        loveAttemptedRef.current = true;
+        console.log('ShopDetails: Incrementing love_count for:', shop.id);
+        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+        const rpcName = effectiveType === 'places' ? 'increment_love_count_place' : 'increment_love_count';
+        const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
+        const { error } = await supabase.rpc(rpcName, param);
+        if (error) {
+          console.error('Error incrementing love_count:', error);
+          alert(`Failed to like ${effectiveType}: ${error.message}`);
+          return;
+        }
+        console.log('ShopDetails: Successfully incremented love_count for:', shop.id);
+        const { data: updatedData, error: fetchError } = await supabase
+          .from(table)
+          .select('love_count')
+          .eq('id', shop.id)
+          .single();
+        if (fetchError) {
+          console.error('Error fetching updated love_count:', fetchError);
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, likes: prevShop.likes + 1 } : prevShop
+          );
+        } else {
+          setShop((prevShop) =>
+            prevShop ? { ...prevShop, likes: updatedData.love_count } : prevShop
           );
         }
+        lovedItems[shop.id] = true;
+        localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
+        setHasLoved(true);
+        loveAttemptedRef.current = false;
+      } catch (err) {
+        console.error('Unexpected error in incrementLove:', err);
+        alert('Failed to like item: Unexpected error');
       }
-
-      // Handle images (one or more)
-      if (images.length > 0) {
-        console.log('Rendering individual images:', images);
-        return (
-          <div>
-            {images.map((img, idx) => (
-              <div key={`image-${idx}`} style={{ marginTop: '10px', marginBottom: '10px' }}>
-                <img src={img.url} alt={img.alt || ''} className="markdown-image" style={{ width: '100%' }} />
-              </div>
-            ))}
-            {nonImageContent.length > 0 && (
-              <p {...props}>
-                {nonImageContent}
-              </p>
-            )}
-          </div>
-        );
-      }
-
-      // Default paragraph rendering
-      console.log('Rendering default paragraph with nonImageContent:', nonImageContent);
-      return (
-        <p {...props}>
-          {cursorNode && cursorNode.parentElement === node && typeof children === "string" ? (
-            <>
-              {children.substring(0, cursorOffset)}
-              <span ref={cursorRef} className="blinking-cursor">|</span>
-              {children.substring(cursorOffset)}
-            </>
-          ) : (
-            nonImageContent.length > 0 ? nonImageContent : children
-          )}
-        </p>
-      );
-    },
-    img: ({ node, ...props }: any) => (
-      <div style={{ marginTop: '10px', marginBottom: '10px' }}>
-        <img {...props} className="markdown-image" style={{ width: '100%' }} />
-      </div>
-    ),
-    span: ({ node, ...props }: any) => <span {...props} style={props.style} />,
-    a: ({ node, href, children, ...props }: any) => {
-      if (href?.startsWith("ogp:")) {
-        const actualUrl = href.replace("ogp:", "");
-        return <OGPPreview url={actualUrl} />;
-      }
-      return (
-        <a href={href} {...props}>
-          {children}
-        </a>
-      );
-    },
-    code: ({ node, inline, className, children, ...props }: any) => {
-      const match = /language-(\w+)/.exec(className || "");
-      return !inline ? (
-        <div className="code-block">
-          <div className="code-language">{match?.[1] || "code"}</div>
-          <code className={className} {...props}>
-            {children}
-          </code>
-        </div>
-      ) : (
-        <code className={className} {...props}>
-          {children}
-        </code>
-      );
-    },
-  };
-
-  useEffect(() => {
-    const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
-    setBookmarkedBlogs(savedBookmarks);
-  }, []);
-
-  const [linePosition, setLinePosition] = useState({ top: 0, height: 0 });
-
-  useEffect(() => {
-    if (!headings.length) return;
-
-    const firstId = headings[0].id;
-    const lastId = headings[headings.length - 1].id;
-    const firstEl = tocItemRefs.current[firstId];
-    const lastEl = tocItemRefs.current[lastId];
-
-    if (firstEl && lastEl) {
-      const containerTop = ulRef.current?.getBoundingClientRect().top ?? 0;
-      const firstTop = firstEl.offsetTop + firstEl.offsetHeight / 2;
-      const lastTop = lastEl.offsetTop + lastEl.offsetHeight / 2;
-
-      setLinePosition({
-        top: firstTop,
-        height: lastTop - firstTop,
-      });
     }
-  }, [headings]);
-
-  const toggleBookmark = (blogId: string) => {
-    const updatedBookmarks = bookmarkedBlogs.includes(blogId)
-      ? bookmarkedBlogs.filter((id) => id !== blogId)
-      : [...bookmarkedBlogs, blogId];
-    setBookmarkedBlogs(updatedBookmarks);
-    localStorage.setItem("bookmarkedBlogs", JSON.stringify(updatedBookmarks));
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  const handleBookmarkClick = () => {
+    if (!shop?.id) {
+      console.error('No id provided for bookmark');
+      return;
+    }
+
+    const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+    const normalizedType = effectiveType === 'places' ? 'place' : 'shop';
+
+    if (isBookmarked) {
+      delete savedBookmarks[shop.id];
+      localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
+      setIsBookmarked(false);
+    } else {
+      savedBookmarks[shop.id] = {
+        id: shop.id,
+        title: shop.title,
+        imageUrl: shop.imageUrl,
+        description: shop.description,
+        likes: shop.likes,
+        views: shop.views,
+        category_id: shop.category_id,
+        category: getCategoryName(shop.category_id),
+        near_station: shop.near_station,
+        address: shop.address,
+        map_embed: shop.map_embed,
+        other_images: shop.other_images,
+        opening_hours: shop.opening_hours,
+        type: normalizedType,
+      };
+      localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
+      setIsBookmarked(true);
+    }
+  };
+
+  useEffect(() => {
+    console.log('ShopDetails: Checking location.state for shop update', location.state);
+    if (location.state?.item?.id) {
+      const fetchShop = async () => {
+        try {
+          setLoading(true);
+          const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+          const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours';
+
+          console.log(`useEffect: Fetching from ${table} with id: ${location.state.item.id}`);
+          const { data: shopData, error: shopError } = await supabase
+            .from(table)
+            .select(selectFields)
+            .eq('id', location.state.item.id)
+            .single();
+
+          if (shopError || !shopData) {
+            console.log(`useEffect: Supabase ${table} error or no data:`, shopError);
+            throw new Error(shopError?.message || `${effectiveType} not found`);
+          }
+          console.log(`useEffect: Fetched ${table} data:`, shopData);
+
+          let categoryName = location.state.item.category || 'No Category';
+          if (shopData.category_id && !location.state.item.category) {
+            const { data: categoryData, error: categoryError } = await supabase
+              .from('categories')
+              .select('name')
+              .eq('id', shopData.category_id)
+              .single();
+            if (categoryError) {
+              console.error('Error fetching category:', categoryError);
+            } else {
+              categoryName = categoryData.name || 'No Category';
+            }
+          }
+
+          const newShop = {
+            id: shopData.id,
+            title: shopData.name,
+            imageUrl: shopData.image_url || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
+            description: shopData.description || 'No description available',
+            likes: shopData.love_count || 0,
+            views: shopData.review_count || 0,
+            near_station: shopData.near_station || 'Unknown station',
+            address: shopData.address || 'Unknown address',
+            map_embed: shopData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
+            other_images: shopData.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
+            category_id: shopData.category_id || 'Unknown',
+            category: categoryName,
+            opening_hours: shopData.opening_hours || 'OPEN 10:00 ~ 22:00',
+          };
+
+          setShop(newShop);
+          setLoading(false);
+
+          // Reset bookmark and love state for new shop
+          const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+          const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+          setIsBookmarked(!!savedBookmarks[newShop.id]);
+          setHasLoved(!!lovedItems[newShop.id]);
+        } catch (err) {
+          console.log('useEffect: Error:', err);
+          setError(err instanceof Error ? err.message : 'Unknown error');
+          setShop(location.state.item);
+          setLoading(false);
+        }
+      };
+
+      fetchShop();
+    } else if (menu && !shop) {
+      setShop({
+        id: menu.id,
+        title: menu.name,
+        imageUrl: menu.image,
+        description: menu.description,
+        likes: menu.likes || 0,
+        views: menu.views || 0,
+        near_station: menu.lastText,
+        address: menu.address,
+        category_id: menu.category_id,
+        map_embed: menu.map_embed,
+        other_images: menu.other_images,
+        opening_hours: menu.hours,
+        category: menu.category,
+      });
+      setLoading(false);
+    } else {
+      console.log('ShopDetails: No fetch needed, shop state:', shop);
+      setLoading(false);
+    }
+  }, [location.state?.item?.id, effectiveType, menu]);
+
+  if (loading) {
+    return <div className="container mx-auto p-4">Loading...</div>;
+  }
+
+  if (error || !shop) {
+    console.log('ShopDetails: Rendering error, error:', error, 'shop:', shop);
+    return <div className="container mx-auto p-4 text-red-600">Error: {error || `${effectiveType} not found`}</div>;
+  }
+
+  console.log('ShopDetails: Rendering shop:', shop);
+  console.log('ShopDetails: Rendering products:', products);
+  const getCategoryName = (categoryId: string) => {
+    const category = categoriesShop.find((cat) => cat.id === categoryId);
+    return category ? category.name : shop.category || 'No Category';
   };
 
   return (
-    <div>
+    <div className="min-h-screen">
       <Header />
-      <CommonCategoryTop
-        title="TRAVEL TIPS"
-        subtitle="旅の情報"
-        imageSrc="/src/bookmark.jpg"
-        imageAlt="Travel tips Image"
-      />
       <MarqueeHeader
-        text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
+        text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
         backgroundColor="#FFFFFF"
-        textColor="#0000000"
+        textColor="#000000"
         animationDuration="90s"
-        marginBottom={0}
-        marginTop={98}
+        marginBottom={120}
+        marginTop={100}
       />
-
-      <div className="mx-auto" style={{marginTop: isMobile? fsm(134): fs(155), paddingLeft: isMobile? fsm(20):fs(0),paddingRight:isMobile? fsm(20):fs(0)}}>
-        <div className="flex flex-col lg:flex-row gap-10">
-
-          {!isMobile && ( <div className="p-2 flex flex-col gap-[31px] justify-center items-center rounded-r-lg border-t-2 border-b-2 border-l-0 border-r-2 border-black overflow-hidden" style={{width: fs(114),height: fs(205) }}>
-            <a href="https://www.instagram.com/reel/DNfV4MozhwL/">
-              <img src="/src/instagram-icon.svg" alt="Instagram" style={{width: fs(40), height: fs(40)}}/>
-            </a>
-            <a href="https://www.tiktok.com/@sugamo_japan">
-              <img src="/src/titok.svg" alt="TikTok" style={{width: fs(40), height: fs(40)}} />
-            </a>
-          </div>)}
-
-          <div className={`bg-white overflow-hidden ${headings.length > 0 ? 'lg:w-3/4 lg:order-1' : 'w-full'}`}>
-            {blog.top_image && (
-              <div className=" overflow-hidden" style={{width: isMobile? "100%": fs(900), height: isMobile? fsm(309):fs(630)}}>
-                <img src={blog.top_image} alt={blog.title} className="w-full h-full object-cover" />
-              </div>
-            )}
-
-            <div className="pt-2">
-              <h1 className="font-semibold font-cairo text-black mb-2" style={{fontSize: isMobile? fsm(31): fs(61)}}>{blog.title}</h1>
-              <span className="font-courierPrime text-gray-500" style={{fontSize: isMobile? fsm(16): fs(20)}}>
-                {formatDate(blog.publish_date)} | {categoryName}
-              </span>
-
-              <div
-                className="prose prose-lg text-black font-cairo font-semibold markdown-content"
-                style={{
-                  marginTop: isMobile ? fsm(55) : fs(55),
-                  fontSize: isMobile ? fsm(16) : fs(20),
-                  letterSpacing: "10%",
-                }}
-              >
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeSlug, rehypeHighlight, rehypeRaw]}
-                  components={markdownComponents}
-                >
-                  {blog.details}
-                </ReactMarkdown>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <Link to="/BlogList" className="text-[#ED4548] font-medium hover:text-[#ED4548] transition-colors">← Back to Articles</Link>
-            </div>
-          </div>
-
-          {headings.length > 0 && !isMobile && (
-            <div className="lg:w-1/4 mb-8 lg:mb-0 lg:order-2">
-              <div className="sticky top-28 bg-transparent p-6 rounded-l-[30px] border-t-2 border-b-2 border-l-2 border-black">
-                <h3 className="text-xl font-semibold font-cairo text-black mb-4 text-center">目次</h3>
-                <div
-                  className="toc-container relative max-h-[calc(100vh-200px)] overflow-y-auto"
-                  ref={tocContainerRef}
-                >
-                  <ul className="space-y-1 relative" ref={ulRef}>
-                    <div
-                      className="toc-line absolute left-[9px] w-[2px] bg-black"
-                      style={{ top: linePosition.top, height: linePosition.height }}
+      <div
+        className="flex flex-col md:flex-row items-center justify-center"
+        style={{ paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}
+      >
+        <div className="md:auto w-full">
+          {isMobile && (
+            <div className="flex flex-row justify-between items-center" style={{ marginBottom: fsm(20) }}>
+              <div className="flex flex-row">
+                <div className="flex space-x-2 ml-auto">
+                  <button
+                    className="bg-[#ED4548] text-white rounded-full italic font-cousine font-bold text-center"
+                    style={{
+                      width: isMobile ? fsm(92) : fs(92),
+                      minWidth: isMobile ? fsm(72) : fs(72),
+                      height: isMobile ? fsm(22) : fs(22),
+                      minHeight: isMobile ? fsm(17) : fs(17),
+                      fontSize: isMobile ? fsm(12) : fs(12),
+                    }}
+                  >
+                    {getCategoryName(shop.category_id)}
+                  </button>
+                  <span className="flex items-center gap-1">
+                    <button onClick={handleLoveClick}>
+                      <img
+                        src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'}
+                        alt="Love"
+                        style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20), cursor: 'pointer' }}
+                      />
+                    </button>
+                    <p
+                      className="font-bold font-cairo"
+                      style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
+                    >
+                      {shop.likes}
+                    </p>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <img
+                      src="/src/eye.svg"
+                      alt="Views"
+                      style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
                     />
-
-                    {headings.map((heading) => (
-                      <li
-                        key={heading.id}
-                        ref={(el) => {
-                          tocItemRefs.current[heading.id] = el;
-                        }}
-                        className={`toc-item toc-level-${heading.level} cursor-pointer flex items-center`}
-                        onClick={() => scrollToHeading(heading.id)}
-                      >
-                        <span
-                          className={`toc-marker-wrapper flex justify-center items-center bg-transparent rounded-full ${heading.level === 2
-                              ? "w-[19px] h-[19px] pl-[2px]"
-                              : "w-[19px] h-[9px] pl-[2px]"
-                            }`}
-                        >
-                          <span
-                            className={`toc-marker ${activeHeading === heading.id
-                                ? "text-[#ED4548] font-bold"
-                                : "text-black"
-                              } ${heading.level === 2 ? "triangle-marker" : "circle-marker"
-                              }`}
-                            style={{
-                              fontSize: heading.level === 2 ? fs(15) : fs(9),
-                            }}
-                          >
-                            {heading.level === 2
-                              ? activeHeading === heading.id
-                                ? "▼"
-                                : "▽"
-                              : activeHeading === heading.id
-                                ? "●"
-                                : "○"}
-                          </span>
-                        </span>
-                        <span
-                          className={`flex-1 ml-3 ${activeHeading === heading.id
-                              ? "text-[#ED4548] font-bold"
-                              : "text-black"
-                            } ${heading.level === 3 ? "toc-level-3" : "toc-level-2"}`}
-                        >
-                          {heading.text}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                    <p
+                      className="font-bold font-cairo"
+                      style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
+                    >
+                      {shop.views}
+                    </p>
+                  </span>
                 </div>
+              </div>
+              <button className="py-1 transition-transform duration-300 hover:scale-125" onClick={handleBookmarkClick}>
+                <img
+                  src={isBookmarked ? '/src/bookmark-filled.svg' : '/src/bookmark.svg'}
+                  alt="Bookmark Icon"
+                  style={{ height: autoSize(20), width: autoSize(20), cursor: 'pointer' }}
+                />
+              </button>
+            </div>
+          )}
+          <img
+            src={shop.imageUrl}
+            alt={shop.title}
+            className="w-full h-auto"
+            style={{ width: isMobile ? '100%' : fs(540), height: isMobile ? fsm(401) : fs(540) }}
+            onError={(e) => {
+              e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png';
+            }}
+          />
+          {isMobile && shop.other_images && shop.other_images.length > 0 && (
+            <div style={{ marginTop: isMobile ? fsm(16) : fs(90) }}>
+              <div className="flex space-x-2 overflow-x-auto">
+                {shop.other_images.map((image, index) => (
+                  <div
+                    key={index}
+                    style={{ minWidth: isMobile ? fsm(117) : fs(358), height: isMobile ? fsm(88) : fs(270) }}
+                  >
+                    <img
+                      src={image}
+                      alt={`Related Item ${index + 1}`}
+                      className="w-full h-auto"
+                      style={{ maxHeight: isMobile ? fsm(88) : fs(270) }}
+                      onError={(e) => {
+                        e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png';
+                      }}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
+        <div
+          className="md:auto w-full max-h-max"
+          style={{ paddingLeft: isMobile ? fsm(0) : fs(20), height: isMobile ? 'auto' : fs(540), paddingTop: fs(63) }}
+        >
+          {!isMobile && (
+            <div className="flex flex-row justify-between items-center">
+              <div className="flex flex-row">
+                <div className="flex space-x-2 ml-auto">
+                  <button
+                    className="bg-[#ED4548] text-white rounded-full italic font-bold font-cairo text-center"
+                    style={{
+                      width: isMobile ? fsm(92) : fs(92),
+                      minWidth: isMobile ? fsm(72) : fs(72),
+                      height: isMobile ? fsm(22) : fs(22),
+                      minHeight: isMobile ? fsm(17) : fs(17),
+                      fontSize: isMobile ? fsm(13) : fs(13),
+                    }}
+                  >
+                    {getCategoryName(shop.category_id)}
+                  </button>
+                  <span className="flex items-center gap-1">
+                    <button onClick={handleLoveClick}>
+                      <img
+                        src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'}
+                        alt="Love"
+                        style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20), cursor: 'pointer' }}
+                      />
+                    </button>
+                    <p
+                      className="font-bold font-cairo"
+                      style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
+                    >
+                      {shop.likes}
+                    </p>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <img
+                      src="/src/eye.svg"
+                      alt="Views"
+                      style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
+                    />
+                    <p
+                      className="font-bold font-cairo"
+                      style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
+                    >
+                      {shop.views}
+                    </p>
+                  </span>
+                </div>
+              </div>
+              <button className="py-1 transition-transform duration-300 hover:scale-125" onClick={handleBookmarkClick}>
+                <img
+                  src={isBookmarked ? '/src/bookmark-filled.svg' : '/src/bookmark.svg'}
+                  alt="Bookmark Icon"
+                  style={{ height: autoSize(20), width: autoSize(20), cursor: 'pointer' }}
+                />
+              </button>
+            </div>
+          )}
+          <div className="flex-col justify-between">
+            <div>
+              <h2
+                className="font-semibold font-cairo text-brown-700"
+                style={{ marginTop: isMobile ? fsm(34) : fs(35), fontSize: autoSize(22) }}
+              >
+                {shop.title}
+              </h2>
+              <p
+                className="text-[#313131] font-normal font-cairo leading-loose"
+                style={{ marginTop: isMobile ? fsm(16) : fs(19), fontSize: autoSize(16), height: isMobile ? 'auto' : fs(210) }}
+              >
+                {shop.description}
+              </p>
+            </div>
+            <div
+              className="flex items-center justify-between"
+              style={{ marginTop: isMobile ? fsm(54) : fs(30), paddingBottom: isMobile ? fsm(0) : fs(61) }}
+            >
+              <div>
+                <p className="text-[#313131] font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
+                  OPEN {shop.opening_hours || 'Not available'}
+                </p>
+                <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
+                  Address: {shop.address || 'Not available'}
+                </p>
+                <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
+                  Near: {shop.near_station || 'Not available'}
+                </p>
+              </div>
+              <a href={shop.map_embed || '#'} target="_blank" rel="noopener noreferrer">
+                <img className="text-yellow-500 text-lg" src="/src/link_url.png" alt="Link Icon" />
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
+      {!isMobile && shop.other_images && shop.other_images.length > 0 && (
+        <div style={{ paddingLeft: fs(90), paddingRight: fs(90), marginTop: fs(90) }}>
+          <div className="flex space-x-4 overflow-x-auto">
+            {shop.other_images.map((image, index) => (
+              <div
+                key={index}
+                style={{ minWidth: isMobile ? fsm(117) : fs(358) }}
+              >
+                <img
+                  src={image}
+                  alt={`Related Item ${index + 1}`}
+                  className="w-full h-auto"
+                  style={{ maxHeight: isMobile ? fsm(88) : fs(270) }}
+                  onError={(e) => {
+                    e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png';
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {shop.map_embed && (
+        <div>
+          <div
+            className="text-[#ED4548] italic underline w-full text-center font-cousine"
+            style={{ fontSize: autoSize(25), marginTop: isMobile ? fsm(138) : fs(90), marginBottom: isMobile ? fsm(24) : fs(0) }}
+          >
+            Google Map
+          </div>
+          <div
+            className="mx-auto border-2 border-black rounded-lg overflow-hidden"
+            style={{ height: isMobile ? fsm(332) : fs(591), marginLeft: isMobile ? fsm(20) : fs(160), marginRight: isMobile ? fsm(20) : fs(160) }}
+          >
+            <iframe
+              src={shop.map_embed}
+              width="100%"
+              height="100%"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
+        </div>
+      )}
+      {products.length > 0 ? (
+        <div
+          className="relative"
+          style={{
+            paddingTop: isMobile ? fsm(141) : fs(180),
+            paddingLeft: isMobile ? fsm(20) : fs(90),
+            paddingRight: isMobile ? fsm(20) : fs(90),
+            marginBottom: isMobile ? fsm(144) : fs(130),
+          }}
+        >
+          <div className="border-2 border-black rounded-[30px] overflow-visible relative" style={{ paddingTop: isMobile ? fsm(70) : fs(76) }}>
+            <div
+              className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap"
+              style={{ paddingLeft: isMobile ? fsm(20) : fs(45), paddingRight: isMobile ? fsm(20) : fs(45), fontSize: autoSize(31) }}
+            >
+              SEE MORE
+            </div>
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-300 ease-in-out px-[25%]"
+                style={{
+                  transform: `translateX(-${currentIndex * (100 / visibleCards)}%)`,
+                  width: `${products.length * (100 / visibleCards)}%`,
+                }}
+              >
+                {products.map((product, index) => (
+                  <div
+                    key={index}
+                    className="flex-shrink-0 p-2"
+                    style={{
+                      width: isMobile ? fsm(210) : fs(350),
+                      height: isMobile ? fsm(301) : fs(496),
+                    }}
+                  >
+                    <ShopItem
+                      id={product.id}
+                      title={product.title}
+                      imageUrl={product.imageUrl}
+                      description={product.description}
+                      likes={product.likes}
+                      views={product.views}
+                      type={effectiveType === 'places' ? 'place' : 'shop'}
+                      near_station={product.near_station}
+                      address={product.address}
+                      map_embed={product.map_embed}
+                      other_images={product.other_images}
+                      opening_hours={product.opening_hours}
+                      category_id={product.category_id}
+                      category={product.category}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-between px-4" style={{ height: isMobile ? fsm(106) : fs(76) }}>
+              <button
+                onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
+                className="text-4xl disabled:opacity-30"
+                disabled={currentIndex === 0}
+              >
+                ←
+              </button>
+              <button
+                onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, products.length - visibleCards))}
+                className="text-4xl disabled:opacity-30"
+                disabled={currentIndex >= products.length - visibleCards}
+              >
+                →
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="text-center text-[#ED4548] font-cairo"
+          style={{
+            paddingTop: isMobile ? fsm(141) : fs(180),
+            paddingLeft: isMobile ? fsm(20) : fs(90),
+            paddingRight: isMobile ? fsm(20) : fs(90),
+            marginBottom: isMobile ? fsm(144) : fs(130),
+            fontSize: autoSize(16),
+          }}
+        >
+          No related shops available.
+        </div>
+      )}
+      <Footer />
+    </div>
+  );
+}
+
+export function ErrorBoundary() {
+  return (
+    <div className="container mx-auto p-4 text-red-600">
+      An unexpected error occurred. Please try again later.
     </div>
   );
 }
