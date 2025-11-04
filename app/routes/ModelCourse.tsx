@@ -10,7 +10,7 @@ import ModelCourseDetailsItem from '../components/ModelCourseDetailsItem';
 import ShopItem from '~/components/ShopItem';
 import { json } from '@remix-run/node';
 import MapSVG from '~/components/MapSVG';
-import ErrorBoundary from '~/components/ErrorBoundary';
+import { ErrorBoundary } from '~/components/ErrorBoundary';
 
 export async function loader() {
   // Preload the SVG file to improve initial loading performance
