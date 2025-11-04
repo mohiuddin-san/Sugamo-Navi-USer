@@ -26,7 +26,6 @@ const ShimmerLayout: React.FC = () => {
       <ResponsiveGrid
         columns={isMobile ? "1fr" : "1fr 1fr"}
         rows="auto"
-        isMobile={isMobile}
         className="flex justify-center mx-10 md:mx-[10%]"
         style={{ gap: isMobile ? fsm(64) : fs(133), maxWidth: "100%", width: "100%" }}
       >

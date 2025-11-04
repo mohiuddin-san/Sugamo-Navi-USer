@@ -1,7 +1,8 @@
 import { json, redirect } from '@remix-run/node';
+import type { LoaderFunctionArgs } from '@remix-run/node';
 import { sessionStorage } from '~/sessions';
 
-export async function loader({ request }) {
+export async function loader({ request }: LoaderFunctionArgs) {
   console.log('Callback Route Called'); // Debug
   const url = new URL(request.url);
   const code = url.searchParams.get('code');

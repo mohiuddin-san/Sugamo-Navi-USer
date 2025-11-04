@@ -85,60 +85,92 @@ export async function loader() {
     ],
     products: [
       {
+        id: '1',
         title: 'ナンジェリー・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1000,
         views: 1000,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '2',
         title: 'ボストール・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1500,
         views: 1200,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '3',
         title: 'ナンジェリー・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1000,
         views: 1000,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '4',
         title: 'ボストール・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1500,
         views: 1200,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '5',
         title: 'ナンジェリー・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1000,
         views: 1000,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '6',
         title: 'ボストール・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1500,
         views: 1200,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '7',
         title: 'ナンジェリー・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1000,
         views: 1000,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
       {
+        id: '8',
         title: 'ボストール・ボストール',
         imageUrl: '/src/burger.png',
         description: '巣鴨店限定のお地蔵パンも！コスパ良いパン屋さん！',
         likes: 1500,
         views: 1200,
+        category_id: '1',
+        category: 'bakery',
+        type: 'shop' as const,
       },
     ],
   });
@@ -418,7 +450,7 @@ useEffect(() => {
             style={{ marginTop: isMobile ? fsm(16) : fs(26), marginRight:isMobile?fsm(20): fs(33),marginLeft: isMobile?fsm(20):fs(33) }}
           ></div>
           <div
-            className="min-h-screen"
+            className="h-auto"
             style={{
               marginTop: isMobile ? fsm(33) : fs(33),
               paddingBottom: isMobile ? fsm(33) : fs(33),
@@ -429,36 +461,132 @@ useEffect(() => {
                 className="w-full md:w-2/3"
                 style={{ paddingRight: isMobile ? fsm(0) : fs(36) }}
               >
-                <p
-                  className="w-full text-black text-start leading-[40px] font-cairo font-normal"
-                  style={{
-                    fontSize: isMobile ? fsm(16) : fs(16),
-                    paddingLeft: isMobile ? fsm(21) : fs(28),
-                    paddingTop: isMobile ? fsm(0) : fs(58),
-                    paddingRight: isMobile ? fsm(21) : fs(0),
-                  }}
-                >
-                  {selectedStop ? (
-                    <>
-                      <strong>{selectedStop.title}</strong>: {selectedStop.description}
-                    </>
-                  ) : (
-                    <>
-                      このコースは、巣鴨の歴史と文化、そしてグルメをバランスよく楽しめる、まさに「王道」と呼ぶにふさわしい内容です。
-                      <br />
-                      コースの始まりは、江戸六地蔵のひとつである眞性寺。旅の安全を願って造られた歴史的なお地蔵様を拝んだら、巣鴨のメインストリート、地蔵通り商店街へ。
-                      <br />
-                      商店街の中ほどにあるとげぬき地蔵尊 高岩寺では、お年寄りから「とげぬき地蔵」として親しまれているお地蔵様にお参りできます。「洗い観音」に水をかけて清める体験も、巣鴨ならではです。
-                      <br />
-                      <br />
-                      お参りを終えたら、お待ちかねのグルメタイム。「カレーうどん」で有名な古奈屋で食事をしたり、行列のできるかき氷店雪菓で休憩したりと、人気の味を堪能できます。また、マルジでは「赤いパンツ」をはじめとするユニークな商品が並び、巣鴨らしい活気を感じられます。さらに、お茶の老舗山年園や、名物の「塩大福」が人気のみずのに立ち寄れば、お土産探しも完璧です。
-                      <br />
-                      <br />
-                      <br />
-                      歴史的なお寺を巡り、おいしいものを味わい、活気あふれる商店街で買い物を楽しむ。このコースは、巣鴨の魅力をぎゅっと凝縮した、初めての方にもリピーターにもおすすめのコースです。
-                    </>
-                  )}
-                </p>
+                {selectedStop ? (
+                  /* Enhanced layout for selected stop */
+                  <div 
+                    className="w-full"
+                    style={{
+                      paddingLeft: isMobile ? fsm(21) : fs(28),
+                      paddingTop: isMobile ? fsm(0) : fs(58),
+                      paddingRight: isMobile ? fsm(21) : fs(0),
+                    }}
+                  >
+                    {/* Top section: Title/Description on left, Image on right */}
+                    <div
+                        className="text-start flex-1"
+                        style={{ 
+                          marginLeft: isMobile ? fsm(16) : fs(16),
+                          marginRight: isMobile ? fsm(16) : fs(16),
+                        }}
+                      >
+                        <p
+                          className="font-cairo font-semibold text-black"
+                          style={{ fontSize: isMobile ? fsm(24) : fs(26) }}
+                        >
+                          王道（巣鴨地蔵通り商店街）コース
+                        </p>
+                        <p
+                          className="font-cairo text-gray-700"
+                          style={{ 
+                            fontSize: isMobile ? fsm(16) : fs(16),
+                            marginTop: isMobile ? fsm(6) : fs(8),
+                            marginBottom: "50px",
+                            lineHeight: '40px',
+                          }}
+                        >
+                          巣鴨地蔵通り商店街はとげぬき地蔵尊・高岩寺のある商店街。和菓子や惣菜、
+                          昔懐かしい日用品の店が並び、世代を超えて楽しめる人情味あふれる商店街です。
+                          そちらの名店を巡る王道コース。
+                        </p>
+                      </div>
+                    {/* Solid line separator */}
+                    <div 
+                      className="w-full border-t-2 border-black mb-4"
+                    ></div>
+
+                    {/* Bottom section: Image on left, Right text on right */}
+                    <div className="w-full flex flex-row items-center gap-4 mb-4">
+                      <div
+                        className="bg-gray-300 flex items-center justify-center text-gray-600"
+                        style={{
+                          backgroundImage: `url(${selectedStop.image})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          backgroundRepeat: 'no-repeat',
+                          width: isMobile ? fsm(150) : fs(150),
+                          height: isMobile ? fsm(170) : fs(170),
+                          borderRadius: '0',
+                          marginTop: '32px',
+                          marginRight: '20px',
+                          marginBottom: '20px',
+                        }}
+                      >
+                        {selectedStop.image.includes('placeholder') && `Img ${selectedStop.id}`}
+                      </div>
+                      <div className="flex-1">
+                        <p
+                          className="font-cairo text-black font-semibold"
+                          style={{
+                            fontSize: isMobile ? fsm(16) : fs(20),
+                            marginTop: isMobile ? fsm(0) : fs(37),
+                            lineHeight: '100%',
+                          }}
+                        >
+                          江戸六地蔵尊 眞性寺 <br />
+                        </p>
+                        <p
+                           className="font-cairo text-gray-500"
+                          style={{
+                            fontSize: isMobile ? fsm(16) : fs(18),
+                            lineHeight: '40px',
+                          }}
+                        >
+                          OPEN 10:00 〜 22:00 <br />
+                          TEL: 03-5944-5737 <br />
+                          JR巣鴨駅より徒歩5分
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Bottom text section */}
+                    <div 
+                      className="w-full text-left py-4"
+                      style={{
+                        fontSize: isMobile ? fsm(16) : fs(16),
+                      }}
+                    >
+                      <p className="font-cairo text-gray-500" style={{ lineHeight: '40px' }}>
+                        巣鴨地蔵通りの入り口にある【眞性寺】。<br />
+                        ここには江戸六地蔵尊のひとつが祀られています。1714年に造立された高さ2.7mもの大地蔵は、旅人の安全と人々の無病息災を願って建立されたもの。<br />
+                        今も商店街のシンボルとして、参拝客をやさしく見守っています。
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  /* Default course description */
+                  <p
+                    className="w-full text-black text-start leading-[40px] font-cairo font-normal"
+                    style={{
+                      fontSize: isMobile ? fsm(16) : fs(16),
+                      paddingLeft: isMobile ? fsm(21) : fs(28),
+                      paddingTop: isMobile ? fsm(0) : fs(58),
+                      paddingRight: isMobile ? fsm(21) : fs(0),
+                    }}
+                  >
+                    このコースは、巣鴨の歴史と文化、そしてグルメをバランスよく楽しめる、まさに「王道」と呼ぶにふさわしい内容です。
+                    <br />
+                    コースの始まりは、江戸六地蔵のひとつである眞性寺。旅の安全を願って造られた歴史的なお地蔵様を拝んだら、巣鴨のメインストリート、地蔵通り商店街へ。
+                    <br />
+                    商店街の中ほどにあるとげぬき地蔵尊 高岩寺では、お年寄りから「とげぬき地蔵」として親しまれているお地蔵様にお参りできます。「洗い観音」に水をかけて清める体験も、巣鴨ならではです。
+                    <br />
+                    <br />
+                    お参りを終えたら、お待ちかねのグルメタイム。「カレーうどん」で有名な古奈屋で食事をしたり、行列のできるかき氷店雪菓で休憩したりと、人気の味を堪能できます。また、マルジでは「赤いパンツ」をはじめとするユニークな商品が並び、巣鴨らしい活気を感じられます。さらに、お茶の老舗山年園や、名物の「塩大福」が人気のみずのに立ち寄れば、お土産探しも完璧です。
+                    <br />
+                    <br />
+                    <br />
+                    歴史的なお寺を巡り、おいしいものを味わい、活気あふれる商店街で買い物を楽しむ。このコースは、巣鴨の魅力をぎゅっと凝縮した、初めての方にもリピーターにもおすすめのコースです。
+                  </p>
+                )}
               </div>
               <div
                 className="w-auto md:w-[2px] bg-black h-[2px] md:h-auto"
@@ -609,11 +737,15 @@ useEffect(() => {
                   }}
                 >
                   <ShopItem
+                    id={product.id}
                     title={product.title}
                     imageUrl="/src/burger.png"
                     description={product.description}
                     likes={product.likes}
                     views={product.views}
+                    category_id={product.category_id}
+                    category={product.category}
+                    type={product.type}
                   />
                 </div>
               ))}

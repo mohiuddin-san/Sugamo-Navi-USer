@@ -62,7 +62,7 @@ export async function getTikTokVideos(): Promise<Video[]> {
     const cacheExpiryDate = cachedData?.lastUpdated
       ? DateTime.fromISO(cachedData.lastUpdated, { zone: 'Asia/Tokyo' }).plus({ days: 3 })
       : null;
-    const shouldFetch = !cachedData || !cachedData.lastUpdated || currentDate > cacheExpiryDate;
+    const shouldFetch = !cachedData || !cachedData.lastUpdated || !cacheExpiryDate || currentDate > cacheExpiryDate;
     let videos: Video[] = [];
     if (shouldFetch) {
       console.log('Fetching new TikTok data via HTTP API...');

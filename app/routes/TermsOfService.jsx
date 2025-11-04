@@ -1,5 +1,4 @@
 
-import React from "react";
 import { useUniversalFluid } from '../hooks/useUniversalFluid'; // Assuming you have this hook
 import { useMediaQuery } from "react-responsive";
 import Header from '~/components/Header';
@@ -7,7 +6,7 @@ import Footer from '../components/Footer';
 
 const TermsOfService = () => {
   const isMobile = useMediaQuery({ maxWidth: 768 });
-  const { fs, fsm, fluidStyle } = useUniversalFluid();
+  const { fs, fsm } = useUniversalFluid();
 
   return (
     <div className="w-full min-h-screen bg-white text-black p-4 md:p-8" style={{ fontFamily: 'Cousine, monospace' }}>
@@ -23,7 +22,7 @@ const TermsOfService = () => {
         <div className="space-y-6 text-sm md:text-base leading-relaxed" style={{ lineHeight: 1.6 }}>
           <p><strong>Effective Date: September 25, 2025</strong></p>
           
-          <p>Welcome to Sugamo Navi ("App", "we", "us", or "our"). Sugamo Navi is a mobile application designed for solo travelers to discover the best shops, travel places, and publish blogs in the Sugamo area of Tokyo, Japan. By accessing or using the App, you agree to be bound by these Terms and Conditions ("Terms"). If you do not agree, please do not use the App.</p>
+          <p>Welcome to Sugamo Navi (&quot;App&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;). Sugamo Navi is a mobile application designed for solo travelers to discover the best shops, travel places, and publish blogs in the Sugamo area of Tokyo, Japan. By accessing or using the App, you agree to be bound by these Terms and Conditions (&quot;Terms&quot;). If you do not agree, please do not use the App.</p>
           
           <section>
             <h2 className="text-xl font-semibold mt-8 mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>1. Eligibility</h2>
@@ -52,7 +51,7 @@ const TermsOfService = () => {
           
           <section>
             <h2 className="text-xl font-semibold mt-8 mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>6. Disclaimers and Limitations</h2>
-            <p>The App is provided "as is" without warranties. We do not guarantee accuracy of shop or travel information. Liability is limited to the maximum extent permitted by law. In no event shall we be liable for indirect damages.</p>
+            <p>The App is provided &quot;as is&quot; without warranties. We do not guarantee accuracy of shop or travel information. Liability is limited to the maximum extent permitted by law. In no event shall we be liable for indirect damages.</p>
           </section>
           
           <section>

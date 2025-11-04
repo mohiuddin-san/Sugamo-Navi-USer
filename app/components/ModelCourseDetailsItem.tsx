@@ -2,7 +2,13 @@ import { Link } from "@remix-run/react";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useMediaQuery } from "react-responsive";
 
-export default function ModelCourseItem({ title , itemNumber, imageUrl}) {
+interface ModelCourseDetailsItemProps {
+    title: string;
+    itemNumber: number;
+    imageUrl: string;
+}
+
+export default function ModelCourseItem({ title , itemNumber, imageUrl}: ModelCourseDetailsItemProps) {
     const { fs,fsm,fsVw,fluidStyle,fluidClass } = useUniversalFluid();
     const isMobile = useMediaQuery({ maxWidth: 768 });
     return (

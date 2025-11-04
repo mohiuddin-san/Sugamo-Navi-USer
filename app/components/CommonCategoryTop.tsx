@@ -3,7 +3,15 @@ import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {RollingText} from '../components/text-3d'
 import { Particles } from "../components/meteors";
-const CommonCategoryTop = ({ title, subtitle, imageSrc, imageAlt}) => {
+
+interface CommonCategoryTopProps {
+  title: string;
+  subtitle: string;
+  imageSrc: string;
+  imageAlt: string;
+}
+
+const CommonCategoryTop = ({ title, subtitle, imageSrc, imageAlt}: CommonCategoryTopProps) => {
   const { fs, fsm} = useUniversalFluid();
   const { isMobile} = useIsMobile();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));

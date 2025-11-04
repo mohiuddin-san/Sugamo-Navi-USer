@@ -24,6 +24,13 @@ interface Shop {
   category?: string;
 }
 
+interface LoaderData {
+  type: string;
+  menu: any;
+  products: any[];
+  error?: string;
+}
+
 
 export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
@@ -147,7 +154,7 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function ShopDetails() {
-  const { menu, products, type, error: loaderError } = useLoaderData();
+  const { menu, products, type, error: loaderError } = useLoaderData<LoaderData>();
   const location = useLocation();
   console.log('ShopDetails: Loader data:', { menu, products, type, loaderError });
   console.log('ShopDetails: Navigation state:', location.state);
@@ -191,7 +198,7 @@ export default function ShopDetails() {
       : null
   );
   const [loading, setLoading] = useState(!shopFromState && !menu);
-  const [error, setError] = useState<string | null>(loaderError);
+  const [error, setError] = useState<string | null>(loaderError || null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
@@ -501,9 +508,10 @@ export default function ShopDetails() {
 
   console.log('ShopDetails: Rendering shop:', shop);
   console.log('ShopDetails: Rendering products:', products);
-  const getCategoryName = (categoryId: string) => {
+  const getCategoryName = (categoryId?: string) => {
+    if (!categoryId) return shop?.category || 'No Category';
     const category = categoriesShop.find((cat) => cat.id === categoryId);
-    return category ? category.name : shop.category || 'No Category';
+    return category ? category.name : shop?.category || 'No Category';
   };
 
   return (
@@ -774,7 +782,7 @@ export default function ShopDetails() {
                   width: `${products.length * (100 / visibleCards)}%`,
                 }}
               >
-                {products.map((product, index) => (
+                {products.map((product: any, index: number) => (
                   <div
                     key={index}
                     className="flex-shrink-0 p-2"
