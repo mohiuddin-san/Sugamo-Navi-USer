@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<style>
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+body, html {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #fff0;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: auto;
+  cursor: none;
+  touch-action: auto;
+}
+@media screen and (max-width: 768px) {
+  body, html {
+    overflow: auto;
+  }
+  html.long-pressing, body.long-pressing {
+    overflow: hidden !important;
+    touch-action: none !important;
+    -webkit-overflow-scrolling: none;
+    overscroll-behavior: none;
+  }
+}
+@media screen and (min-width: 769px) {
+  body, html {
+    overflow: auto !important;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    background-color: rgba(0,0,0,.05);
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,.2);
+    border-radius: 4px;
+  }
+}
+#canvas-wrapper {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+</style>
+</head>
+<body>
+<div id="canvas-wrapper"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+<script>
+const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isSaf = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+let P_S = { pixelRatio: 1, rows: 200, cols: isMob ? 360 : 400, touchThrottleMs: isMob ? 40 : 0, lastTouchTime: 0, targetFrameInterval: isMob ? 16 : 0, lastFrameTime: 0 };
+let t_S = { isLonPress: false, startX: 0, startY: 0 };
+let lastScrollY = 0, savedScrollY = 0, lastTouch = Date.now();
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, .2, 1e3);
+camera.position.set(0, 0, 0);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(P_S.pixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.domElement.addEventListener("contextmenu", e => e.preventDefault());
+document.getElementById("canvas-wrapper").appendChild(renderer.domElement);
+
+function handleScroll() {
+  const scrollY = window.scrollY;
+  if (Math.abs(scrollY - lastScrollY) > 2) {
+    try {
+      window.parent.postMessage({ type: "iframeScroll", scrollY, scrollEnabled: true }, "*");
+      lastScrollY = scrollY;
+    } catch (e) {
+      console.warn("Failed to post scroll message:", e);
+    }
+  }
+}
+
+if (isIOS) {
+  let lastTouchY = 0, isDragging = false;
+  window.addEventListener("touchstart", e => {
+    if (t_S.isLonPress || i_b_for) return;
+    lastTouchY = e.touches[0].clientY;
+    isDragging = true;
+    savedScrollY = window.scrollY;
+  }, { passive: true });
+
+  window.addEventListener("touchmove", e => {
+    if (!isDragging || t_S.isLonPress || i_b_for) return;
+    const deltaY = e.touches[0].clientY - lastTouchY;
+    lastTouchY = e.touches[0].clientY;
+    window.scrollTo({ top: savedScrollY - deltaY, behavior: "auto" });
+    handleScroll();
+  }, { passive: true });
+
+  window.addEventListener("touchend", () => {
+    isDragging = false;
+    window.scrollTo({ top: Math.round(window.scrollY), behavior: "auto" });
+  }, { passive: true });
+} else {
+  window.addEventListener("scroll", handleScroll, { passive: true });
+}
+
+function allowScroll() {
+  if (isIOS) {
+    requestAnimationFrame(() => {
+      document.documentElement.style.overflow = "auto";
+      document.body.style.overflow = "auto";
+      document.documentElement.style.touchAction = "auto";
+      document.body.style.touchAction = "auto";
+      document.getElementById("canvas-wrapper").style.overflow = "auto";
+    });
+  }
+}
+
+allowScroll();
+
+const D_C = [0xffb3ba, 0xffdfba, 0xffffba, 0xbaffc9, 0xb2ffff, 0xb5c7ff, 0xe2baff];
+const W1_COLS = { start: D_C[0], middle: D_C[4], end: 0xb7dbff };
+const W2_COLS = { start: 0xffbcdd, middle: 0xccffcc, end: D_C[5] };
+const W3_COLS = { start: D_C[1], middle: D_C[2], end: D_C[2] };
+let b_Of_X = 0, b_Of_Y = 0, b_Of_Z = 0, t_ball_X = 0, t_ball_Z = 0;
+let i_b_for = false, lo_Pre_Ti = null, dotCreateTimer = null, colorChangeInterval, currentColorIndex = 0;
+
+// Cache raycaster and plane for better Safari performance
+const cachedRaycaster = new THREE.Raycaster();
+const cachedPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const cachedIntersection = new THREE.Vector3();
+
+function creFixSizDot(color) {
+  try {
+    const orthoCamera = new THREE.OrthographicCamera(-window.innerWidth / 2, window.innerWidth / 2, window.innerHeight / 2, -window.innerHeight / 2, .1, 10);
+    orthoCamera.position.z = 1;
+    const dotScene = new THREE.Scene();
+    const dotGeometry = new THREE.CircleGeometry(10, 32);
+    const dotMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: 0, side: THREE.DoubleSide, depthTest: false });
+    const dotMesh = new THREE.Mesh(dotGeometry, dotMaterial);
+    dotScene.add(dotMesh);
+    return {
+      scene: dotScene, camera: orthoCamera, mesh: dotMesh, material: dotMaterial, visible: false, position: { x: 0, y: 0 },
+      updatePosition(clientX, clientY) {
+        const x = clientX - window.innerWidth / 2;
+        const y = -(clientY - window.innerHeight / 2);
+        this.position.x = x;
+        this.position.y = y;
+        this.mesh.position.set(x, y, 0);
+      },
+      setVisible(visible) { this.visible = visible; },
+      setColor(color) { this.mesh.material.color.set(color); },
+      setOpacity(opacity) { this.mesh.material.opacity = opacity; },
+      render() {
+        if (this.visible) {
+          renderer.autoClear = false;
+          renderer.clearDepth();
+          renderer.render(this.scene, this.camera);
+          renderer.autoClear = true;
+        }
+      },
+      resize() {
+        this.camera.left = -window.innerWidth / 2;
+        this.camera.right = window.innerWidth / 2;
+        this.camera.top = window.innerHeight / 2;
+        this.camera.bottom = -window.innerHeight / 2;
+        this.camera.updateProjectionMatrix();
+      }
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+const fixDot = creFixSizDot(D_C[0]);
+
+function computeGridParams() {
+  const pxPerCol = 3.6;
+  const pxPerRow = 4.0;
+  const numCols = Math.round(window.innerWidth / pxPerCol);
+  const numRows = Math.round(window.innerHeight / pxPerRow);
+  const frustumHeight = 2 * Math.tan(THREE.MathUtils.degToRad(30)) * Math.max(18, window.innerHeight / 100); // Dynamic adjustment for small screens
+  const frustumWidth = frustumHeight * camera.aspect;
+  const factor = isMob ? .85 : 1.0; // Increase factor for mobile to reduce wave span
+  const totalSpanX = frustumWidth / factor;
+  const totalSpanZ = frustumHeight / factor;
+  const separationX = totalSpanX / numCols;
+  const separationZ = totalSpanZ / numRows;
+  return { numRows, numCols, separationX, separationZ, totalSpanX, totalSpanZ };
+}
+
+const initialParams = computeGridParams();
+let rows = initialParams.numRows;
+let cols = initialParams.numCols;
+let separationX = initialParams.separationX;
+let separationZ = initialParams.separationZ;
+let cursor = { x: 0, y: 0, targetX: 0, targetY: 0, active: false };
+const initialCameraPosition = new THREE.Vector3(isMob ? 1.3 : 1.8, 2, isMob ? -Math.max(5, window.innerHeight / 80) : -Math.max(7, window.innerHeight / 100)); // Adjusted Z for mobile
+
+// Safari-specific fix: Pre-warm the raycaster
+if (isSaf) {
+  setTimeout(() => {
+    const dummyEvent = { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 };
+    updateCursor(dummyEvent.clientX, dummyEvent.clientY);
+    cursor.active = false;
+  }, 100);
+}
+
+function creWav(staCol, midCol, endCol) {
+  const geometry = new THREE.BufferGeometry();
+  const pos = new Float32Array(rows * cols * 3);
+  const sizes = new Float32Array(rows * cols);
+  const intensities = new Float32Array(rows * cols);
+  const originalX = [], originalZ = [], speedFactors = [], randomPositions = [];
+  let i = 0, j = 0;
+  for (let ix = 0; ix < cols; ix++) {
+    for (let iy = 0; iy < rows; iy++) {
+      const x = ix * separationX - (cols * separationX) / 2;
+      const z = iy * separationZ - (rows * separationZ) / 2;
+      pos[i] = x;
+      pos[i + 1] = 0;
+      pos[i + 2] = z;
+      sizes[j] = 1.5;
+      intensities[j] = 0.8 + Math.random() * 0.4;
+      originalX.push(x);
+      originalZ.push(z);
+      speedFactors.push(0.05 + Math.random() * 0.15);
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const baseRadius = 2.5;
+      const sx = baseRadius * Math.sin(phi) * Math.cos(theta);
+      const sy = baseRadius * Math.cos(phi);
+      const sz = baseRadius * Math.sin(phi) * Math.sin(theta);
+      randomPositions.push({ sx, sy, sz });
+      i += 3;
+      j++;
+    }
+  }
+  geometry.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+  geometry.setAttribute("intensity", new THREE.BufferAttribute(intensities, 1));
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      startColor: { value: new THREE.Color(staCol) },
+      middleColor: { value: new THREE.Color(midCol) },
+      endColor: { value: new THREE.Color(endCol) },
+      opacity: { value: 1.0 }
+    },
+    vertexShader: `
+      attribute float size;
+      attribute float intensity;
+      varying float vIntensity;
+      varying vec3 vPosition;
+      void main() {
+        vPosition = position;
+        vIntensity = intensity;
+        gl_PointSize = size * 1.2;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 startColor;
+      uniform vec3 middleColor;
+      uniform vec3 endColor;
+      uniform float opacity;
+      varying vec3 vPosition;
+      varying float vIntensity;
+      void main() {
+        if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.475) discard;
+        vec3 finalColor;
+        float t = (vPosition.x + 3.0) / 6.0;
+        t = clamp(t, 0.0, 1.0);
+        if (t < 0.5) {
+          finalColor = mix(startColor, middleColor, t * 2.0);
+        } else {
+          finalColor = mix(middleColor, endColor, (t - 0.5) * 2.0);
+        }
+        gl_FragColor = vec4(finalColor * vIntensity, opacity);
+      }
+    `,
+    transparent: true
+  });
+  const points = new THREE.Points(geometry, material);
+  points.userData = { originalX, originalZ, speedFactors, randomPositions };
+  scene.add(points);
+  return points;
+}
+
+let w1 = creWav(W1_COLS.start, W1_COLS.middle, W1_COLS.end);
+let w2 = creWav(W2_COLS.start, W2_COLS.middle, W2_COLS.end);
+let w3 = creWav(W3_COLS.start, W3_COLS.middle, W3_COLS.end);
+
+function animate(time) {
+  try {
+    if (P_S.targetFrameInterval > 0) {
+      if (time - P_S.lastFrameTime < P_S.targetFrameInterval) {
+        requestAnimationFrame(animate);
+        return;
+      }
+      P_S.lastFrameTime = time;
+    }
+    if (i_b_for) {
+      camera.position.copy(initialCameraPosition);
+    } else {
+      camera.position.set(initialCameraPosition.x, initialCameraPosition.y, initialCameraPosition.z);
+    }
+    camera.lookAt(0, 0, 0);
+    if (i_b_for) {
+      b_Of_X += (t_ball_X - b_Of_X) * 0.1;
+      b_Of_Z += (t_ball_Z - b_Of_Z) * 0.1;
+    }
+    cursor.x += (cursor.targetX - cursor.x) * 0.1;
+    cursor.y += (cursor.targetY - cursor.y) * 0.1;
+    updateWaveGeometry(w1, time, 5.0);
+    updateWaveGeometry(w2, time, 2.5);
+    updateWaveGeometry(w3, time, 3.5);
+    TWEEN.update();
+    renderer.render(scene, camera);
+    if (fixDot) {
+      fixDot.render();
+    }
+    requestAnimationFrame(animate);
+  } catch (error) {
+    endLongPress();
+    location.reload();
+  }
+}
+animate(0);
+
+function updateWaveGeometry(wave, time, amplitude) {
+  const posGe = wave.geometry.attributes.position.array;
+  const originalX = wave.userData.originalX;
+  const originalZ = wave.userData.originalZ;
+  const speedFactors = wave.userData.speedFactors;
+  const rotationSpeed = 0.001;
+  const timeFactor = time * 0.001;
+  let i = 0;
+  for (let ix = 0; ix < cols; ix++) {
+    for (let iy = 0; iy < rows; iy++) {
+      const idx = ix * rows + iy;
+      const ox = originalX[idx];
+      const oz = originalZ[idx];
+      let wavePosX = ox;
+      let wavePosY = 0;
+      let wavePosZ = oz;
+      const dist = Math.sqrt((wavePosX - cursor.x) ** 2 + (wavePosZ - cursor.y) ** 2);
+      const waveController = { decayRate: 0.44, maxAmplitude: 2.5 };
+      const waveEffect = cursor.active ? Math.exp(-dist * waveController.decayRate) * amplitude * waveController.maxAmplitude : 0;
+      const sinValue = Math.sin((ox + timeFactor) * 0.4) * Math.sin((oz + timeFactor) * 0.4);
+      const dy = sinValue * amplitude;
+      wavePosY = dy + waveEffect;
+      if (i_b_for) {
+        const elapsedTime = Math.min(time / 20.0, 1.0);
+        const currentRadius = 3.0 - elapsedTime * (3.0 - 0.1);
+        const dx = ox - b_Of_X;
+        const dz = oz - b_Of_Z;
+        const distanceFromCenter = Math.sqrt(dx * dx + dz * dz);
+        const theta = Math.atan2(dz, dx) + time * rotationSpeed;
+        const phi = (distanceFromCenter / ((cols * separationX) / 2)) * Math.PI;
+        const sx = b_Of_X + currentRadius * Math.sin(phi) * Math.cos(theta);
+        const sy = b_Of_Y + currentRadius * Math.cos(phi);
+        const sz = b_Of_Z + currentRadius * Math.sin(phi) * Math.sin(theta);
+        const spd = speedFactors[idx] * 0.4;
+        posGe[i] += (sx - posGe[i]) * spd;
+        posGe[i + 1] += (sy - posGe[i + 1]) * spd;
+        posGe[i + 2] += (sz - posGe[i + 2]) * spd;
+      } else {
+        const returnSpeed = 0.1;
+        posGe[i] += (ox - posGe[i]) * returnSpeed;
+        posGe[i + 1] += (0 - posGe[i + 1]) * returnSpeed;
+        posGe[i + 2] += (oz - posGe[i + 2]) * returnSpeed;
+        posGe[i + 1] += (dy + waveEffect - posGe[i + 1]) * 0.1;
+        if (posGe[i] > (cols * separationX) / 2) {
+          posGe[i] -= cols * separationX;
+        } else if (posGe[i] < -(cols * separationX) / 2) {
+          posGe[i] += cols * separationX;
+        }
+        if (posGe[i + 2] > (rows * separationZ) / 2) {
+          posGe[i + 2] -= rows * separationZ;
+        } else if (posGe[i + 2] < -(rows * separationZ) / 2) {
+          posGe[i + 2] += rows * separationZ;
+        }
+      }
+      i += 3;
+    }
+  }
+  wave.geometry.attributes.position.needsUpdate = true;
+}
+
+function updateCursor(e, t) {
+  try {
+    const r = renderer.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2((e - r.left) / r.width * 2 - 1, 2 * -((t - r.top) / r.height) + 1);
+    cachedRaycaster.setFromCamera(mouse, camera);
+    cachedRaycaster.ray.intersectPlane(cachedPlane, cachedIntersection);
+    cursor.targetX = cachedIntersection.x;
+    cursor.targetY = cachedIntersection.z;
+    cursor.active = true;
+  } catch (error) {
+    cursor.active = true;
+  }
+}
+
+function updateDotPosition(e, t) {
+  if (i_b_for) {
+    const r = renderer.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2((e - r.left) / r.width * 2 - 1, 2 * -((t - r.top) / r.height) + 1);
+    cachedRaycaster.setFromCamera(mouse, camera);
+    cachedRaycaster.ray.intersectPlane(cachedPlane, cachedIntersection);
+    t_ball_X = cachedIntersection.x;
+    t_ball_Z = cachedIntersection.z;
+    if (fixDot && fixDot.visible) {
+      fixDot.updatePosition(e, t);
+    }
+  }
+}
+
+function toucEvent() {
+  if (!isMob || i_b_for || P_S.touchThrottleMs <= 0) return true;
+  const now = performance.now();
+  if (now - P_S.lastTouchTime < P_S.touchThrottleMs) return false;
+  P_S.lastTouchTime = now;
+  if (isMob && Date.now() - lastTouch < 100) return false;
+  lastTouch = Date.now();
+  return true;
+}
+
+renderer.domElement.addEventListener("mousemove", e => {
+  if (!toucEvent()) return;
+  window.parent.postMessage({ type: "cursorMove", x: e.clientX, y: e.clientY, isBallForming: i_b_for }, "*");
+  updateCursor(e.clientX, e.clientY);
+  if (i_b_for) {
+    updateDotPosition(e.clientX, e.clientY);
+  }
+});
+
+if (isSaf) {
+  renderer.domElement.addEventListener("mouseenter", e => {
+    updateCursor(e.clientX, e.clientY);
+  }, { once: true });
+}
+
+window.addEventListener("touchmove", e => {
+  if (!toucEvent() && !i_b_for && !t_S.isLonPress) return;
+  if (t_S.isLonPress || i_b_for) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    updateCursor(touch.clientX, touch.clientY);
+    window.parent.postMessage({ type: "cursorMove", x: touch.clientX, y: touch.clientY, isBallForming: i_b_for }, "*");
+    if (i_b_for) {
+      updateDotPosition(touch.clientX, touch.clientY);
+    }
+  }
+}, { passive: false });
+
+window.addEventListener("mousedown", e => {
+  t_S.startX = e.clientX;
+  t_S.startY = e.clientY;
+  startLongPress(e);
+});
+
+window.addEventListener("touchstart", e => {
+  const touch = e.touches[0];
+  t_S.startX = touch.clientX;
+  t_S.startY = touch.clientY;
+  startLongPress(e);
+}, { passive: true });
+
+window.addEventListener("mouseup", endLongPress);
+window.addEventListener("touchend", endLongPress);
+
+window.addEventListener("mouseup", () => {
+  t_ball_X = 0;
+  t_ball_Z = 0;
+});
+
+window.addEventListener("touchend", () => {
+  t_ball_X = 0;
+  t_ball_Z = 0;
+  t_S.isLonPress = false;
+  allowScroll();
+});
+
+function startLongPress(e) {
+  if (!e) return;
+  try {
+    document.documentElement.classList.add("long-pressing");
+    document.body.classList.add("long-pressing");
+    const rect = renderer.domElement.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const mouse = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+    cachedRaycaster.setFromCamera(mouse, camera);
+    cachedRaycaster.ray.intersectPlane(cachedPlane, cachedIntersection);
+    t_ball_X = cachedIntersection.x;
+    t_ball_Z = cachedIntersection.z;
+    b_Of_X = cachedIntersection.x;
+    b_Of_Y = 0;
+    b_Of_Z = cachedIntersection.z;
+    if (fixDot) {
+      fixDot.updatePosition(clientX, clientY);
+    }
+    lo_Pre_Ti = setTimeout(() => {
+      i_b_for = true;
+      new TWEEN.Tween({ opacity: 1 }).to({ opacity: 0 }, 1000).onUpdate(val => {
+        w1.material.uniforms.opacity.value = val.opacity;
+        w2.material.uniforms.opacity.value = val.opacity;
+        w3.material.uniforms.opacity.value = val.opacity;
+      }).start();
+      dotCreateTimer = setTimeout(() => {
+        w1.visible = false;
+        w2.visible = false;
+        w3.visible = false;
+        if (fixDot) {
+          fixDot.setColor(new THREE.Color(D_C[0]));
+          fixDot.setVisible(true);
+          new TWEEN.Tween({ opacity: 0 }).to({ opacity: 1 }, 400).onUpdate(val => fixDot.setOpacity(val.opacity)).start();
+          colorChangeInterval = setInterval(() => {
+            currentColorIndex = (currentColorIndex + 1) % D_C.length;
+            if (fixDot) {
+              changeDotColor(fixDot, D_C[currentColorIndex], 400);
+            }
+          }, 1200);
+        }
+      }, 1000);
+    }, 200);
+  } catch (error) {
+    console.error("Error in startLongPress:", error);
+  }
+}
+
+function endLongPress() {
+  document.documentElement.classList.remove("long-pressing");
+  document.body.classList.remove("long-pressing");
+  t_S.isLonPress = false;
+  window.parent.postMessage({ type: "touchStarted", isLongPressing: false }, "*");
+  i_b_for = false;
+  currentColorIndex = 0;
+  TWEEN.removeAll();
+  t_ball_X = 0;
+  t_ball_Z = 0;
+  clearTimeout(lo_Pre_Ti);
+  clearTimeout(dotCreateTimer);
+  allowScroll();
+  window.parent.postMessage({ type: "ballForming", isForming: false }, "*");
+  if (fixDot && fixDot.visible) {
+    new TWEEN.Tween({ opacity: fixDot.material.opacity }).to({ opacity: 0 }, 400).onUpdate(val => fixDot.setOpacity(val.opacity)).onComplete(() => fixDot.setVisible(false)).start();
+  }
+  [w1, w2, w3].forEach(wave => {
+    wave.visible = true;
+    wave.material.uniforms.opacity.value = 1.0;
+  });
+  if (colorChangeInterval) {
+    clearInterval(colorChangeInterval);
+    colorChangeInterval = null;
+  }
+  const newParams = computeGridParams();
+  const newOffsetX = isMob ? 1.3 : 1.8;
+  initialCameraPosition.set(-newOffsetX, 2, isMob ? -Math.max(5, window.innerHeight / 80) : -Math.max(7, window.innerHeight / 100));
+  camera.position.set(initialCameraPosition.x, initialCameraPosition.y, initialCameraPosition.z);
+  camera.lookAt(0, 0, 0);
+}
+
+function changeDotColor(o, a, e = 400) {
+  try {
+    if (o === fixDot) {
+      const n = new THREE.Color().copy(o.mesh.material.color);
+      const t = new THREE.Color(a);
+      new TWEEN.Tween(n).to(t, e).onUpdate(() => o.setColor(n)).easing(TWEEN.Easing.Quadratic.InOut).start();
+    }
+  } catch (error) {
+    console.error("Error in changeDotColor:", error);
+  }
+}
+
+function disposeObject(obj) {
+  if (!obj) return;
+  if (obj.geometry) {
+    obj.geometry.dispose();
+  }
+  if (obj.material) {
+    if (Array.isArray(obj.material)) {
+      obj.material.forEach(material => material.dispose());
+    } else {
+      obj.material.dispose();
+    }
+  }
+  if (obj.children && obj.children.length > 0) {
+    for (let i = obj.children.length - 1; i >= 0; i--) {
+      disposeObject(obj.children[i]);
+    }
+  }
+}
+
+function handleResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  const newParams = computeGridParams();
+  rows = newParams.numRows;
+  cols = newParams.numCols;
+  separationX = newParams.separationX;
+  separationZ = newParams.separationZ;
+  [w1, w2, w3].forEach(wave => {
+    scene.remove(wave);
+    disposeObject(wave);
+  });
+  w1 = creWav(W1_COLS.start, W1_COLS.middle, W1_COLS.end);
+  w2 = creWav(W2_COLS.start, W2_COLS.middle, W2_COLS.end);
+  w3 = creWav(W3_COLS.start, W3_COLS.middle, W3_COLS.end);
+  if (fixDot) fixDot.resize();
+  const newOffsetX = isMob ? 1.3 : 1.8;
+  initialCameraPosition.set(newOffsetX, 2, isMob ? -Math.max(5, window.innerHeight / 80) : -Math.max(7, window.innerHeight / 100));
+  camera.position.set(initialCameraPosition.x, initialCameraPosition.y, initialCameraPosition.z);
+  camera.lookAt(0, 0, 0);
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    animate(performance.now());
+  }
+});
+
+window.addEventListener("resize", handleResize);
+</script>
+</body>
+</html>
