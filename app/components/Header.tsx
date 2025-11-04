@@ -545,16 +545,14 @@ const Header: React.FC = () => {
               </div>
             </div>
             <ul
-              className="space-y-2 bg-[#F7F7F7] text-left rounded-lg overflow-hidden"
+              className="space-y-2 bg-[#F7F7F7] text-left p-4 rounded-lg overflow-hidden"
               style={{ 
                 width: isMobile ? fsm(360) : fs(860),
-                height: isMobile ? fsm(309) : fs(258),
+                height: 'auto',
                 borderTopLeftRadius: 0,
                 borderTopRightRadius: 0,
                 borderBottomLeftRadius: isMobile ? fsm(30) : fs(30),
                 borderBottomRightRadius: isMobile ? fsm(30) : fs(30),
-                padding: `${isMobile ? fsm(8) : fs(18)} ${isMobile ? fsm(16) : fs(16)} ${isMobile ? fsm(16) : fs(16)} ${isMobile ? fsm(16) : fs(16)}`,
-                
               }}
             >
               {loadingShops ? (
