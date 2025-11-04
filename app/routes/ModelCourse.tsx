@@ -10,9 +10,14 @@ import ModelCourseDetailsItem from '../components/ModelCourseDetailsItem';
 import ShopItem from '~/components/ShopItem';
 import { json } from '@remix-run/node';
 import MapSVG from '~/components/MapSVG';
+import ErrorBoundary from '~/components/ErrorBoundary';
 
 export async function loader() {
+  // Preload the SVG file to improve initial loading performance
+  const svgPath = '/src/map-pin.svg';
+  
   return json({
+    svgPath,
     modelCourse: [
       {
         title: 'ナンジェリー・ボストール',
@@ -181,6 +186,7 @@ export default function ModelCourse() {
   const modelCourse = data?.modelCourse || [];
   const products = data?.products || [];
   const stops = data?.stops || [];
+  const svgPath = data?.svgPath || '/src/map-pin.svg';
   const location = useLocation();
   const { isMobile } = useIsMobile();
   const { fs, fsm } = useUniversalFluid();
@@ -430,11 +436,13 @@ useEffect(() => {
               marginTop={0}
             />
             <div style={{position: 'relative'}} ref={mapRef}>
-              <MapSVG
-                svgPath="/src/map-pin.svg"
-                onPinClick={handlePinClick}
-                startAnimation={hasSvgAnimated}
-              />
+              <ErrorBoundary>
+                <MapSVG
+                  svgPath={svgPath}
+                  onPinClick={handlePinClick}
+                  startAnimation={hasSvgAnimated}
+                />
+              </ErrorBoundary>
             </div>
             <MarqueeHeader
               text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"

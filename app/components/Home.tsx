@@ -1,5 +1,5 @@
 
-import { Link } from '@remix-run/react';
+import { Link , useLoaderData } from '@remix-run/react';
 import Header from '~/components/Header';
 import React, { useEffect, useState, useRef } from 'react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
@@ -10,7 +10,7 @@ import ProductCard from '~/components/ProductCard';
 import ModelCourseItem from './ModelCourseItem';
 import TravelsTipsItem from './TravelsTipsItem';
 import InstagramVideosAll from '~/components/InstagramVideos';
-import { useLoaderData } from '@remix-run/react';
+
 import supabaseShops from "~/supabase";
 import supabaseBlogs from "~/supabase_blog";
 import TikTokVideos from '~/components/TiktokVideos';
