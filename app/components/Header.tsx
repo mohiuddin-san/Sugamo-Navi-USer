@@ -494,7 +494,7 @@ const Header: React.FC = () => {
                 }}
               >
                 <img
-                  src="/src/icons8-search.png"
+                  src="/src/icons-search.png"
                   alt="Search Icon"
                   className=""
                   style={{
@@ -546,7 +546,7 @@ const Header: React.FC = () => {
             </div>
             <ul
               className={`space-y-2 bg-[#F7F7F7] text-left rounded-lg ${
-                searchQuery && filteredShops.length > 6 ? 'overflow-y-auto' : 'overflow-hidden'
+                searchQuery && filteredShops.length > 4 ? 'overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200' : 'overflow-hidden'
               }`}
               style={{ 
                 width: isMobile ? fsm(360) : fs(860),
