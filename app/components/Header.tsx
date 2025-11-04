@@ -584,18 +584,6 @@ const Header: React.FC = () => {
                   {searchQuery ? 'No shops found' : 'Start typing to search shops...'}
                 </li>
               )}
-              {/* Scroll indicator when there are more than 4 results */}
-              {searchQuery && filteredShops.length > 4 && (
-                <li 
-                  className="text-center text-gray-500 text-sm italic pt-2 border-t border-gray-300"
-                  style={{ 
-                    fontSize: isMobile ? fsm(12) : fs(14),
-                    marginTop: isMobile ? fsm(8) : fs(12)
-                  }}
-                >
-                  Scroll to see more shops ({filteredShops.length} total)
-                </li>
-              )}
             </ul>
             {!isMobile && (
               <div className="mt-6">
