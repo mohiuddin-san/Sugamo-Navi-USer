@@ -130,6 +130,7 @@ export default {
 
       addUtilities(utilities)
     }),
-      require("tailwindcss-animate")
+      require("tailwindcss-animate"),
+      require('@tailwindcss/line-clamp'),
 ],
 }

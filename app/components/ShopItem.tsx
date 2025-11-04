@@ -244,15 +244,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
           style={{
             fontSize: isMobile ? fsm(16) : fs(25),
             maxWidth: '100%',
-            height: isMobile ? fsm(32) : fs(50),
-            display: 'flex',
-            alignItems: 'center',
+            height: 'auto',
+            display: 'block',
+            paddingLeft: isMobile ? fsm(9) : fs(25),
+            paddingRight: isMobile ? fsm(9) : fs(25),
             justifyContent: 'center',
             lineHeight: '1.2',
           }}
         >
           {title || 'Untitled'}
         </h1>
+
       </div>
       <div className="relative">
         <img
@@ -276,10 +278,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <button
           className="bg-[#ED4548] text-white rounded-full italic font-cairo text-center"
           style={{
-            width: isMobile ? fsm(92) : fs(92),
+            width: "auto",
             minWidth: isMobile ? fsm(72) : fs(72),
             height: isMobile ? fsm(22) : fs(22),
             minHeight: isMobile ? fsm(17) : fs(17),
+            paddingLeft: isMobile ? fsm(10) : fs(10),
+            paddingRight: isMobile ? fsm(10) : fs(10),
             fontSize: isMobile ? fsm(12) : fs(12),
           }}
         >

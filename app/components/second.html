@@ -88,24 +88,18 @@
         let lastScrollY = 0, savedScrollY = 0, lastTouch = Date.now();
 
         const scene = new THREE.Scene();
-
-        // ক্যামেরা পজিশন আগে ডিফাইন করো
         const initialCameraPosition = new THREE.Vector3(
             isMob ? 0.4 : 1.8,
             2,
             isMob ? -Math.max(5, window.innerHeight / 80) : -Math.max(7, window.innerHeight / 100)
         );
-
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, .2, 1e3);
         camera.position.copy(initialCameraPosition);
-
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
         renderer.setPixelRatio(P_S.pixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.domElement.addEventListener("contextmenu", e => e.preventDefault());
         document.getElementById("canvas-wrapper").appendChild(renderer.domElement);
-
-        // Raycaster & Plane
         const cachedRaycaster = new THREE.Raycaster();
         const cachedPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         const cachedIntersection = new THREE.Vector3();
@@ -231,13 +225,28 @@
         let cols = initialParams.numCols;
         let separationX = initialParams.separationX;
         let separationZ = initialParams.separationZ;
-        let cursor = { x: 0, y: 0, targetX: 0, targetY: 0, active: false };
+
+        // GRID BOUNDS
+        let gridMinX = -(cols * separationX) / 2;
+        let gridMaxX = (cols * separationX) / 2;
+        let gridMinZ = -(rows * separationZ) / 2;
+        let gridMaxZ = (rows * separationZ) / 2;
+
+        // CURSOR ALWAYS ACTIVE + CLAMPED
+        let cursor = { 
+            x: 0, 
+            y: 0, 
+            targetX: 0, 
+            targetY: 0, 
+            active: true,
+            lastActiveTime: 0,
+            fadeOutDuration: Infinity
+        };
 
         if (isSaf) {
             setTimeout(() => {
                 const dummyEvent = { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 };
                 updateCursor(dummyEvent.clientX, dummyEvent.clientY);
-                cursor.active = false;
             }, 100);
         }
 
@@ -336,7 +345,6 @@
                     b_Of_X += (t_ball_X - b_Of_X) * 0.1;
                     b_Of_Z += (t_ball_Z - b_Of_Z) * 0.1;
                 }
-
                 cursor.x += (cursor.targetX - cursor.x) * 0.1;
                 cursor.y += (cursor.targetY - cursor.y) * 0.1;
 
@@ -363,6 +371,11 @@
             const speedFactors = wave.userData.speedFactors;
             const rotationSpeed = 0.001;
             const timeFactor = time * 0.001;
+
+            // CLAMP CURSOR TO GRID BOUNDS
+            const clampedX = Math.max(gridMinX, Math.min(gridMaxX, cursor.x));
+            const clampedZ = Math.max(gridMinZ, Math.min(gridMaxZ, cursor.y));
+
             let i = 0;
             for (let ix = 0; ix < cols; ix++) {
                 for (let iy = 0; iy < rows; iy++) {
@@ -373,12 +386,12 @@
                     let wavePosY = 0;
                     let wavePosZ = oz;
 
-                    // সবগুলো ওয়েভের জন্য কার্সার ইফেক্ট
-                    const dist = Math.sqrt((wavePosX - cursor.x) ** 2 + (wavePosZ - cursor.y) ** 2);
+                    // USE CLAMPED CURSOR FOR DISTANCE
+                    const dist = Math.sqrt((wavePosX - clampedX) ** 2 + (wavePosZ - clampedZ) ** 2);
                     const waveController = { decayRate: 0.44, maxAmplitude: 2.5 };
-                    const waveEffect = cursor.active ? Math.exp(-dist * waveController.decayRate) * amplitude * waveController.maxAmplitude : 0;
-                    
-                    // প্রতিটি ওয়েভের নিজস্ব wave pattern
+                    const fadeMultiplier = 1.0;
+
+                    const waveEffect = Math.exp(-dist * waveController.decayRate) * amplitude * waveController.maxAmplitude * fadeMultiplier;
                     const sinValue = Math.sin((ox + timeFactor) * 0.4) * Math.sin((oz + timeFactor) * 0.4);
                     const dy = sinValue * amplitude;
                     wavePosY = dy + waveEffect;
@@ -405,10 +418,10 @@
                         posGe[i + 2] += (oz - posGe[i + 2]) * returnSpeed;
                         posGe[i + 1] += (dy + waveEffect - posGe[i + 1]) * 0.1;
                         
-                        if (posGe[i] > (cols * separationX) / 2) posGe[i] -= cols * separationX;
-                        else if (posGe[i] < -(cols * separationX) / 2) posGe[i] += cols * separationX;
-                        if (posGe[i + 2] > (rows * separationZ) / 2) posGe[i + 2] -= rows * separationZ;
-                        else if (posGe[i + 2] < -(rows * separationZ) / 2) posGe[i + 2] += rows * separationZ;
+                        if (posGe[i] > gridMaxX) posGe[i] -= cols * separationX;
+                        else if (posGe[i] < gridMinX) posGe[i] += cols * separationX;
+                        if (posGe[i + 2] > gridMaxZ) posGe[i + 2] -= rows * separationZ;
+                        else if (posGe[i + 2] < gridMinZ) posGe[i + 2] += rows * separationZ;
                     }
                     i += 3;
                 }
@@ -435,7 +448,7 @@
             if (pos) {
                 cursor.targetX = pos.x;
                 cursor.targetY = pos.z;
-                cursor.active = true;
+                cursor.lastActiveTime = Date.now();
             }
         }
 
@@ -516,6 +529,7 @@
             touchStartY = touch.clientY;
             hasMoved = false;
             startLongPress(e);
+            updateCursor(touch.clientX, touch.clientY);
         }, { passive: true });
 
         window.addEventListener("mouseup", endLongPress);
@@ -570,7 +584,7 @@
                                 fixDot.setColor(new THREE.Color(D_C[0]));
                                 fixDot.setVisible(true);
                                 new TWEEN.Tween({ opacity: 0 }).to({ opacity: 1 }, 400).onUpdate(val => fixDot.setOpacity(val.opacity)).start();
-                                colorChangeInterval = setInterval(() => {
+                               .div colorChangeInterval = setInterval(() => {
                                     currentColorIndex = (currentColorIndex + 1) % D_C.length;
                                     if (fixDot) changeDotColor(fixDot, D_C[currentColorIndex], 400);
                                 }, 1200);
@@ -639,11 +653,19 @@
             const newParams = computeGridParams();
             rows = newParams.numRows; cols = newParams.numCols;
             separationX = newParams.separationX; separationZ = newParams.separationZ;
+
+            // UPDATE GRID BOUNDS
+            gridMinX = -(cols * separationX) / 2;
+            gridMaxX = (cols * separationX) / 2;
+            gridMinZ = -(rows * separationZ) / 2;
+            gridMaxZ = (rows * separationZ) / 2;
+
             [w1, w2, w3].forEach(wave => { scene.remove(wave); disposeObject(wave); });
             w1 = creWav(W1_COLS.start, W1_COLS.middle, W1_COLS.end);
             w2 = creWav(W2_COLS.start, W2_COLS.middle, W2_COLS.end);
             w3 = creWav(W3_COLS.start, W3_COLS.middle, W3_COLS.end);
             if (fixDot) fixDot.resize();
+
             const newOffsetX = isMob ? 0.4 : 1.8;
             new TWEEN.Tween(camera.position).to({ x: newOffsetX, y: 2, z: isMob ? -Math.max(5, window.innerHeight / 80) : -Math.max(7, window.innerHeight / 100) }, 450)
                 .easing(TWEEN.Easing.Quadratic.Out).start();
@@ -653,9 +675,7 @@
         document.addEventListener("visibilitychange", () => {
             if (!document.hidden) animate(performance.now());
         });
-
         window.addEventListener("resize", handleResize);
     </script>
 </body>
-
 </html>
