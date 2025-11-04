@@ -10,7 +10,6 @@ import ModelCourseDetailsItem from '../components/ModelCourseDetailsItem';
 import ShopItem from '~/components/ShopItem';
 import { json } from '@remix-run/node';
 import MapSVG from '~/components/MapSVG';
-import { ErrorBoundary } from '~/components/ErrorBoundary';
 
 export async function loader() {
   // Preload the SVG file to improve initial loading performance
@@ -436,13 +435,11 @@ useEffect(() => {
               marginTop={0}
             />
             <div style={{position: 'relative'}} ref={mapRef}>
-              <ErrorBoundary>
-                <MapSVG
-                  svgPath={svgPath}
-                  onPinClick={handlePinClick}
-                  startAnimation={hasSvgAnimated}
-                />
-              </ErrorBoundary>
+              <MapSVG
+                svgPath={svgPath}
+                onPinClick={handlePinClick}
+                startAnimation={hasSvgAnimated}
+              />
             </div>
             <MarqueeHeader
               text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
