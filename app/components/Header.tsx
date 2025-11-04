@@ -46,6 +46,14 @@ const Header: React.FC = () => {
     if (revalidator.state === "idle") {
       revalidator.revalidate();
     }
+    // Close search modal if it's open
+    if (isSearchOpen) {
+      setIsSearchOpen(false);
+    }
+    // Close menu if it's open
+    if (isMenuOpen) {
+      setIsMenuOpen(false);
+    }
   };
 
   const handleLanguageSelect = (language: string) => {
@@ -88,17 +96,13 @@ const Header: React.FC = () => {
     shop.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const [selectedShop, setSelectedShop] = useState<{id: string, name: string} | null>(null);
+
   const handleShopClick = (shopId: string, shopName: string) => {
-    navigate("/ShopDetails", {
-      state: {
-        shop: {
-          id: shopId,
-          title: shopName,
-        },
-      },
-    });
-    setIsSearchOpen(false);
-    setSearchQuery("");
+    // Put shop name in search input and store shop data
+    setSearchQuery(shopName);
+    setSelectedShop({id: shopId, name: shopName});
+    // Keep search window open - don't close automatically
   };
 
   useEffect(() => {
@@ -387,49 +391,173 @@ const Header: React.FC = () => {
         </div>
       )}
 
-      {/* Search Modal */}
+      {/* Search Model */}
       {isSearchOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-full h-full flex flex-col items-center justify-center p-6">
-            <div
-              className="font-bold font-cousine cursor-pointer mb-6"
-              style={{ fontSize: isMobile ? fsm(25) : fs(25) }}
-              onClick={handleHomeClick}
-            >
-              SUGAMO NAVI
-            </div>
-            <div className="flex justify-center mb-6">
+        <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+          <div className="w-full h-full flex flex-col items-center justify-center p-6 relative">
+            {isMobile ? (
+              <div className="absolute top-0 left-0 w-full flex items-center justify-between pt-4 px-4">
+                <div className="relative flex items-center justify-center">
+                  <img
+                    src="/src/world.svg"
+                    alt="World Icon"
+                    className="cursor-pointer transition-transform duration-300 hover:scale-110"
+                    style={{
+                      width: fsm(37),
+                      height: fsm(37),
+                    }}
+                    onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                  />
+                  {isLanguageDropdownOpen && (
+                    <div
+                      className="absolute top-0 left-0 flex flex-col items-center justify-start bg-white border rounded-full shadow-md z-10"
+                      style={{
+                        borderRadius: fsm(30),
+                        width: fsm(40),
+                        height: fsm(128),
+                      }}
+                    >
+                      <div
+                        className="flex justify-center rounded-full cursor-pointer"
+                        onClick={() => setIsLanguageDropdownOpen(false)}
+                      >
+                        <img
+                          src="/src/world.svg"
+                          alt="World Icon"
+                          style={{ height: fsm(20), width: fsm(20) }}
+                        />
+                      </div>
+                      {["JA", "EN", "ZH"].map((lang) => (
+                        <div
+                          key={lang}
+                          onClick={() => handleLanguageSelect(lang)}
+                          className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${
+                            selectedLanguage === lang
+                              ? "bg-black text-white"
+                              : "border border-black text-black"
+                          } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
+                          style={{
+                            height: fsm(27),
+                            width: fsm(27),
+                            fontSize: fsm(12),
+                          }}
+                        >
+                          {lang}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div
+                  className="font-bold font-cousine cursor-pointer absolute left-1/2 transform -translate-x-1/2"
+                  style={{ 
+                    fontSize: fsm(25),
+                    fontWeight: 700,
+                    color: '#000000'
+                  }}
+                  onClick={handleHomeClick}
+                >
+                  SUGAMO NAVI
+                </div>
+                <img
+                  src="/src/cross.svg"
+                  alt="Close"
+                  className="cursor-pointer transition-transform duration-300 hover:scale-110"
+                  style={{
+                    width: fsm(20),
+                    height: fsm(20),
+                  }}
+                  onClick={() => setIsSearchOpen(false)}
+                />
+              </div>
+            ) : (
               <div
-                className="flex items-center justify-center rounded-full border-2 border-black overflow-hidden"
+                className="font-bold font-cousine cursor-pointer"
+                style={{ 
+                  height: fs(100),
+                  fontSize: fs(61.4),
+                  fontWeight: 700,
+                  color: '#000000'
+                }}
+                onClick={handleHomeClick}
+              >
+                SUGAMO NAVI
+              </div>
+            )}
+            <div className="flex justify-center">
+              <div
+                className="flex items-center justify-center border-2 border-black overflow-hidden"
                 style={{
-                  width: isMobile ? fsm(300) : fs(600),
-                  height: isMobile ? fsm(40) : fs(60),
+                  width: isMobile ? fsm(400) : fs(950),
+                  height: isMobile ? fsm(65) : fs(108),
+                  borderRadius: isMobile ? fsm(172.5) : fs(172.5),
                 }}
               >
                 <img
-                  src="/src/icons8-search.gif"
+                  src="/src/icons8-search.png"
                   alt="Search Icon"
+                  className=""
                   style={{
-                    height: isMobile ? fsm(19) : fs(25),
-                    width: isMobile ? fsm(19) : fs(25),
+                    height: isMobile ? fsm(19.5) : fs(54),
+                    width: isMobile ? fsm(19.5) : fs(55),
                     marginLeft: isMobile ? fsm(20) : fs(30),
                   }}
                 />
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search shops..."
-                  className="w-full h-full bg-transparent border-none focus:outline-none font-cousine font-bold pl-3"
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setSelectedShop(null); // Clear selected shop when manually typing
+                  }}
+                  placeholder="ブーランジェリーボヌール"
+                  className="w-full h-full bg-transparent border-none focus:outline-none font-cousine pl-3"
                   style={{
-                    fontSize: isMobile ? fsm(18) : fs(20),
+                    fontSize: isMobile ? fsm(16) : fs(25),
+                    fontFamily: 'Cousine',
+                    fontWeight: 700,
+                    color: '#000000',
                   }}
                 />
+                <span
+                  className="cursor-pointer hover:scale-110 transition-transform duration-200 font-bold select-none"
+                  style={{
+                    fontSize: isMobile ? fsm(23) : fs(50),
+                    marginRight: isMobile ? fsm(20) : fs(30),
+                    color: '#000000',
+                    lineHeight: 1,
+                  }}
+                  onClick={() => {
+                    if (selectedShop) {
+                      // Open selected shop in new window
+                      window.open(`/ShopDetails?id=${selectedShop.id}&type=shops`, '_blank');
+                    } else {
+                      // Focus search input if no shop selected
+                      const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+                      if (searchInput) {
+                        searchInput.focus();
+                      }
+                    }
+                  }}
+                >
+                  →
+                </span>
               </div>
             </div>
             <ul
-              className="space-y-2 bg-[#F7F7F7] text-center p-4 rounded-lg"
-              style={{ width: isMobile ? fsm(300) : fs(500) }}
+              className={`space-y-2 bg-[#F7F7F7] text-left rounded-lg ${
+                searchQuery && filteredShops.length > 6 ? 'overflow-y-auto' : 'overflow-hidden'
+              }`}
+              style={{ 
+                width: isMobile ? fsm(360) : fs(860),
+                height: isMobile ? fsm(309) : fs(258),
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+                borderBottomLeftRadius: isMobile ? fsm(30) : fs(30),
+                borderBottomRightRadius: isMobile ? fsm(30) : fs(30),
+                padding: `${isMobile ? fsm(8) : fs(18)} ${isMobile ? fsm(16) : fs(16)} ${isMobile ? fsm(16) : fs(16)} ${isMobile ? fsm(16) : fs(16)}`,
+                
+              }}
             >
               {loadingShops ? (
                 <li className="text-gray-700">Loading shops...</li>
@@ -439,10 +567,16 @@ const Header: React.FC = () => {
                 filteredShops.map((shop) => (
                   <li
                     key={shop.id}
-                    className="text-gray-700 cursor-pointer hover:bg-gray-200 p-2 rounded"
+                    className=" font-Cousine font-bold cursor-pointer hover:bg-gray-200 hover:text-black active:bg-black active:text-white transition-colors duration-200"
+                    style={{ 
+                      fontSize: isMobile ? fsm(16) : fs(20),
+                      fontWeight: 700,
+                      color:'#878787',
+                      paddingLeft: isMobile ? fsm(10) : fs(40),
+                    }}
                     onClick={() => handleShopClick(shop.id, shop.name)}
                   >
-                    {shop.name}
+                    # {shop.name}
                   </li>
                 ))
               ) : (
@@ -451,14 +585,16 @@ const Header: React.FC = () => {
                 </li>
               )}
             </ul>
-            <div className="mt-6">
-              <button
-                className="w-auto px-12 py-2 bg-black text-white rounded-3xl hover:bg-black transition-transform duration-300 hover:scale-105"
-                onClick={() => setIsSearchOpen(false)}
-              >
-                Close
-              </button>
-            </div>
+            {!isMobile && (
+              <div className="mt-6">
+                <button
+                  className="w-auto px-12 py-2 bg-black text-white rounded-3xl hover:bg-black transition-transform duration-300 hover:scale-105"
+                  onClick={() => setIsSearchOpen(false)}
+                >
+                  閉じる
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
