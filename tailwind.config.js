@@ -131,6 +131,7 @@ export default {
       addUtilities(utilities)
     }),
       require("tailwindcss-animate"),
-      require('@tailwindcss/line-clamp'),
+      // Note: @tailwindcss/line-clamp is deprecated and built into Tailwind CSS 3.3+
+      // Use built-in line-clamp utilities instead: line-clamp-1, line-clamp-2, etc.
 ],
 }

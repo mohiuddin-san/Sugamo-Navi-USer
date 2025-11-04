@@ -108,9 +108,6 @@ importers:
       '@remix-run/dev':
         specifier: ^2.17.1
         version: 2.17.1(@remix-run/react@2.17.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2))(@remix-run/serve@2.17.0(typescript@5.9.2))(@types/node@24.5.2)(typescript@5.9.2)(vite@5.4.20(@types/node@24.5.2))
-      '@tailwindcss/line-clamp':
-        specifier: ^0.4.4
-        version: 0.4.4(tailwindcss@3.4.17)
       '@types/luxon':
         specifier: ^3.7.1
         version: 3.7.1
@@ -965,11 +962,6 @@ packages:
 
   '@supabase/supabase-js@2.57.4':
     resolution: {integrity: sha512-LcbTzFhHYdwfQ7TRPfol0z04rLEyHabpGYANME6wkQ/kLtKNmI+Vy+WEM8HxeOZAtByUFxoUTTLwhXmrh+CcVw==}
-
-  '@tailwindcss/line-clamp@0.4.4':
-    resolution: {integrity: sha512-5U6SY5z8N42VtrCrKlsTAA35gy2VSyYtHWCsg1H87NU1SXnEfekTVlrga9fzUDrrHcGi2Lb5KenUWb4lRQT5/g==}
-    peerDependencies:
-      tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
 
   '@turf/along@7.2.0':
     resolution: {integrity: sha512-Cf+d2LozABdb0TJoIcJwFKB+qisJY4nMUW9z6PAuZ9UCH7AR//hy2Z06vwYCKFZKP4a7DRPkOMBadQABCyoYuw==}
@@ -5590,10 +5582,6 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
-
-  '@tailwindcss/line-clamp@0.4.4(tailwindcss@3.4.17)':
-    dependencies:
-      tailwindcss: 3.4.17
 
   '@turf/along@7.2.0':
     dependencies:
