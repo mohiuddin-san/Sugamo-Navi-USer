@@ -1,24 +1,32 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
 import { DeviceProvider } from "~/routes/contexts/DeviceContext";
+import { useLocation } from "@remix-run/react";
 import { useEffect } from "react";
 import "~/styles/app.css";
 
-export const links = () => [
-  { rel: "stylesheet", href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Sawarabi+Gothic&family=Cairo:wght@400;500;600;700&family=Courier+Prime&family=Cousine&display=swap",
-  },
-  { rel: "preload", href: "~/styles/app.css", as: "style" },
-  { rel: "preload", href: "https://cdn.example.com/sugamo-navi.webp", as: "image" },
-  { rel: "preload", href: "/src/map-pin.svg", as: "image", type: "image/svg+xml" },
-];
+// View Transition Wrapper
+function ViewTransitionOutlet() {
+  const location = useLocation();
 
-export const meta = () => [
-  { charset: "utf-8" },
-  { title: "Sugamo Navi" },
-  { name: "viewport", content: "width=device-width, initial-scale=1" },
-];
+  useEffect(() => {
+    if (!document.startViewTransition) {
+      return;
+    }
+
+    // প্রতিবার location চেঞ্জ হলে ট্রানজিশন শুরু
+    const transition = document.startViewTransition(() => {
+      // কিছু করার দরকার নেই – Remix নিজেই রিঅ্যাক্ট করবে
+    });
+
+    return () => {
+      transition.finished.then(() => {
+        // ট্রানজিশন শেষ হলে স্ক্রল রিস্টোর করো
+      });
+    };
+  }, [location]);
+
+  return <Outlet />;
+}
 
 export default function App() {
   return (
@@ -29,7 +37,7 @@ export default function App() {
       </head>
       <body>
         <DeviceProvider>
-          <Outlet />
+          <ViewTransitionOutlet /> {/* এখানে Outlet wrap করলাম */}
         </DeviceProvider>
         <ScrollRestoration />
         <Scripts />
