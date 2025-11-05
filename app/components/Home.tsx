@@ -98,10 +98,6 @@ export default function HomePage() {
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState<Blog[]>([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [blogsError, setBlogsError] = useState<string | null>(null);
-
-  // States for animations
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [hasShownCelebration, setHasShownCelebration] = useState(false);
   const firstPlaceRef = useRef<HTMLDivElement>(null);
   const [isLetsGoVisible, setIsLetsGoVisible] = useState(false);
   const letsGoRef = useRef<HTMLDivElement>(null);
@@ -190,36 +186,7 @@ export default function HomePage() {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
     };
-  }, [mounted]); // শুধু mounted dependency
-
-  // Celebration GIF
-  useEffect(() => {
-    if (!firstPlaceRef.current || topShops.length === 0) return;
-
-    const handleScroll = () => {
-      if (!firstPlaceRef.current) return;
-      const rect = firstPlaceRef.current.getBoundingClientRect();
-      const isVisible = rect.top < window.innerHeight * 0.7 && rect.bottom > 0;
-
-      if (isVisible && !hasShownCelebration) {
-        setShowCelebration(true);
-        setHasShownCelebration(true);
-        setTimeout(() => {
-          setShowCelebration(false);
-        }, 4000);
-      } else if (!isVisible && hasShownCelebration) {
-        setHasShownCelebration(false); // Reset when out of view
-      }
-    };
-
-    const timeoutId = setTimeout(handleScroll, 100);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [topShops, hasShownCelebration]);
+  }, [mounted]);
 
   useEffect(() => {
     const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedBlogs") || "[]");
@@ -615,36 +582,11 @@ export default function HomePage() {
                 className="flex flex-col items-center transform order-1 md:order-2 relative"
                 style={{ gap: isMobile ? fsm(16) : fs(25) }}
               >
-                {showCelebration && (
-                  <div
-                    className="absolute inset-0 z-[60] flex items-center justify-center pointer-events-none"
-                    style={{
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                    }}
-                  >
-                    <img
-                      src="./src/congratulations-13773_512.gif"
-                      alt="Celebration"
-                      className="object-contain"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        maxWidth: isMobile ? fsm(350) : fs(500),
-                        maxHeight: isMobile ? fsm(500) : fs(650),
-                        objectFit: 'cover'
-
-                      }}
-                    />
-                  </div>
-                )}
                 <img
                   src="./src/first.svg"
                   alt="First Place"
                   style={{ width: autoSize(116), height: autoSize(113) }}
-                  className={`object-cover rounded-lg ${showCelebration ? 'animate-bounce-scale' : ''}`}
+                  className={`object-cover rounded-lg`}
                 />
                 <ProductCard
                   title={topShops[0]?.name || "ブーランジェリーボヌール"}

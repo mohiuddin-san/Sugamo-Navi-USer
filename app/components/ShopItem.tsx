@@ -46,6 +46,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
   const [likesCount, setLikesCount] = useState<number>(initialLikes);
   const [hasLoved, setHasLoved] = useState<boolean>(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const placeholder = '/src/sugamonavi.jpg';
 
   useEffect(() => {
     if (!['shop', 'place'].includes(type)) {
@@ -53,14 +55,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
       return;
     }
 
-    // Unified bookmark check
+    // Bookmark check
     const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
     if (savedBookmarks[id]) {
       setIsBookmarked(true);
-      console.log(`ProductCard: Bookmark found for ${type} id: ${id}`);
     }
 
-    // Unified love check
+    // Love check
     const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
     if (lovedItems[id]) {
       setHasLoved(true);
@@ -88,16 +89,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleLoveIncrement = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!id) {
-      console.error('ProductCard: No id provided for love increment');
-      alert('Cannot like item: Invalid ID');
-      return;
-    }
+    if (!id) return alert('Cannot like item: Invalid ID');
 
-    if (hasLoved) {
-      console.log('ProductCard: Already loved, ignoring increment');
-      return;
-    }
+    if (hasLoved) return;
 
     try {
       let rpcName, param;
@@ -109,42 +103,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
         param = { place_id: id };
       }
 
-      const { error, data } = await supabase.rpc(rpcName, param);
+      const { error } = await supabase.rpc(rpcName, param);
+      if (error) throw error;
 
-      if (error) {
-        console.error('ProductCard: RPC error:', error);
-        alert(`Failed to like ${type}: ${error.message}`);
-        return;
-      }
-
-      console.log('ProductCard: RPC success:', data);
       setLikesCount(prev => prev + 1);
       setHasLoved(true);
 
-      // Unified localStorage
       const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
       lovedItems[id] = true;
       localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
-
-      console.log(`ProductCard: Successfully liked ${type} id: ${id}, new likes: ${likesCount + 1}`);
     } catch (err) {
-      console.error('ProductCard: Unexpected error in increment:', err);
-      alert('Failed to like item: Unexpected error');
+      console.error(err);
+      alert('Failed to like item');
     }
   };
 
   const handleLoveDecrement = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!id) {
-      console.error('ProductCard: No id provided for love decrement');
-      alert('Cannot unlike item: Invalid ID');
-      return;
-    }
-
-    if (!hasLoved) {
-      console.log('ProductCard: Not loved yet, ignoring decrement');
-      return;
-    }
+    if (!id) return alert('Cannot unlike item: Invalid ID');
+    if (!hasLoved) return;
 
     try {
       let rpcName, param;
@@ -156,43 +133,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
         param = { place_id: id };
       }
 
-      const { error, data } = await supabase.rpc(rpcName, param);
+      const { error } = await supabase.rpc(rpcName, param);
+      if (error) throw error;
 
-      if (error) {
-        console.error('ProductCard: RPC error:', error);
-        alert(`Failed to unlike ${type}: ${error.message}`);
-        return;
-      }
-
-      console.log('ProductCard: RPC success:', data);
       setLikesCount(prev => Math.max(prev - 1, 0));
       setHasLoved(false);
 
-      // Unified localStorage
       const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
       delete lovedItems[id];
       localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
-
-      console.log(`ProductCard: Successfully unliked ${type} id: ${id}, new likes: ${Math.max(likesCount - 1, 0)}`);
     } catch (err) {
-      console.error('ProductCard: Unexpected error in decrement:', err);
-      alert('Failed to unlike item: Unexpected error');
+      console.error(err);
+      alert('Failed to unlike item');
     }
   };
 
   const handleBookmarkClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!id) {
-      console.error('ProductCard: No id provided for bookmark');
-      alert('Cannot bookmark item: Invalid ID');
-      return;
-    }
-
-    if (!['shop', 'place'].includes(type)) {
-      console.error('ProductCard: Invalid type for bookmark:', type);
-      alert('Cannot bookmark item: Invalid type');
-      return;
-    }
+    if (!id) return alert('Cannot bookmark item: Invalid ID');
+    if (!['shop', 'place'].includes(type)) return alert('Invalid type');
 
     const productData = {
       id,
@@ -211,19 +170,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
       opening_hours: opening_hours || '',
     };
 
-    // Unified key
     const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
 
     if (isBookmarked) {
       delete savedBookmarks[id];
       localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
       setIsBookmarked(false);
-      console.log(`ProductCard: Removed bookmark for ${type} id: ${id}`);
     } else {
       savedBookmarks[id] = productData;
       localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
       setIsBookmarked(true);
-      console.log(`ProductCard: Added bookmark for ${type} id: ${id}`);
     }
   };
 
@@ -248,25 +204,43 @@ const ProductCard: React.FC<ProductCardProps> = ({
             display: 'block',
             paddingLeft: isMobile ? fsm(9) : fs(25),
             paddingRight: isMobile ? fsm(9) : fs(25),
-            justifyContent: 'center',
             lineHeight: '1.2',
           }}
         >
           {title || 'Untitled'}
         </h1>
+      </div>
+<div
+  className="relative flex items-center justify-center bg-white border-t-2 border-b-2 border-l-0 border-r-0 border-black overflow-hidden"
+  style={{ height: isMobile ? fsm(148) : fs(210) }}
+>
+  {/* Placeholder (always centered, never cropped) */}
+  {!imageLoaded && (
+    <img
+      src={placeholder}
+      alt="Placeholder"
+      className="absolute inset-0 w-auto h-auto max-w-[80%] max-h-[80%] object-contain m-auto"
+      style={{ transition: 'opacity 0.3s ease' }}
+    />
+  )}
 
-      </div>
-      <div className="relative">
-        <img
-          src={imageUrl || (type === 'place' ? '/src/see-do.png' : '/src/shop.png')}
-          alt={title || 'Item'}
-          className="w-full object-cover border-t-2 border-b-2 border-l-0 border-r-0 border-black"
-          style={{ height: isMobile ? fsm(148) : fs(210) }}
-          onError={(e) => {
-            e.currentTarget.src = type === 'place' ? '/src/see-do.png' : '/src/shop.png';
-          }}
-        />
-      </div>
+  {/* Real image (fills the box) */}
+  <img
+    src={
+      imageUrl || (type === 'place' ? '/src/see-do.png' : '/src/shop.png')
+    }
+    alt={title || 'Item'}
+    className={`w-full h-full object-cover transition-opacity duration-300 ${
+      imageLoaded ? 'opacity-100' : 'opacity-0'
+    }`}
+    onLoad={() => setImageLoaded(true)}
+    onError={(e) => {
+      e.currentTarget.src = type === 'place' ? '/src/see-do.png' : '/src/shop.png';
+    }}
+  />
+</div>
+
+
       <div
         className="flex flex-col md:flex-row justify-center items-center md:justify-between"
         style={{
@@ -289,6 +263,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         >
           {getCategoryName(category_id)}
         </button>
+
         <div
           className="flex"
           style={{ marginTop: isMobile ? fsm(15) : fs(0), gap: isMobile ? fsm(16) : fs(16) }}
@@ -315,8 +290,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
               {likesCount || 0}
             </p>
           </span>
-          <span className="flex items-center" style={{ gap: isMobile ? fsm(5) : fs(5) }}
-          >
+
+          <span className="flex items-center" style={{ gap: isMobile ? fsm(5) : fs(5) }}>
             <img
               src="/src/eye.svg"
               alt="Views"
@@ -329,6 +304,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               {views || 0}
             </p>
           </span>
+
           <span className="flex items-center">
             <img
               src={isBookmarked ? '/src/bookmark-filled.svg' : '/src/bookmark.svg'}
@@ -343,6 +319,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </span>
         </div>
       </div>
+
       <div
         className="flex flex-col justify-between"
         style={{ paddingBottom: isMobile ? fsm(10) : fs(16), marginTop: fs(29), height: fs(132) }}

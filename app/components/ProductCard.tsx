@@ -53,6 +53,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [likes, setLikes] = useState<number>(initialLikes);
   const [hasLoved, setHasLoved] = useState<boolean>(false);
   const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     console.log('ProductCard: Initializing for shopId:', shopId, 'initialLikes:', initialLikes);
@@ -247,12 +248,33 @@ const ProductCard: React.FC<ProductCardProps> = ({
       >
         {title || 'No Title Available'}
       </h1>
-      <img
-        src={imageUrl || '/src/shop.png'}
-        alt={title}
-        className="w-full object-cover"
+      {/* ✅ Image section with placeholder */}
+      <div
+        className="relative flex items-center justify-center bg-white overflow-hidden"
         style={{ height: isMobile ? fsm(210) : fs(imageHeight) }}
-      />
+      >
+        {/* Placeholder image (shows full logo) */}
+        {!imageLoaded && (
+          <img
+            src="/src/sugamonavi.jpg" // your logo placeholder
+            alt="Placeholder"
+            className="absolute inset-0 w-auto h-auto max-w-[80%] max-h-[80%] object-contain m-auto transition-opacity duration-500"
+          />
+        )}
+
+        {/* Main image */}
+        <img
+          src={imageUrl || (type === 'travels' ? '/src/see-do.png' : '/src/shop.png')}
+          alt={title || 'Image'}
+          className={`w-full h-full object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          onLoad={() => setImageLoaded(true)}
+          onError={(e) => {
+            e.currentTarget.src = type === 'travels' ? '/src/see-do.png' : '/src/shop.png';
+          }}
+        />
+      </div>
+
       <div
         className="flex justify-between"
         style={{
