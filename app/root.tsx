@@ -4,29 +4,24 @@ import { useLocation } from "@remix-run/react";
 import { useEffect } from "react";
 import "~/styles/app.css";
 
-// View Transition Wrapper
 function ViewTransitionOutlet() {
   const location = useLocation();
 
   useEffect(() => {
-    if (!document.startViewTransition) {
-      return;
-    }
+    if (!document.startViewTransition) return;
 
-    // প্রতিবার location চেঞ্জ হলে ট্রানজিশন শুরু
-    const transition = document.startViewTransition(() => {
-      // কিছু করার দরকার নেই – Remix নিজেই রিঅ্যাক্ট করবে
-    });
-
+    const transition = document.startViewTransition(() => {});
     return () => {
-      transition.finished.then(() => {
-        // ট্রানজিশন শেষ হলে স্ক্রল রিস্টোর করো
-      });
+      transition.finished.then(() => {});
     };
   }, [location]);
 
   return <Outlet />;
 }
+
+export const links = () => [
+  { rel: "icon", href: "/favicon-v2.ico" },
+];
 
 export default function App() {
   return (
@@ -37,7 +32,7 @@ export default function App() {
       </head>
       <body>
         <DeviceProvider>
-          <ViewTransitionOutlet /> {/* এখানে Outlet wrap করলাম */}
+          <ViewTransitionOutlet />
         </DeviceProvider>
         <ScrollRestoration />
         <Scripts />
