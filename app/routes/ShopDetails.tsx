@@ -22,6 +22,7 @@ interface Shop {
   other_images?: string[];
   opening_hours?: string;
   category?: string;
+  website_url?: string;
 }
 
 interface LoaderData {
@@ -59,7 +60,7 @@ export async function loader({ request }: { request: Request }) {
   }
 
   const table = type === 'places' ? 'tourist_places' : 'shops';
-  const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours';
+  const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours,website_url';
 
   try {
     console.log(`Loader: Fetching from ${table} with id: ${id}`);
@@ -115,6 +116,7 @@ export async function loader({ request }: { request: Request }) {
           other_images: parseOtherImages(itemData.other_images) || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
           likes: itemData.love_count || 0,
           views: itemData.review_count || 0,
+          website_url: itemData.website_url || 'https://example.com',
         },
         products: [],
         error: `Failed to fetch related ${type}s: ${relatedError.message}`,
@@ -138,6 +140,7 @@ export async function loader({ request }: { request: Request }) {
         other_images: parseOtherImages(itemData.other_images) || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
         likes: itemData.love_count || 0,
         views: itemData.review_count || 0,
+        website_url: itemData.website_url || 'https://example2.com',
       },
       products: relatedData.map((item) => ({
         id: item.id,
@@ -153,6 +156,7 @@ export async function loader({ request }: { request: Request }) {
         opening_hours: item.opening_hours,
         category_id: item.category_id,
         category: categoryName,
+        website_url: item.website_url || 'https://example3.com',
       })),
       type,
       error: null,
@@ -188,6 +192,7 @@ export default function ShopDetails() {
         category_id: shopFromState.category_id || 'Unknown',
         opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
         category: shopFromState.category || 'No Category',
+        website_url: shopFromState.website_url || 'https://example.com',
       }
       : menu
         ? {
@@ -204,6 +209,7 @@ export default function ShopDetails() {
           other_images: menu.other_images,
           opening_hours: menu.hours,
           category: menu.category,
+          website_url: menu.website_url || 'https://example.com',
         }
         : null
   );
@@ -465,6 +471,7 @@ export default function ShopDetails() {
             category_id: shopData.category_id || 'Unknown',
             category: categoryName,
             opening_hours: shopData.opening_hours || 'OPEN 10:00 ~ 22:00',
+
           };
 
           setShop(newShop);
@@ -642,7 +649,7 @@ export default function ShopDetails() {
                 <div className="flex space-x-2 ml-auto">
                   <div className="flex flex-wrap gap-2">
                     {(getCategoryName(shop.category_id) || "Shop")
-                      .split("、") 
+                      .split("、")
                       .map((category: string, index: React.Key | null | undefined) => (
                         <button
                           key={index}
@@ -741,35 +748,55 @@ export default function ShopDetails() {
                   Near: {shop.near_station || 'Not available'}
                 </p>
               </div>
-              <a href={shop.map_embed || '#'} target="_blank" rel="noopener noreferrer">
-                <img className="text-yellow-500 text-lg" src="/src/link_url.png" alt="Link Icon" />
+              
+              <a
+                href={shop.website_url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img src="/src/link_url.png" alt="Link Icon" />
               </a>
+
             </div>
           </div>
         </div>
       </div>
       {!isMobile && shop.other_images && shop.other_images.length > 0 && (
-        <div style={{ paddingLeft: fs(90), paddingRight: fs(90), marginTop: fs(90) }}>
-          <div className="flex space-x-4 overflow-x-auto">
-            {shop.other_images.map((image, index) => (
-              <div
-                key={index}
-                style={{ minWidth: isMobile ? fsm(117) : fs(358) }}
-              >
-                <img
-                  src={image}
-                  alt={`Related Item ${index + 1}`}
-                  className="w-full h-auto"
-                  style={{ maxHeight: isMobile ? fsm(88) : fs(270) }}
-                  onError={(e) => {
-                    e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png';
-                  }}
-                />
-              </div>
-            ))}
-          </div>
+  <div style={{ paddingLeft: fs(90), paddingRight: fs(90), marginTop: fs(90) }}>
+    <div 
+      className="flex space-x-4 overflow-x-auto"
+      style={{
+        scrollbarWidth: 'none', /* Firefox */
+        msOverflowStyle: 'none', /* IE and Edge */
+      }}
+   
+    >
+      {shop.other_images.map((image, index) => (
+        <div
+          key={index}
+          style={{ 
+            minWidth: isMobile ? fsm(117) : fs(358),
+            flexShrink: 0, // যেন width কমে না যায়
+          }}
+        >
+          <img
+            src={image}
+            alt={`Related Item ${index + 1}`}
+            className="w-full h-full object-cover rounded-lg"
+            style={{ 
+              maxHeight: isMobile ? fsm(88) : fs(270),
+              height: isMobile ? fsm(88) : fs(270), // fixed height
+              minHeight: isMobile ? fsm(88) : fs(270),
+            }}
+            onError={(e) => {
+              e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png';
+            }}
+          />
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
       {shop.map_embed && (
         <div>
           <div
@@ -890,3 +917,6 @@ export function ErrorBoundary() {
     </div>
   );
 }
+
+
+

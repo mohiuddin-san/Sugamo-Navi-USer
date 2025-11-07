@@ -241,7 +241,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
 
       <div
-        className="flex flex-col md:flex-row justify-center items-center md:justify-between"
+        className="flex flex-col md:flex-row md:justify-between md:items-start"
         style={{
           paddingLeft: isMobile ? fsm(14) : fs(19),
           paddingTop: isMobile ? fsm(10) : fs(12),
@@ -250,7 +250,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       >
         <div className="flex flex-wrap gap-2">
           {getCategoryName(category_id)
-            ?.split("、") // "、" দিয়ে স্প্লিট করা হচ্ছে (Japanese comma)
+            ?.split("、") 
             .map((category: string, index: React.Key | null | undefined) => (
               <button
                 key={index}

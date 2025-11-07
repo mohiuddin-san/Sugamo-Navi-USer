@@ -248,21 +248,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
       >
         {title || 'No Title Available'}
       </h1>
-      {/* ✅ Image section with placeholder */}
       <div
         className="relative flex items-center justify-center bg-white overflow-hidden"
         style={{ height: isMobile ? fsm(210) : fs(imageHeight) }}
       >
-        {/* Placeholder image (shows full logo) */}
         {!imageLoaded && (
           <img
-            src="/src/sugamonavi.jpg" // your logo placeholder
+            src="/src/sugamonavi.jpg"
             alt="Placeholder"
             className="absolute inset-0 w-auto h-auto max-w-[80%] max-h-[80%] object-contain m-auto transition-opacity duration-500"
           />
         )}
-
-        {/* Main image */}
         <img
           src={imageUrl || (type === 'travels' ? '/src/see-do.png' : '/src/shop.png')}
           alt={title || 'Image'}
@@ -285,13 +281,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
       >
         <div className="flex flex-wrap gap-2">
           {(getCategoryName(category_id) || "Shop")
-            .split("、") // Japanese comma দিয়ে ভাগ করা
+            .split("、")
             .map((category: string, index: React.Key | null | undefined) => (
               <button
                 key={index}
                 className="bg-[#ED4548] text-white font-bold rounded-full italic font-cairo text-center"
                 style={{
-                  width: isMobile ? fsm(92) : fs(92),
+                  width: "auto",
                   minWidth: isMobile ? fsm(72) : fs(72),
                   height: isMobile ? fsm(22) : fs(22),
                   minHeight: isMobile ? fsm(17) : fs(17),
