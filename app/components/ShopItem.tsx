@@ -210,35 +210,34 @@ const ProductCard: React.FC<ProductCardProps> = ({
           {title || 'Untitled'}
         </h1>
       </div>
-<div
-  className="relative flex items-center justify-center bg-white border-t-2 border-b-2 border-l-0 border-r-0 border-black overflow-hidden"
-  style={{ height: isMobile ? fsm(148) : fs(210) }}
->
-  {/* Placeholder (always centered, never cropped) */}
-  {!imageLoaded && (
-    <img
-      src={placeholder}
-      alt="Placeholder"
-      className="absolute inset-0 w-auto h-auto max-w-[80%] max-h-[80%] object-contain m-auto"
-      style={{ transition: 'opacity 0.3s ease' }}
-    />
-  )}
+      <div
+        className="relative flex items-center justify-center bg-white border-t-2 border-b-2 border-l-0 border-r-0 border-black overflow-hidden"
+        style={{ height: isMobile ? fsm(148) : fs(210) }}
+      >
+        {/* Placeholder (always centered, never cropped) */}
+        {!imageLoaded && (
+          <img
+            src={placeholder}
+            alt="Placeholder"
+            className="absolute inset-0 w-auto h-auto max-w-[80%] max-h-[80%] object-contain m-auto"
+            style={{ transition: 'opacity 0.3s ease' }}
+          />
+        )}
 
-  {/* Real image (fills the box) */}
-  <img
-    src={
-      imageUrl || (type === 'place' ? '/src/see-do.png' : '/src/shop.png')
-    }
-    alt={title || 'Item'}
-    className={`w-full h-full object-cover transition-opacity duration-300 ${
-      imageLoaded ? 'opacity-100' : 'opacity-0'
-    }`}
-    onLoad={() => setImageLoaded(true)}
-    onError={(e) => {
-      e.currentTarget.src = type === 'place' ? '/src/see-do.png' : '/src/shop.png';
-    }}
-  />
-</div>
+        {/* Real image (fills the box) */}
+        <img
+          src={
+            imageUrl || (type === 'place' ? '/src/see-do.png' : '/src/shop.png')
+          }
+          alt={title || 'Item'}
+          className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          onLoad={() => setImageLoaded(true)}
+          onError={(e) => {
+            e.currentTarget.src = type === 'place' ? '/src/see-do.png' : '/src/shop.png';
+          }}
+        />
+      </div>
 
 
       <div
@@ -249,20 +248,28 @@ const ProductCard: React.FC<ProductCardProps> = ({
           paddingRight: isMobile ? fsm(14) : fs(19),
         }}
       >
-        <button
-          className="bg-[#ED4548] text-white rounded-full italic font-cairo text-center"
-          style={{
-            width: "auto",
-            minWidth: isMobile ? fsm(72) : fs(72),
-            height: isMobile ? fsm(22) : fs(22),
-            minHeight: isMobile ? fsm(17) : fs(17),
-            paddingLeft: isMobile ? fsm(10) : fs(10),
-            paddingRight: isMobile ? fsm(10) : fs(10),
-            fontSize: isMobile ? fsm(12) : fs(12),
-          }}
-        >
-          {getCategoryName(category_id)}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {getCategoryName(category_id)
+            ?.split("、") // "、" দিয়ে স্প্লিট করা হচ্ছে (Japanese comma)
+            .map((category: string, index: React.Key | null | undefined) => (
+              <button
+                key={index}
+                className="bg-[#ED4548] text-white rounded-full italic font-cairo text-center"
+                style={{
+                  width: "auto",
+                  minWidth: isMobile ? fsm(72) : fs(72),
+                  height: isMobile ? fsm(22) : fs(22),
+                  minHeight: isMobile ? fsm(17) : fs(17),
+                  paddingLeft: isMobile ? fsm(10) : fs(10),
+                  paddingRight: isMobile ? fsm(10) : fs(10),
+                  fontSize: isMobile ? fsm(12) : fs(12),
+                }}
+              >
+                {category.trim()}
+              </button>
+            ))}
+        </div>
+
 
         <div
           className="flex"

@@ -283,18 +283,26 @@ const ProductCard: React.FC<ProductCardProps> = ({
           paddingRight: isMobile ? fsm(14) : fs(19),
         }}
       >
-        <button
-          className="bg-[#ED4548] text-white font-bold rounded-full italic font-cairo text-center"
-          style={{
-            width: isMobile ? fsm(92) : fs(92),
-            minWidth: isMobile ? fsm(72) : fs(72),
-            height: isMobile ? fsm(22) : fs(22),
-            minHeight: isMobile ? fsm(17) : fs(17),
-            fontSize: isMobile ? fsm(13) : fs(13),
-          }}
-        >
-          {getCategoryName(category_id) || 'Shop'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {(getCategoryName(category_id) || "Shop")
+            .split("、") // Japanese comma দিয়ে ভাগ করা
+            .map((category: string, index: React.Key | null | undefined) => (
+              <button
+                key={index}
+                className="bg-[#ED4548] text-white font-bold rounded-full italic font-cairo text-center"
+                style={{
+                  width: isMobile ? fsm(92) : fs(92),
+                  minWidth: isMobile ? fsm(72) : fs(72),
+                  height: isMobile ? fsm(22) : fs(22),
+                  minHeight: isMobile ? fsm(17) : fs(17),
+                  fontSize: isMobile ? fsm(13) : fs(13),
+                }}
+              >
+                {category.trim()}
+              </button>
+            ))}
+        </div>
+
         <div className="flex space-x-3">
           <span className="flex items-center gap-1">
             <img

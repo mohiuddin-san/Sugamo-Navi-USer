@@ -31,7 +31,17 @@ interface LoaderData {
   error?: string;
 }
 
-
+const parseOtherImages = (images: any) => {
+  if (Array.isArray(images)) return images;
+  if (typeof images === 'string') {
+    try {
+      return JSON.parse(images);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
@@ -102,7 +112,7 @@ export async function loader({ request }: { request: Request }) {
           lastText: itemData.near_station || 'Unknown station',
           address: itemData.address || 'Unknown address',
           map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
-          other_images: itemData.other_images || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
+          other_images: parseOtherImages(itemData.other_images) || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
           likes: itemData.love_count || 0,
           views: itemData.review_count || 0,
         },
@@ -125,7 +135,7 @@ export async function loader({ request }: { request: Request }) {
         lastText: itemData.near_station || 'Unknown station',
         address: itemData.address || 'Unknown address',
         map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
-        other_images: itemData.other_images || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
+        other_images: parseOtherImages(itemData.other_images) || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
         likes: itemData.love_count || 0,
         views: itemData.review_count || 0,
       },
@@ -139,7 +149,7 @@ export async function loader({ request }: { request: Request }) {
         near_station: item.near_station,
         address: item.address,
         map_embed: item.map_embed,
-        other_images: item.other_images,
+        other_images: parseOtherImages(item.other_images),
         opening_hours: item.opening_hours,
         category_id: item.category_id,
         category: categoryName,
@@ -165,22 +175,22 @@ export default function ShopDetails() {
   const [shop, setShop] = useState<Shop | null>(
     shopFromState
       ? {
-          id: shopFromState.id,
-          title: shopFromState.title,
-          imageUrl: shopFromState.imageUrl || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
-          description: shopFromState.description || 'No description available',
-          likes: shopFromState.likes || 0,
-          views: shopFromState.views || 0,
-          near_station: shopFromState.near_station || 'Unknown station',
-          address: shopFromState.address || 'Unknown address',
-          map_embed: shopFromState.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
-          other_images: shopFromState.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
-          category_id: shopFromState.category_id || 'Unknown',
-          opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
-          category: shopFromState.category || 'No Category',
-        }
+        id: shopFromState.id,
+        title: shopFromState.title,
+        imageUrl: shopFromState.imageUrl || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
+        description: shopFromState.description || 'No description available',
+        likes: shopFromState.likes || 0,
+        views: shopFromState.views || 0,
+        near_station: shopFromState.near_station || 'Unknown station',
+        address: shopFromState.address || 'Unknown address',
+        map_embed: shopFromState.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
+        other_images: shopFromState.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
+        category_id: shopFromState.category_id || 'Unknown',
+        opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
+        category: shopFromState.category || 'No Category',
+      }
       : menu
-      ? {
+        ? {
           id: menu.id,
           title: menu.name,
           imageUrl: menu.image,
@@ -195,7 +205,7 @@ export default function ShopDetails() {
           opening_hours: menu.hours,
           category: menu.category,
         }
-      : null
+        : null
   );
   const [loading, setLoading] = useState(!shopFromState && !menu);
   const [error, setError] = useState<string | null>(loaderError || null);
@@ -396,7 +406,7 @@ export default function ShopDetails() {
         near_station: shop.near_station,
         address: shop.address,
         map_embed: shop.map_embed,
-        other_images: shop.other_images,
+        other_images: parseOtherImages(shop.other_images),
         opening_hours: shop.opening_hours,
         type: normalizedType,
       };
@@ -451,7 +461,7 @@ export default function ShopDetails() {
             near_station: shopData.near_station || 'Unknown station',
             address: shopData.address || 'Unknown address',
             map_embed: shopData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
-            other_images: shopData.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
+            other_images: parseOtherImages(shopData.other_images) || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
             category_id: shopData.category_id || 'Unknown',
             category: categoryName,
             opening_hours: shopData.opening_hours || 'OPEN 10:00 ~ 22:00',
@@ -486,7 +496,7 @@ export default function ShopDetails() {
         address: menu.address,
         category_id: menu.category_id,
         map_embed: menu.map_embed,
-        other_images: menu.other_images,
+        other_images: parseOtherImages(menu.other_images),
         opening_hours: menu.hours,
         category: menu.category,
       });
@@ -534,18 +544,23 @@ export default function ShopDetails() {
             <div className="flex flex-row justify-between items-center" style={{ marginBottom: fsm(20) }}>
               <div className="flex flex-row">
                 <div className="flex space-x-2 ml-auto">
-                  <button
-                    className="bg-[#ED4548] text-white rounded-full italic font-cousine font-bold text-center"
-                    style={{
-                      width: isMobile ? fsm(92) : fs(92),
-                      minWidth: isMobile ? fsm(72) : fs(72),
-                      height: isMobile ? fsm(22) : fs(22),
-                      minHeight: isMobile ? fsm(17) : fs(17),
-                      fontSize: isMobile ? fsm(12) : fs(12),
-                    }}
-                  >
-                    {getCategoryName(shop.category_id)}
-                  </button>
+                  {(getCategoryName(shop.category_id) || "Shop")
+                    .split("、") // যদি Japanese comma হয়
+                    .map((category: string, index: React.Key | null | undefined) => (
+                      <button
+                        key={index}
+                        className="bg-[#ED4548] text-white rounded-full italic font-bold font-cairo text-center"
+                        style={{
+                          width: isMobile ? fsm(92) : fs(92),
+                          minWidth: isMobile ? fsm(72) : fs(72),
+                          height: isMobile ? fsm(22) : fs(22),
+                          minHeight: isMobile ? fsm(17) : fs(17),
+                          fontSize: isMobile ? fsm(12) : fs(12),
+                        }}
+                      >
+                        {category.trim()}
+                      </button>
+                    ))}
                   <span className="flex items-center gap-1">
                     <button onClick={handleLoveClick}>
                       <img
@@ -625,18 +640,26 @@ export default function ShopDetails() {
             <div className="flex flex-row justify-between items-center">
               <div className="flex flex-row">
                 <div className="flex space-x-2 ml-auto">
-                  <button
-                    className="bg-[#ED4548] text-white rounded-full italic font-bold font-cairo text-center"
-                    style={{
-                      width: isMobile ? fsm(92) : fs(92),
-                      minWidth: isMobile ? fsm(72) : fs(72),
-                      height: isMobile ? fsm(22) : fs(22),
-                      minHeight: isMobile ? fsm(17) : fs(17),
-                      fontSize: isMobile ? fsm(13) : fs(13),
-                    }}
-                  >
-                    {getCategoryName(shop.category_id)}
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    {(getCategoryName(shop.category_id) || "Shop")
+                      .split("、") 
+                      .map((category: string, index: React.Key | null | undefined) => (
+                        <button
+                          key={index}
+                          className="bg-[#ED4548] text-white rounded-full italic font-bold font-cairo text-center"
+                          style={{
+                            width: isMobile ? fsm(92) : fs(92),
+                            minWidth: isMobile ? fsm(72) : fs(72),
+                            height: isMobile ? fsm(22) : fs(22),
+                            minHeight: isMobile ? fsm(17) : fs(17),
+                            fontSize: isMobile ? fsm(13) : fs(13),
+                          }}
+                        >
+                          {category.trim()}
+                        </button>
+                      ))}
+                  </div>
+
                   <span className="flex items-center gap-1">
                     <button onClick={handleLoveClick}>
                       <img
@@ -686,19 +709,31 @@ export default function ShopDetails() {
               </h2>
               <p
                 className="text-[#313131] font-normal font-cairo leading-loose"
-                style={{ marginTop: isMobile ? fsm(16) : fs(19), fontSize: autoSize(16), height: isMobile ? 'auto' : fs(210) }}
-              >
-                {shop.description}
-              </p>
+                style={{
+                  marginTop: isMobile ? fsm(16) : fs(19),
+                  fontSize: autoSize(16),
+                  height: isMobile ? "auto" : fs(210),
+                }}
+                dangerouslySetInnerHTML={{ __html: shop.description }}
+              />
             </div>
             <div
               className="flex items-center justify-between"
               style={{ marginTop: isMobile ? fsm(54) : fs(30), paddingBottom: isMobile ? fsm(0) : fs(61) }}
             >
               <div>
-                <p className="text-[#313131] font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
-                  OPEN {shop.opening_hours || 'Not available'}
+                <p
+                  className="text-[#313131] font-cairo font-medium"
+                  style={{ fontSize: autoSize(13) }}
+                >
+                  OPEN{" "}
+                  {shop.opening_hours ? (
+                    <span dangerouslySetInnerHTML={{ __html: shop.opening_hours }} />
+                  ) : (
+                    "Not available"
+                  )}
                 </p>
+
                 <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
                   Address: {shop.address || 'Not available'}
                 </p>

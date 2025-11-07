@@ -52,40 +52,46 @@ export async function loader() {
     stops: [
       {
         id: 1,
-        title: '古奈屋 巣鴨本店',
-        description: '古奈屋 巣鴨本店で美味しいラーメンを味わう。',
-        image: '/src/food-1.png',
+        title: '眞性寺',
+        description: '<p><br></p><p><span style="color: rgb(0, 0, 0);">江戸六地蔵尊 眞性寺</span></p><p><span style="color: rgb(0, 0, 0);">巣鴨地蔵通りの入り口にある【眞性寺】。 ここには江戸六地蔵尊のひとつが祀られています。1714年に造立された高さ2.7mもの大地蔵は、旅人の安全と人々の無病息災を願って建立されたもの。 今も商店街のシンボルとして、参拝客をやさしく見守っています。</span></p>',
+        image: '/src/step-m-1.jpg',
       },
       {
         id: 2,
-        title: '高岩寺 (とげぬき地蔵)',
-        description: '高岩寺で癒しを求める参拝客で賑わう。',
-        image: '/src/food-2.png',
+        title: '地蔵通り',
+        description: '<p><span style="color: rgb(0, 0, 0);">とげぬき地蔵尊 高岩寺</span></p><p><span style="color: rgb(0, 0, 0);">巣鴨といえば「とげぬき地蔵尊」こと【高岩寺】。 病気平癒・延命にご利益があるとされ、江戸時代から多くの人に信仰されてきたお寺です。 境内で人気なのは「洗い観音」。 自分の体の悪い部分と同じ場所を洗うと治るといわれ、いつも行列ができるほど。</span></p>',
+        image: '/src/step-m-2.jpg',
       },
       {
         id: 3,
-        title: '地蔵通り',
-        description: '地蔵通り商店街を散策し、地元の雰囲気を楽しむ。',
-        image: '/src/food-3.png',
+        title: '山年園',
+        description: '<p><span style="color: rgb(0, 0, 0);">古奈屋</span></p><p><span style="color: rgb(0, 0, 0);">巣鴨の名物カレーうどんといえば【古奈屋】 1983年創業、まろやかでクリーミーなカレー出汁にコシのあるうどんが絡む唯一無二の味。 一番人気は“天使のえび天カレーうどん”サクッと揚がった海老天と濃厚なカレースープの相性は間違いなし！</span></p>',
+        image: '/src/step-m-3.jpg',
       },
       {
         id: 4,
-        title: 'かき氷 工房 雪や',
-        description: 'かき氷工房雪やで美味しいかき氷を堪能する。',
-        image: '/src/food-4.png',
+        title: '高岩寺',
+        description: '<p><span style="color: rgb(0, 0, 0);">雪菓 高岩寺すぐ脇のかき氷屋さん【雪菓】 夏は連日かなりのウェイティングも。 人気メニューはピスタチオミルクや抹茶無双。 季節によって様々なフレーバーも楽しめます。</span></p>',
+        image: '/src/step-m-4.jpg',
       },
       {
         id: 5,
-        title: '六義園',
-        description: '六義園で自然を満喫し、心をリフレッシュ。',
-        image: '/src/food-5.png',
+        title: 'かき氷工房 雪菓',
+        description: '<p><span style="color: rgb(0, 0, 0);">マルジ 毎月２日のマルジの日にはすがもんが店先に登場</span></p><p><span style="color: rgb(0, 0, 0);"> 創業は昭和27年（1952年）で、地元密着の老舗店。「赤パンツの元祖」「日本一の赤パンツ」といったキャッチコピーを掲げ、“赤”を通じて健康・長寿を願う商品を展開している。</span></p>',
+        image: '/src/step-m-5.jpg',
       },
       {
         id: 6,
-        title: '六義園',
-        description: '六義園で自然を満喫し、心をリフレッシュ。',
-        image: '/src/food-5.png',
+        title: '古奈屋 巣鴨本店',
+        description: '<p><span style="color: rgb(0, 0, 0);">山年園 創業70年余りの老舗茶屋店【山年園】 参拝客や地元住民に親しまれてきた店！ 参拝茶などお土産や記念にぴったの商品も。</span></p>',
+        image: '/src/step-m-6.jpg',
       },
+      {
+        id: 7,
+        title: 'マルジ',
+        description: '<p><span style="color: rgb(0, 0, 0);">山年園 創業70年余りの老舗茶屋店【山年園】 参拝客や地元住民に親しまれてきた店！ 参拝茶などお土産や記念にぴったの商品も。</span></p>',
+        image: '/src/step-m-7.jpg',
+      }
     ],
     products: [
       {
@@ -540,9 +546,10 @@ useEffect(() => {
                           江戸六地蔵尊 眞性寺 <br />
                         </p>
                         <p
-                           className="font-cairo text-gray-500"
+                           className="font-cairo "
                           style={{
                             fontSize: isMobile ? fsm(16) : fs(18),
+                            color: '#313131',
                             lineHeight: '40px',
                           }}
                         >
