@@ -152,7 +152,7 @@ export default function ModelCourse() {
   const [isTransitioning, setIsTransitioning] = useState(true);
   const infiniteItems = [...modelCourses, ...modelCourses, ...modelCourses];
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(1);
   const [selectedStop, setSelectedStop] = useState<typeof selectedCourse.stops[0] | null>(null);
   const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
   const [hasSvgAnimated, setHasSvgAnimated] = useState(false);
