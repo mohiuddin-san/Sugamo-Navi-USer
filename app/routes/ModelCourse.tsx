@@ -10,6 +10,7 @@ import { useIsMobile } from '~/hooks/useIsMobile';
 import ModelCourseDetailsItem from '../components/ModelCourseDetailsItem';
 import ShopItem from '~/components/ShopItem';
 import MapSVG from '~/components/MapSVG';
+
 export async function loader({ }: LoaderFunctionArgs) {
   return json({
     modelCourses: [
@@ -109,12 +110,11 @@ export async function loader({ }: LoaderFunctionArgs) {
           { id: 3, title: "洋食　小林", description: `洋食　小林
 巣鴨地蔵通りの路地裏に佇む洋食屋 洋食 小林 。名物は とろ〜り半熟スコッチエッグ。揚げたてサクサクの衣の向こうから黄身がじゅわっと広がる逸品。クラシックで落ち着いた店内には、グランメゾン出身シェフの技が光る！スコッチエッグに添えられたトマトジャムも秀逸。`, image: "/src/step-11.jpg" },
           { id: 4, title: "巣鴨庚申塚", description: `<p>巣鴨庚申塚</p><p>巣鴨の隠れたパワースポット【庚申塚】 中山道の宿場町として栄えた江戸時代、旅人が道中の安全を祈った場所です。 今は「猿田彦大神」が祀られ、道をひらき、人々を正しい方向へ導いてくれる神さまとして信仰されています。</p>`, image: "/src/step-15.jpg" },
-        { id: 5, title: "いっぷく亭", description: `<p>いっぷく亭</p><p>巣鴨・庚申塚駅すぐの甘味処【いっぷく亭】 駅ホームから徒歩3歩、都電散策や地蔵通り散歩の合間にぴったりな場所。 名物は 手作りおはぎ と 焼きそば の「こだわりセット」。あんこ5種（あずき・抹茶・白あん・きな粉・黒ごま）も選べるのが魅力。 線路を眺めながら、ノスタルジックな空間でちょっと一息。</p>`, image: "/src/step-14.jpg" },
-        { id: 6, title: "えがお老眼鏡", description: `えがお老眼鏡
+          { id: 5, title: "いっぷく亭", description: `<p>いっぷく亭</p><p>巣鴨・庚申塚駅すぐの甘味処【いっぷく亭】 駅ホームから徒歩3歩、都電散策や地蔵通り散歩の合間にぴったりな場所。 名物は 手作りおはぎ と 焼きそば の「こだわりセット」。あんこ5種（あずき・抹茶・白あん・きな粉・黒ごま）も選べるのが魅力。 線路を眺めながら、ノスタルジックな空間でちょっと一息。</p>`, image: "/src/step-14.jpg" },
+          { id: 6, title: "えがお老眼鏡", description: `えがお老眼鏡
 巣鴨に誕生した“老眼鏡のセレクトショップ”【えがお老眼鏡】老眼鏡＝必需品、から、老眼鏡＝ファッションアイテムへ。50代以上の女性に向けた、大人の“魅せるメガネ”を提案するお店。洗練されたフレームがずらりと並び、リーズナブルな価格で選べる＋見た目も素敵。`, image: "/src/step-13.jpg" },
-        { id: 7, title: "千成もなか", description: `千成もなか　
+          { id: 7, title: "千成もなか", description: `千成もなか　
 巣鴨駅すぐの老舗和菓子店【千成もなか本舗】店名由来は豊臣秀吉の馬印「千成瓢箪（ひょうたん）」、縁起を込めた最中が看板商品です。名物はひょうたん形の最中（五色あん）と、人気のあんバターどら焼き。あんバターどら焼きはブラックペッパーと合わせていただくのもオススメ。“和風パンケーキ”（どら焼きの皮だけ）も評判。`, image: "/src/step-12.jpg" },
-        
         ],
         products: [
           { id: "9", title: "雪菓", imageUrl: "/src/pistachio.jpg", description: "ピスタチオミルク", likes: 3300, views: 6800, category_id: "3", category: "dessert", type: "shop" as const },
@@ -134,6 +134,7 @@ export async function loader({ }: LoaderFunctionArgs) {
 export default function ModelCourse() {
   const data = useLoaderData<typeof loader>();
   const location = useLocation();
+
   if (!data?.modelCourses?.length) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -147,25 +148,29 @@ export default function ModelCourse() {
   const { isMobile } = useIsMobile();
   const { fs, fsm } = useUniversalFluid();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
-
   const [currentIndexM, setCurrentIndexM] = useState(modelCourses.length);
   const [isTransitioning, setIsTransitioning] = useState(true);
   const infiniteItems = [...modelCourses, ...modelCourses, ...modelCourses];
-
-  const [currentIndex, setCurrentIndex] = useState(1);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedStop, setSelectedStop] = useState<typeof selectedCourse.stops[0] | null>(null);
-  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
   const [hasSvgAnimated, setHasSvgAnimated] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const stopsRef = useRef<(HTMLDivElement | null)[]>([]);
+
   const handleCourseClick = (course: typeof modelCourses[0]) => {
     setSelectedCourse(course);
     setSelectedStop(null);
-    setSelectedTitle(null);
     setHasSvgAnimated(false);
     stopsRef.current = [];
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+    mapRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }, 100);
   };
+
   const itemWidth = isMobile ? 70 : 33.33;
 
   const handleNextM = () => {
@@ -194,8 +199,8 @@ export default function ModelCourse() {
       setTimeout(() => setIsTransitioning(true), 50);
     }
   }, [isTransitioning]);
+
   const handlePinClick = (title: string) => {
-    setSelectedTitle(title);
     const stop = selectedCourse.stops.find(s => s.title.trim() === title.trim());
     if (stop) {
       setSelectedStop(stop);
@@ -205,6 +210,7 @@ export default function ModelCourse() {
       setSelectedStop(null);
     }
   };
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -217,6 +223,7 @@ export default function ModelCourse() {
     if (mapRef.current) observer.observe(mapRef.current);
     return () => observer.disconnect();
   }, [hasSvgAnimated, selectedCourse]);
+
   const handleNext = () => {
     const maxIndex = Math.max(0, selectedCourse.products.length - (isMobile ? 1 : 3));
     setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
@@ -225,6 +232,7 @@ export default function ModelCourse() {
   const handlePrev = () => {
     setCurrentIndex(prev => Math.max(prev - 1, 0));
   };
+
   const visibleItems = isMobile ? 1 : 3;
   const translateX = currentIndex * (100 / visibleItems);
 
@@ -241,7 +249,6 @@ export default function ModelCourse() {
         imageSrc="/src/food.png"
         imageAlt="Food"
       />
-
       <MarqueeHeader
         text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
         backgroundColor="#FFFFFF"
@@ -250,6 +257,8 @@ export default function ModelCourse() {
         marginBottom={43}
         marginTop={98}
       />
+
+      {/* Course Selector */}
       <div
         className="relative border-2 border-black rounded-[30px]"
         style={{
@@ -304,12 +313,8 @@ export default function ModelCourse() {
             paddingRight: isMobile ? fsm(20) : fs(23),
           }}
         >
-          <button onClick={handlePrevM} className="text-4xl">
-            ←
-          </button>
-          <button onClick={handleNextM} className="text-4xl">
-            →
-          </button>
+          <button onClick={handlePrevM} className="text-4xl">←</button>
+          <button onClick={handleNextM} className="text-4xl">→</button>
         </div>
       </div>
 
@@ -382,7 +387,7 @@ export default function ModelCourse() {
             }}
           >
             <MarqueeHeader
-              text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
+              text="Welcome to Sugamo! Pick your faves! "
               backgroundColor="#FFFFFF"
               textColor="#000000"
               animationDuration="90s"
@@ -397,7 +402,7 @@ export default function ModelCourse() {
               />
             </div>
             <MarqueeHeader
-              text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
+              text="Welcome to Sugamo! Pick your faves! "
               backgroundColor="#FFFFFF"
               textColor="#000000"
               animationDuration="90s"
@@ -423,6 +428,7 @@ export default function ModelCourse() {
             }}
           >
             <div className="mx-auto flex flex-col md:flex-row">
+              {/* Details */}
               <div
                 className="w-full md:w-2/3"
                 style={{ paddingRight: isMobile ? fsm(0) : fs(36) }}
@@ -460,9 +466,7 @@ export default function ModelCourse() {
                         dangerouslySetInnerHTML={{ __html: selectedStop.description }}
                       />
                     </div>
-
                     <div className="w-full border-t-2 border-black mb-4"></div>
-
                     <div className="w-full flex flex-row items-center gap-4 mb-4">
                       <div
                         className="bg-gray-300 flex items-center justify-center text-gray-600"
@@ -481,7 +485,6 @@ export default function ModelCourse() {
                       >
                         {selectedStop.image.includes('placeholder') && `Img ${selectedStop.id}`}
                       </div>
-                     
                       <div className="flex-1">
                         <p
                           className="font-cairo text-black font-semibold"
@@ -494,7 +497,7 @@ export default function ModelCourse() {
                           {selectedStop.title}
                         </p>
                         <p
-                           className="font-cairo "
+                          className="font-cairo "
                           style={{
                             fontSize: isMobile ? fsm(16) : fs(18),
                             color: '#313131',
@@ -507,16 +510,14 @@ export default function ModelCourse() {
                         </p>
                       </div>
                     </div>
-                  <div 
+                    <div
                       className="w-full text-left py-4"
                       style={{
                         fontSize: isMobile ? fsm(16) : fs(16),
                       }}
                     >
                       <p className="font-cairo text-gray-500" style={{ lineHeight: '40px' }}>
-                        巣鴨地蔵通りの入り口にある【眞性寺】。<br />
-                        ここには江戸六地蔵尊のひとつが祀られています。1714年に造立された高さ2.7mもの大地蔵は、旅人の安全と人々の無病息災を願って建立されたもの。<br />
-                        今も商店街のシンボルとして、参拝客をやさしく見守っています。
+                        {selectedStop.description.replace(/<[^>]*>/g, '').substring(0, 200)}...
                       </p>
                     </div>
                   </div>
@@ -535,17 +536,15 @@ export default function ModelCourse() {
                     コースの始まりは、江戸六地蔵のひとつである眞性寺。旅の安全を願って造られた歴史的なお地蔵様を拝んだら、巣鴨のメインストリート、地蔵通り商店街へ。
                     <br />
                     商店街の中ほどにあるとげぬき地蔵尊 高岩寺では、お年寄りから「とげぬき地蔵」として親しまれているお地蔵様にお参りできます。「洗い観音」に水をかけて清める体験も、巣鴨ならではです。
-                    <br />
-                    <br />
+                    <br /><br />
                     お参りを終えたら、お待ちかねのグルメタイム。「カレーうどん」で有名な古奈屋で食事をしたり、行列のできるかき氷店雪菓で休憩したりと、人気の味を堪能できます。また、マルジでは「赤いパンツ」をはじめとするユニークな商品が並び、巣鴨らしい活気を感じられます。さらに、お茶の老舗山年園や、名物の「塩大福」が人気のみずのに立ち寄れば、お土産探しも完璧です。
-                    <br />
-                    <br />
-                    <br />
+                    <br /><br /><br />
                     歴史的なお寺を巡り、おいしいものを味わい、活気あふれる商店街で買い物を楽しむ。このコースは、巣鴨の魅力をぎゅっと凝縮した、初めての方にもリピーターにもおすすめのコースです。
                   </p>
                 )}
               </div>
 
+              {/* Divider */}
               <div
                 className="w-auto md:w-[2px] bg-black h-[2px] md:h-auto"
                 style={{
@@ -555,6 +554,7 @@ export default function ModelCourse() {
                 }}
               ></div>
 
+              {/* Stops List */}
               <div className="w-auto md:w-1/3 flex flex-col items-center"
                 style={{
                   marginLeft: isMobile ? fsm(20) : 0,
@@ -583,15 +583,22 @@ export default function ModelCourse() {
                     <div
                       key={stop.id}
                       ref={(el) => (stopsRef.current[index] = el)}
-                      className={`flex flex-col items-center`}
+                      className={`flex flex-col items-center cursor-pointer`}
                       style={{
                         height: isMobile ? fsm(115) : fs(115),
                         marginBottom: isMobile ? fsm(16) : fs(16),
                       }}
+                      onClick={() => {
+                        setSelectedStop(stop);
+                        if (isMobile) {
+                          stopsRef.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                      }}
                     >
                       <div
-                        className={`border-2 border-black rounded-[10px] w-full flex overflow-hidden ${selectedTitle === stop.title ? 'bg-[#ED4548]' : 'bg-[#FFFFFF]'
-                          }`}
+                        className={`border-2 border-black rounded-[10px] w-full flex overflow-hidden transition-colors ${
+                          selectedStop?.id === stop.id ? 'bg-[#ED4548]' : 'bg-[#FFFFFF]'
+                        }`}
                       >
                         <div
                           className="bg-gray-300 flex items-center justify-center text-gray-600"
@@ -609,8 +616,9 @@ export default function ModelCourse() {
                           style={{ marginLeft: isMobile ? fsm(16) : fs(16) }}
                         >
                           <h3
-                            className={`italic font-bold font-cousine ${selectedTitle === stop.title ? 'text-[#FFFFFF]' : 'text-[#000000]'
-                              }`}
+                            className={`italic font-bold font-cousine ${
+                              selectedStop?.id === stop.id ? 'text-[#FFFFFF]' : 'text-[#000000]'
+                            }`}
                             style={{
                               fontSize: isMobile ? fsm(16) : fs(16),
                               marginTop: isMobile ? fsm(7) : fs(7),
@@ -619,8 +627,9 @@ export default function ModelCourse() {
                             STOP.{stop.id}
                           </h3>
                           <p
-                            className={`font-cairo font-semibold ${selectedTitle === stop.title ? 'text-[#FFFFFF]' : 'text-[#000000]'
-                              }`}
+                            className={`font-cairo font-semibold ${
+                              selectedStop?.id === stop.id ? 'text-[#FFFFFF]' : 'text-[#000000]'
+                            }`}
                             style={{ fontSize: isMobile ? fsm(20) : fs(20) }}
                           >
                             {stop.title}
@@ -645,16 +654,8 @@ export default function ModelCourse() {
 
               {!isMobile && (
                 <div className="mx-auto h-full" style={{ marginTop: fs(73) }}>
-                  <img
-                    src="/src/union.svg"
-                    alt="Description"
-                    style={{ height: fs(311) }}
-                  />
-                  <img
-                    src="/src/union.svg"
-                    alt="Description"
-                    style={{ marginTop: fs(18) }}
-                  />
+                  <img src="/src/union.svg" alt="Description" style={{ height: fs(311) }} />
+                  <img src="/src/union.svg" alt="Description" style={{ marginTop: fs(18) }} />
                 </div>
               )}
             </div>
@@ -715,7 +716,7 @@ export default function ModelCourse() {
             <button
               onClick={handleNext}
               className="text-4xl disabled:opacity-30"
-              disabled={currentIndex >= selectedCourse.products.length - 4}
+              disabled={currentIndex >= selectedCourse.products.length - (isMobile ? 1 : 3)}
             >
               →
             </button>

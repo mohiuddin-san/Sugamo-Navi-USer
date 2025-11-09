@@ -24,6 +24,15 @@ export const links = () => [
 ];
 
 export default function App() {
+    useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://www.tiktok.com/embed.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
   return (
     <html lang="en">
       <head>
