@@ -144,7 +144,7 @@ export default function ModelCourse() {
   }
 
   const { modelCourses } = data;
-  const [selectedCourse, setSelectedCourse] = useState(modelCourses[0]);
+  const [selectedCourse, setSelectedCourse] = useState(modelCourses[1]);
   const { isMobile } = useIsMobile();
   const { fs, fsm } = useUniversalFluid();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
