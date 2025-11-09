@@ -17,15 +17,6 @@ import TikTokVideos from '~/components/TiktokVideos';
 import LoadingScreen from '~/components/LoadingScreen';
 import { useTypingEffect } from '~/hooks/useTypingEffect';
 
-type LoaderData = {
-  posts: any[];
-  error: string | null;
-  topImg: string;
-  imageUrl: string;
-  title: string;
-  details: string[];
-  letsGOimg: string;
-};
 
 type Blog = {
   id: any;
@@ -78,13 +69,11 @@ export function loader() {
 
 export default function HomePage() {
   const { isMobile, mounted } = useIsMobile();
-  const data = useLoaderData<LoaderData>();
   const { posts, tiktokVideos } = useLoaderData<{
     posts: any[];
     tiktokVideos: any[];
     error: string | null;
   }>();
-  const error = data?.error || null;
   const { topImg, imageUrl, title, details, letsGOimg } = loader();
 
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
@@ -298,14 +287,6 @@ export default function HomePage() {
 
     fetchTopShops();
   }, []);
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-4 text-red-600">
-        Error: {error}
-      </div>
-    );
-  }
 
   const getCategoryName = (categoryId: any) => {
     const category = categoriesShop.find((cat: Category) => cat.id === categoryId);
