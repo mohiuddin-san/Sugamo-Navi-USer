@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
-import {useUniversalFluid} from '../hooks/useUniversalFluid'
+import { useUniversalFluid } from '../hooks/useUniversalFluid'
 import { useIsMobile } from '../hooks/useIsMobile';
 
 interface MapProps {
@@ -18,7 +18,7 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
   const svgContainerRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const { fs, fsm, fluidStyle } = useUniversalFluid();
-  
+
   useEffect(() => {
     const setVh = () => {
       const vh = window.innerHeight * 0.01;
@@ -37,7 +37,7 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
-    
+
     fetch(svgPath)
       .then((response) => {
         if (!response.ok) {
@@ -174,7 +174,7 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
@@ -190,16 +190,16 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
 
     const handleSvgClick = (event: MouseEvent) => {
       const target = event.target as SVGElement;
-      
-      const pinElement = target.closest('.pin') || 
-                        target.closest('[data-title]') || 
-                        (target.hasAttribute('data-title') ? target : null);
+
+      const pinElement = target.closest('.pin') ||
+        target.closest('[data-title]') ||
+        (target.hasAttribute('data-title') ? target : null);
 
       if (pinElement) {
         event.stopPropagation();
-        const title = pinElement.getAttribute('data-title') || 
-                     (pinElement.textContent || 'Unknown Location').trim();
-        
+        const title = pinElement.getAttribute('data-title') ||
+          (pinElement.textContent || 'Unknown Location').trim();
+
         console.log('ক্লিক করা এলিমেন্ট:', title);
 
         if (pinElement instanceof SVGElement) {
@@ -228,14 +228,14 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
   }, [svgContent, onPinClick]);
 
   return (
-    <div className="relative w-full bg-white" style={{height:isMobile?fsm(265):fs(493)}} >
+    <div className="relative w-full bg-white" style={{ height: isMobile ? fsm(265) : fs(493) }} >
       <TransformWrapper
         ref={transformRef}
-        initialScale={isMobile?3.5:1.1} 
+        initialScale={isMobile ? 3.5 : 1.1}
         minScale={1.1}
         maxScale={2}
         initialPositionX={0}
-        initialPositionY={isMobile?1:0}
+        initialPositionY={isMobile ? 1 : 0}
         centerOnInit={true}
         centerZoomedOut={true}
         wheel={{ step: 0.1 }}
@@ -252,31 +252,70 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
         {({ zoomIn, zoomOut, resetTransform, centerView }) => (
           <>
             {!isMobile && (
-              <div className="flex absolute gap-2 z-10 top-4 right-4 flex-col">
+              <div
+                className="flex absolute z-10 top-4 right-4 flex-col bg-white border-2 border-gray-800 rounded-xl overflow-hidden shadow-lg"
+                style={{
+                  width: fs(52),
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+              >
+                {/* Zoom In */}
                 <button
                   onClick={() => zoomIn()}
-                  className="bg-white text-black rounded-full flex items-center justify-center shadow-lg border-2 border-black"
-                  style={{width: fs(40), height: fs(40), fontSize: fs(25)}}
+                  className="flex items-center justify-center transition-transform hover:scale-110 border-b border-gray-800"
+                  style={{
+                    width: fs(52),
+                    height: fs(52),
+                    padding: 0,
+                  }}
+                  aria-label="Zoom In"
                 >
-                  +
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    <line x1="11" y1="8" x2="11" y2="14" />
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                  </svg>
                 </button>
+
+                {/* Zoom Out */}
                 <button
                   onClick={() => zoomOut()}
-                  className="bg-red-600 text-white rounded-full hover:bg-red-600 flex items-center justify-center shadow-lg"
-                  style={{width: fs(40), height: fs(40), fontSize: fs(25)}}
+                  className="flex items-center justify-center transition-transform hover:scale-110 border-b border-gray-800"
+                  style={{
+                    width: fs(52),
+                    height: fs(52),
+                    padding: 0,
+                  }}
+                  aria-label="Zoom Out"
                 >
-                  –
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                  </svg>
                 </button>
+
+                {/* Reset */}
                 <button
                   onClick={() => {
                     resetTransform();
                     setTimeout(() => centerView(), 100);
                   }}
-                  className="bg-green-500 text-white rounded-full hover:bg-green-600 flex items-center justify-center text-xs shadow-lg"
-                  style={{width: fs(40), height: fs(40), fontSize: fs(25)}}
-                  title="Reset View"
+                  className="flex items-center justify-center transition-transform hover:scale-110"
+                  style={{
+                    width: fs(52),
+                    height: fs(52),
+                    padding: 0,
+                  }}
+                  aria-label="Reset View"
                 >
-                  ↻
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 4v6h-6" />
+                    <path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" />
+                    <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14" />
+                  </svg>
                 </button>
               </div>
             )}
@@ -296,7 +335,7 @@ const MapSVG: React.FC<MapProps> = ({ onPinClick, svgPath, startAnimation }) => 
             >
               <div
                 ref={svgContainerRef}
-                style={{ 
+                style={{
                   width: `${containerSize.width}px`,
                   height: `${containerSize.height}px`,
                   cursor: 'grab'

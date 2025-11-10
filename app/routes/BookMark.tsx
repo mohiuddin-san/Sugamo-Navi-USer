@@ -38,115 +38,145 @@ export default function BookmarkPage() {
   const { fs, fsm } = useUniversalFluid();
   const { isMobile } = useIsMobile();
 
-  useEffect(() => {
-    const fetchBookmarksAndItems = async () => {
-      try {
-        setLoading(true);
-        setErrorMsg(null);
-        const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
-        console.log('Unified Bookmarks:', savedBookmarks);
+  const fetchBookmarksAndItems = async () => {
+  try {
+    setLoading(true);
+    setErrorMsg(null);
 
-        if (Object.keys(savedBookmarks).length === 0) {
-          setAvailableTypes([]);
-          setBookmarkedProducts([]);
-          setErrorMsg('No bookmarked items found.');
-          setLoading(false);
-          return;
+    const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+    console.log('Unified Bookmarks:', savedBookmarks);
+
+    if (Object.keys(savedBookmarks).length === 0) {
+      setAvailableTypes([]);
+      setBookmarkedProducts([]);
+      setErrorMsg('No bookmarked items found.');
+      setLoading(false);
+      return;
+    }
+
+    // Group by type and extract IDs
+    const typeGroups: { [key in ItemType]: string[] } = { shops: [], places: [] };
+    Object.keys(savedBookmarks).forEach((itemId) => {
+      const bookmark = savedBookmarks[itemId];
+      if (bookmark && bookmark.type) {
+        const normalizedType = bookmark.type === 'shop' ? 'shops' : 'places';
+        if (!typeGroups[normalizedType as ItemType].includes(itemId)) {
+          typeGroups[normalizedType as ItemType].push(itemId);
         }
-
-        // Group by type and extract IDs
-        const typeGroups: { [key in ItemType]: string[] } = { shops: [], places: [] };
-
-        Object.keys(savedBookmarks).forEach((itemId) => {
-          const bookmark = savedBookmarks[itemId];
-          if (bookmark && bookmark.type) {
-            const normalizedType = bookmark.type === 'shop' ? 'shops' : 'places';
-            if (!typeGroups[normalizedType as ItemType].includes(itemId)) {
-              typeGroups[normalizedType as ItemType].push(itemId);
-            }
-          } else {
-            if (!typeGroups['shops'].includes(itemId)) {
-              typeGroups['shops'].push(itemId);
-            }
-          }
-        });
-
-        console.log('Type Groups:', typeGroups);
-
-        const typesWithData = Object.keys(typeGroups).filter((t) => typeGroups[t as ItemType].length > 0) as ItemType[];
-        if (typesWithData.length === 0) {
-          setAvailableTypes([]);
-          setBookmarkedProducts([]);
-          setErrorMsg('No valid bookmarked items found.');
-          setLoading(false);
-          return;
+      } else {
+        // fallback to shops if type missing
+        if (!typeGroups['shops'].includes(itemId)) {
+          typeGroups['shops'].push(itemId);
         }
-
-        if (!typesWithData.includes(selectedType)) {
-          setSelectedType(typesWithData[0]);
-        }
-        setAvailableTypes(typesWithData);
-
-        const currentType = selectedType;
-        const itemIds = typeGroups[currentType];
-
-        if (itemIds.length === 0) {
-          setBookmarkedProducts([]);
-          setErrorMsg(`No bookmarked ${currentType} found.`);
-          setLoading(false);
-          return;
-        }
-
-        const { data: shops, error: shopsError } = await supabase
-          .from('shops')
-          .select('*')
-          .in('id', itemIds);
-
-        if (shopsError) {
-          throw new Error(`Failed to fetch shops: ${shopsError.message}`);
-        }
-
-        let items: Shop[] = [];
-        if (shops && shops.length > 0) {
-          items = shops.map(shop => ({
-            ...shop,
-            imageUrl: shop.image_url || shop.imageUrl || '/src/shop.png',
-            other_images: typeof shop.other_images === 'string' ? JSON.parse(shop.other_images) : (shop.other_images || []),
-            type: shop.type || 'shop',
-            likes: Number.isFinite(shop.likes) ? shop.likes : 0, // Fallback
-            views: Number.isFinite(shop.views) ? shop.views : 0, // Fallback
-          }));
-        }
-
-        if (items.length === 0) {
-          setBookmarkedProducts([]);
-          setErrorMsg(`No matching ${currentType} found in database.`);
-          setLoading(false);
-          return;
-        }
-
-        const filteredItems = items.filter((item) => {
-          const bookmark = savedBookmarks[item.id];
-          if (!bookmark) return false;
-          const bookmarkType = bookmark.type === 'shop' ? 'shops' : 'places';
-          return bookmarkType === currentType;
-        });
-
-        console.log('Filtered Items:', filteredItems);
-        setBookmarkedProducts(filteredItems);
-      } catch (error) {
-        const errMsg = error instanceof Error ? error.message : 'Unknown error fetching bookmarked items';
-        setErrorMsg(errMsg);
-        console.error('Error details:', error);
-      } finally {
-        setLoading(false);
       }
-    };
+    });
 
-    console.log('Fetching bookmarks for type:', selectedType);
-    fetchBookmarksAndItems();
-  }, [selectedType]);
+    console.log('Type Groups:', typeGroups);
 
+    const typesWithData = Object.keys(typeGroups).filter(
+      (t) => typeGroups[t as ItemType].length > 0
+    ) as ItemType[];
+
+    if (typesWithData.length === 0) {
+      setAvailableTypes([]);
+      setBookmarkedProducts([]);
+      setErrorMsg('No valid bookmarked items found.');
+      setLoading(false);
+      return;
+    }
+
+    if (!typesWithData.includes(selectedType)) {
+      setSelectedType(typesWithData[0]);
+    }
+    setAvailableTypes(typesWithData);
+
+    const currentType = selectedType;
+    const itemIds = typeGroups[currentType];
+    if (itemIds.length === 0) {
+      setBookmarkedProducts([]);
+      setErrorMsg(`No bookmarked ${currentType} found.`);
+      setLoading(false);
+      return;
+    }
+
+    let items: Shop[] = [];
+
+    if (currentType === 'shops') {
+      // Fetch from 'shops' table
+      const { data: shops, error: shopsError } = await supabase
+        .from('shops')
+        .select('*')
+        .in('id', itemIds);
+
+      if (shopsError) throw new Error(`Failed to fetch shops: ${shopsError.message}`);
+
+      if (shops && shops.length > 0) {
+        items = shops.map((shop) => ({
+          ...shop,
+          imageUrl: shop.image_url || shop.imageUrl || '/src/shop.png',
+          other_images: typeof shop.other_images === 'string' ? JSON.parse(shop.other_images) : (shop.other_images || []),
+          type: 'shop',
+          love_count: Number(shop.love_count) || 0,
+          review_count: Number(shop.review_count) || 0,
+        }));
+      }
+    } else if (currentType === 'places') {
+      // Fetch from 'tourist_places' table
+      const { data: places, error: placesError } = await supabase
+        .from('tourist_places')
+        .select('*')
+        .in('id', itemIds);
+
+      if (placesError) throw new Error(`Failed to fetch places: ${placesError.message}`);
+
+      if (places && places.length > 0) {
+        items = places.map((place) => ({
+          ...place,
+          imageUrl: place.image_url || place.imageUrl || '/src/place.png',
+          other_images: typeof place.other_images === 'string' ? JSON.parse(place.other_images) : (place.other_images || []),
+          type: 'place',
+          love_count: Number(place.love_count) || 0,
+          review_count: Number(place.review_count) || 0,
+          name: place.name,
+          description: place.description,
+          category: place.category,
+          category_id: place.category_id,
+          near_station: place.near_station,
+          address: place.address,
+          map_embed: place.map_embed,
+          opening_hours: place.opening_hours,
+        }));
+      }
+    }
+
+    if (items.length === 0) {
+      setBookmarkedProducts([]);
+      setErrorMsg(`No matching ${currentType} found in database.`);
+      setLoading(false);
+      return;
+    }
+
+    // Filter to ensure type matches
+    const filteredItems = items.filter((item) => {
+      const bookmark = savedBookmarks[item.id];
+      if (!bookmark) return false;
+      const bookmarkType = bookmark.type === 'shop' ? 'shops' : 'places';
+      return bookmarkType === currentType;
+    });
+
+    console.log('Final Bookmarked Items:', filteredItems);
+    setBookmarkedProducts(filteredItems); // এখানে ঠিক করা হয়েছে
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : 'Unknown error';
+    setErrorMsg(errMsg);
+    console.error('Error:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+useEffect(() => {
+  fetchBookmarksAndItems();
+}, [selectedType]);
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
   }, [location]);

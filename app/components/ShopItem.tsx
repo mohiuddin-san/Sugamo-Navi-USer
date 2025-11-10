@@ -20,6 +20,7 @@ interface ProductCardProps {
   map_embed?: string;
   other_images?: string[];
   opening_hours?: string;
+  website_url?: string;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({

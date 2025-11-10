@@ -60,13 +60,13 @@ export async function loader({ request }: { request: Request }) {
   }
 
   const table = type === 'places' ? 'tourist_places' : 'shops';
-  const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours,website_url';
+  //const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours,website_url';
 
   try {
     console.log(`Loader: Fetching from ${table} with id: ${id}`);
     const { data: itemData, error: itemError } = await supabase
       .from(table)
-      .select(selectFields)
+      .select('*')
       .eq('id', id)
       .single();
 
@@ -93,7 +93,7 @@ export async function loader({ request }: { request: Request }) {
 
     const { data: relatedData, error: relatedError } = await supabase
       .from(table)
-      .select(selectFields)
+      .select('*')
       .neq('id', id)
       .order('name', { ascending: true })
       .limit(8);
@@ -523,8 +523,6 @@ export default function ShopDetails() {
     return <div className="container mx-auto p-4 text-red-600">Error: {error || `${effectiveType} not found`}</div>;
   }
 
-  console.log('ShopDetails: Rendering shop:', shop);
-  console.log('ShopDetails: Rendering products:', products);
   const getCategoryName = (categoryId?: string) => {
     if (!categoryId) return shop?.category || 'No Category';
     const category = categoriesShop.find((cat) => cat.id === categoryId);
@@ -748,7 +746,6 @@ export default function ShopDetails() {
                   Near: {shop.near_station || 'Not available'}
                 </p>
               </div>
-              
               <a
                 href={shop.website_url}
                 target="_blank"
@@ -762,41 +759,41 @@ export default function ShopDetails() {
         </div>
       </div>
       {!isMobile && shop.other_images && shop.other_images.length > 0 && (
-  <div style={{ paddingLeft: fs(90), paddingRight: fs(90), marginTop: fs(90) }}>
-    <div 
-      className="flex space-x-4 overflow-x-auto"
-      style={{
-        scrollbarWidth: 'none', /* Firefox */
-        msOverflowStyle: 'none', /* IE and Edge */
-      }}
-   
-    >
-      {shop.other_images.map((image, index) => (
-        <div
-          key={index}
-          style={{ 
-            minWidth: isMobile ? fsm(117) : fs(358),
-            flexShrink: 0, // যেন width কমে না যায়
-          }}
-        >
-          <img
-            src={image}
-            alt={`Related Item ${index + 1}`}
-            className="w-full h-full object-cover rounded-lg"
-            style={{ 
-              maxHeight: isMobile ? fsm(88) : fs(270),
-              height: isMobile ? fsm(88) : fs(270), // fixed height
-              minHeight: isMobile ? fsm(88) : fs(270),
+        <div style={{ paddingLeft: fs(90), paddingRight: fs(90), marginTop: fs(90) }}>
+          <div
+            className="flex space-x-4 overflow-x-auto"
+            style={{
+              scrollbarWidth: 'none', /* Firefox */
+              msOverflowStyle: 'none', /* IE and Edge */
             }}
-            onError={(e) => {
-              e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png';
-            }}
-          />
+
+          >
+            {shop.other_images.map((image, index) => (
+              <div
+                key={index}
+                style={{
+                  minWidth: isMobile ? fsm(117) : fs(358),
+                  flexShrink: 0, // যেন width কমে না যায়
+                }}
+              >
+                <img
+                  src={image}
+                  alt={`Related Item ${index + 1}`}
+                  className="w-full h-full object-cover rounded-lg"
+                  style={{
+                    maxHeight: isMobile ? fsm(88) : fs(270),
+                    height: isMobile ? fsm(88) : fs(270), // fixed height
+                    minHeight: isMobile ? fsm(88) : fs(270),
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png';
+                  }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
-      ))}
-    </div>
-  </div>
-)}
+      )}
       {shop.map_embed && (
         <div>
           <div

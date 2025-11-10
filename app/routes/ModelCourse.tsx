@@ -10,7 +10,35 @@ import { useIsMobile } from '~/hooks/useIsMobile';
 import ModelCourseDetailsItem from '../components/ModelCourseDetailsItem';
 import ShopItem from '~/components/ShopItem';
 import MapSVG from '~/components/MapSVG';
+import supabase from '~/supabase';
+import { useSearchParams } from '@remix-run/react';
 
+type MixedItem = {
+  id: string;
+  name: string;
+  description: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  contact_phone?: string;
+  contact_email?: string;
+  opening_hours?: string;
+  rating?: number;
+  category: string;
+  category_id: string;
+  review_count?: number;
+  image_url: string;
+  other_images?: any[];
+  love_count: number;
+  near_station?: string;
+  is_recommended?: boolean;
+  is_best_shop?: boolean;
+  website_url?: string;
+  payment_method?: string;
+  number_seats?: string;
+  map_embed?: string;
+  type: 'place' | 'shop';
+};
 export async function loader({ }: LoaderFunctionArgs) {
   return json({
     modelCourses: [
@@ -63,17 +91,7 @@ export async function loader({ }: LoaderFunctionArgs) {
             description: '<p><span style="color: rgb(0, 0, 0);">山年園 創業70年余りの老舗茶屋店【山年園】 参拝客や地元住民に親しまれてきた店！ 参拝茶などお土産や記念にぴったの商品も。</span></p>',
             image: '/src/step-m-7.jpg',
           }
-        ],
-        products: [
-          { id: "1", title: "古奈屋", imageUrl: "/src/konaya.jpg", description: "天使のえび天カレーうどん", likes: 2800, views: 5200, category_id: "2", category: "food", type: "shop" as const },
-          { id: "2", title: "雪菓", imageUrl: "/src/yukimi.jpg", description: "ピスタチオミルクかき氷", likes: 3100, views: 6100, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "3", title: "マルジ", imageUrl: "/src/maruji.jpg", description: "赤パンツ（健康長寿祈願）", likes: 1800, views: 3400, category_id: "4", category: "goods", type: "shop" as const },
-          { id: "4", title: "山年園", imageUrl: "/src/sanen.jpg", description: "巣鴨参拝茶ギフト", likes: 1400, views: 2800, category_id: "5", category: "tea", type: "shop" as const },
-          { id: "5", title: "みずの", imageUrl: "/src/mizuno.jpg", description: "塩大福（当日分完売注意）", likes: 2600, views: 4900, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "6", title: "とげぬき地蔵尊売店", imageUrl: "/src/omamori.jpg", description: "お守り・御朱印帳", likes: 900, views: 2100, category_id: "6", category: "omamori", type: "shop" as const },
-          { id: "7", title: "巣鴨あんぱん", imageUrl: "/src/anpan.jpg", description: "地蔵あんぱん（限定）", likes: 1300, views: 2500, category_id: "1", category: "bakery", type: "shop" as const },
-          { id: "8", title: "すがもんショップ", imageUrl: "/src/sugamon.jpg", description: "すがもんグッズ", likes: 700, views: 1600, category_id: "7", category: "souvenir", type: "shop" as const },
-        ],
+        ]
       },
       {
         id: 2,
@@ -84,19 +102,9 @@ export async function loader({ }: LoaderFunctionArgs) {
         stops: [
           { id: 1, title: "麺や　いま村", description: `<p><span style="white-space:pre-wrap;">麺や　いま村<br>巣鴨駅すぐの人気ラーメン店【麺や いま村】。看板は、無添加仕込みの鶏白湯に煮干しを合わせた&ldquo;鶏煮干しラーメン&rdquo;。まろやかで奥深いスープに、炭火焼きの鶏チャーシューが香ばしくマッチ！鶏チャーシューはお土産にもオススメ。</span></p>`, image: "/src/step-10.jpg" },
           { id: 2, title: "六義園", description: `<p>六義園<br>巣鴨からも散策範囲！駒込に広がる都内屈指の日本庭園【六義園】。五代将軍・徳川綱吉の側用人、柳沢吉保が1702年に造った&ldquo;回遊式築山泉水庭園&rdquo;です。四季折々の景色が楽しめ、春のしだれ桜や秋の紅葉は特に絶景！</p>`, image: "/src/step-m-2.jpg" },
-          { id: 3, title: "L’esprit", description: `<p>L&rsquo;esprit<br>巣鴨・六義園あたりに新しくできた香りのアトリエ【L&rsquo;esprit（レスプリ）】。空間芳香を手掛ける会社のショップ。10種類の天然香料から、自分だけのアロマサシェや香水を&ldquo;調香体験&rdquo;できる場所。</p>`, image: "/src/step-9.jpg" },
+          { id: 3, title: "L'esprit", description: `<p>L&rsquo;esprit<br>巣鴨・六義園あたりに新しくできた香りのアトリエ【L&rsquo;esprit（レスプリ）】。空間芳香を手掛ける会社のショップ。10種類の天然香料から、自分だけのアロマサシェや香水を&ldquo;調香体験&rdquo;できる場所。</p>`, image: "/src/step-9.jpg" },
           { id: 4, title: "フレンチパウンドハウス", description: `<p><span style="white-space:pre-wrap;">フレンチパウンドハウス<br>巣鴨の名店【FRENCH POUND HOUSE】&ldquo;日本一のショートケーキ&rdquo;と称される絶品ケーキが！口どけなめらかな生クリームと瑞々しい苺のバランスが絶妙な「ブラン」。芳醇な洋酒の香りが広がる大人味の「ルージュ」。2種類のショートケーキは、どちらも特別な時間を約束してくれる逸品です。</span></p>`, image: "/src/step-m-4.jpg" },
-        ],
-        products: [
-          { id: "9", title: "雪菓", imageUrl: "/src/pistachio.jpg", description: "ピスタチオミルク", likes: 3300, views: 6800, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "10", title: "みずの", imageUrl: "/src/shio-daifuku.jpg", description: "塩大福", likes: 2900, views: 5400, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "11", title: "パティスリー ヨーコ", imageUrl: "/src/montblanc.jpg", description: "和栗モンブラン", likes: 2100, views: 4100, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "12", title: "巣鴨あんぱん本舗", imageUrl: "/src/jizo-anpan.jpg", description: "地蔵あんぱん", likes: 1700, views: 3200, category_id: "1", category: "bakery", type: "shop" as const },
-          { id: "13", title: "茶の間", imageUrl: "/src/matcha-parfait.jpg", description: "抹茶パフェ", likes: 2400, views: 4600, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "14", title: "巣鴨プリン", imageUrl: "/src/pudding.jpg", description: "昔ながらの固めプリン", likes: 1600, views: 3100, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "15", title: "甘味処 さくら", imageUrl: "/src/zunda.jpg", description: "ずんだ白玉", likes: 1300, views: 2700, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "16", title: "巣鴨ドーナツ", imageUrl: "/src/donut.jpg", description: "揚げたてドーナツ", likes: 1100, views: 2200, category_id: "1", category: "bakery", type: "shop" as const },
-        ],
+        ]
       },
       {
         id: 3,
@@ -107,25 +115,21 @@ export async function loader({ }: LoaderFunctionArgs) {
         stops: [
           { id: 1, title: "眞性寺", description: `<p>江戸六地蔵尊 眞性寺<br>巣鴨地蔵通りの入り口にある【眞性寺】。ここには江戸六地蔵尊のひとつが祀られています。1714年に造立された高さ2.7mもの大地蔵は、旅人の安全と人々の無病息災を願って建立されたもの。今も商店街のシンボルとして、参拝客をやさしく見守っています。</p>`, image: "/src/step-m-1.jpg" },
           { id: 2, title: "高岩寺", description: `<p>とげぬき地蔵尊 高岩寺</p><p>巣鴨といえば「とげぬき地蔵尊」こと【高岩寺】。 病気平癒・延命にご利益があるとされ、江戸時代から多くの人に信仰されてきたお寺です。 境内で人気なのは「洗い観音」。 自分の体の悪い部分と同じ場所を洗うと治るといわれ、いつも行列ができるほど。</p>`, image: "/src/step-m-2.jpg" },
-          { id: 3, title: "洋食　小林", description: `洋食　小林
-巣鴨地蔵通りの路地裏に佇む洋食屋 洋食 小林 。名物は とろ〜り半熟スコッチエッグ。揚げたてサクサクの衣の向こうから黄身がじゅわっと広がる逸品。クラシックで落ち着いた店内には、グランメゾン出身シェフの技が光る！スコッチエッグに添えられたトマトジャムも秀逸。`, image: "/src/step-11.jpg" },
+          {
+            id: 3, title: "洋食　小林", description: `洋食　小林
+巣鴨地蔵通りの路地裏に佇む洋食屋 洋食 小林 。名物は とろ〜り半熟スコッチエッグ。揚げたてサクサクの衣の向こうから黄身がじゅわっと広がる逸品。クラシックで落ち着いた店内には、グランメゾン出身シェフの技が光る！スコッチエッグに添えられたトマトジャムも秀逸。`, image: "/src/step-11.jpg"
+          },
           { id: 4, title: "巣鴨庚申塚", description: `<p>巣鴨庚申塚</p><p>巣鴨の隠れたパワースポット【庚申塚】 中山道の宿場町として栄えた江戸時代、旅人が道中の安全を祈った場所です。 今は「猿田彦大神」が祀られ、道をひらき、人々を正しい方向へ導いてくれる神さまとして信仰されています。</p>`, image: "/src/step-15.jpg" },
           { id: 5, title: "いっぷく亭", description: `<p>いっぷく亭</p><p>巣鴨・庚申塚駅すぐの甘味処【いっぷく亭】 駅ホームから徒歩3歩、都電散策や地蔵通り散歩の合間にぴったりな場所。 名物は 手作りおはぎ と 焼きそば の「こだわりセット」。あんこ5種（あずき・抹茶・白あん・きな粉・黒ごま）も選べるのが魅力。 線路を眺めながら、ノスタルジックな空間でちょっと一息。</p>`, image: "/src/step-14.jpg" },
-          { id: 6, title: "えがお老眼鏡", description: `えがお老眼鏡
-巣鴨に誕生した“老眼鏡のセレクトショップ”【えがお老眼鏡】老眼鏡＝必需品、から、老眼鏡＝ファッションアイテムへ。50代以上の女性に向けた、大人の“魅せるメガネ”を提案するお店。洗練されたフレームがずらりと並び、リーズナブルな価格で選べる＋見た目も素敵。`, image: "/src/step-13.jpg" },
-          { id: 7, title: "千成もなか", description: `千成もなか　
-巣鴨駅すぐの老舗和菓子店【千成もなか本舗】店名由来は豊臣秀吉の馬印「千成瓢箪（ひょうたん）」、縁起を込めた最中が看板商品です。名物はひょうたん形の最中（五色あん）と、人気のあんバターどら焼き。あんバターどら焼きはブラックペッパーと合わせていただくのもオススメ。“和風パンケーキ”（どら焼きの皮だけ）も評判。`, image: "/src/step-12.jpg" },
-        ],
-        products: [
-          { id: "9", title: "雪菓", imageUrl: "/src/pistachio.jpg", description: "ピスタチオミルク", likes: 3300, views: 6800, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "10", title: "みずの", imageUrl: "/src/shio-daifuku.jpg", description: "塩大福", likes: 2900, views: 5400, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "11", title: "パティスリー ヨーコ", imageUrl: "/src/montblanc.jpg", description: "和栗モンブラン", likes: 2100, views: 4100, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "12", title: "巣鴨あんぱん本舗", imageUrl: "/src/jizo-anpan.jpg", description: "地蔵あんぱん", likes: 1700, views: 3200, category_id: "1", category: "bakery", type: "shop" as const },
-          { id: "13", title: "茶の間", imageUrl: "/src/matcha-parfait.jpg", description: "抹茶パフェ", likes: 2400, views: 4600, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "14", title: "巣鴨プリン", imageUrl: "/src/pudding.jpg", description: "昔ながらの固めプリン", likes: 1600, views: 3100, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "15", title: "甘味処 さくら", imageUrl: "/src/zunda.jpg", description: "ずんだ白玉", likes: 1300, views: 2700, category_id: "3", category: "dessert", type: "shop" as const },
-          { id: "16", title: "巣鴨ドーナツ", imageUrl: "/src/donut.jpg", description: "揚げたてドーナツ", likes: 1100, views: 2200, category_id: "1", category: "bakery", type: "shop" as const },
-        ],
+          {
+            id: 6, title: "えがお老眼鏡", description: `えがお老眼鏡
+巣鴨に誕生した“老眼鏡のセレクトショップ”【えがお老眼鏡】老眼鏡＝必需品、から、老眼鏡＝ファッションアイテムへ。50代以上の女性に向けた、大人の“魅せるメガネ”を提案するお店。洗練されたフレームがずらりと並び、リーズナブルな価格で選べる＋見た目も素敵。`, image: "/src/step-13.jpg"
+          },
+          {
+            id: 7, title: "千成もなか", description: `千成もなか　
+巣鴨駅すぐの老舗和菓子店【千成もなか本舗】店名由来は豊臣秀吉の馬印「千成瓢箪（ひょうたん）」、縁起を込めた最中が看板商品です。名物はひょうたん形の最中（五色あん）と、人気のあんバターどら焼き。あんバターどら焼きはブラックペッパーと合わせていただくのもオススメ。“和風パンケーキ”（どら焼きの皮だけ）も評判。`, image: "/src/step-12.jpg"
+          },
+        ]
       }
     ],
   });
@@ -142,21 +146,86 @@ export default function ModelCourse() {
       </div>
     );
   }
-
+  const [searchParams] = useSearchParams();
+  const categoryId = searchParams.get('category') || 'all';
   const { modelCourses } = data;
   const [selectedCourse, setSelectedCourse] = useState(modelCourses[1]);
+  const [mixedItems, setMixedItems] = useState<MixedItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const { isMobile } = useIsMobile();
   const { fs, fsm } = useUniversalFluid();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   const [currentIndexM, setCurrentIndexM] = useState(modelCourses.length);
   const [isTransitioning, setIsTransitioning] = useState(true);
   const infiniteItems = [...modelCourses, ...modelCourses, ...modelCourses];
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(1);
   const [selectedStop, setSelectedStop] = useState<typeof selectedCourse.stops[0] | null>(null);
   const [hasSvgAnimated, setHasSvgAnimated] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const stopsRef = useRef<(HTMLDivElement | null)[]>([]);
 
+  const fetchRecommendedItems = async (catId: string) => {
+    setLoading(true);
+    try {
+      let placesQuery = supabase.from('tourist_places').select('*');
+      let shopsQuery = supabase.from('shops').select('*');
+
+      if (catId !== 'all') {
+        placesQuery = placesQuery.eq('category_id', catId);
+        shopsQuery = shopsQuery.eq('category_id', catId);
+      }
+
+      const [{ data: places }, { data: shops }] = await Promise.all([
+        placesQuery,
+        shopsQuery,
+      ]);
+
+      // Normalize data
+      const placeItems: MixedItem[] = (places || []).map(p => ({
+        ...p,
+        image_url: p.image_url || '',
+        type: 'place' as const,
+        love_count: p.love_count || 0,
+        category: p.category || 'Unknown',
+        category_id: String(p.category_id),
+      }));
+
+      const shopItems: MixedItem[] = (shops || []).map(s => ({
+        ...s,
+        image_url: s.image_url || '',
+        type: 'shop' as const,
+        love_count: s.love_count || 0,
+        category: s.category || 'Unknown',
+        category_id: String(s.category_id),
+      }));
+
+      // ALTERNATE: Shop → Travel → Shop → Travel
+      const alternated: MixedItem[] = [];
+      const maxLength = Math.max(placeItems.length, shopItems.length);
+
+      for (let i = 0; i < maxLength; i++) {
+        if (i < shopItems.length) alternated.push(shopItems[i]);
+        if (i < placeItems.length) alternated.push(placeItems[i]);
+      }
+
+      // Shuffle if needed, but keep alternate pattern
+      const finalItems = alternated
+        .slice(0, maxLength) // Keep the same length
+
+      console.log('Alternated items:', finalItems);
+      setMixedItems(finalItems);
+    } catch (err) {
+      console.error('Error:', err);
+      setMixedItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // === Load on mount or category change ===
+  useEffect(() => {
+    fetchRecommendedItems(categoryId);
+  }, [categoryId]);
   const handleCourseClick = (course: typeof modelCourses[0]) => {
     setSelectedCourse(course);
     setSelectedStop(null);
@@ -164,11 +233,11 @@ export default function ModelCourse() {
     stopsRef.current = [];
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => {
-    mapRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-    });
-  }, 100);
+      mapRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 100);
   };
 
   const itemWidth = isMobile ? 70 : 33.33;
@@ -193,7 +262,15 @@ export default function ModelCourse() {
       setCurrentIndexM(currentIndexM + length);
     }
   };
+const handlePrev = () => {
+  setCurrentIndex(prev => Math.max(0, prev - 1));
+};
 
+const handleNext = () => {
+  const visibleCount = isMobile ? 1 : 3;
+  const maxIndex = Math.max(0, mixedItems.length - visibleCount);
+  setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
+};
   useEffect(() => {
     if (!isTransitioning) {
       setTimeout(() => setIsTransitioning(true), 50);
@@ -223,16 +300,6 @@ export default function ModelCourse() {
     if (mapRef.current) observer.observe(mapRef.current);
     return () => observer.disconnect();
   }, [hasSvgAnimated, selectedCourse]);
-
-  const handleNext = () => {
-    const maxIndex = Math.max(0, selectedCourse.products.length - (isMobile ? 1 : 3));
-    setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
-  };
-
-  const handlePrev = () => {
-    setCurrentIndex(prev => Math.max(prev - 1, 0));
-  };
-
   const visibleItems = isMobile ? 1 : 3;
   const translateX = currentIndex * (100 / visibleItems);
 
@@ -596,9 +663,8 @@ export default function ModelCourse() {
                       }}
                     >
                       <div
-                        className={`border-2 border-black rounded-[10px] w-full flex overflow-hidden transition-colors ${
-                          selectedStop?.id === stop.id ? 'bg-[#ED4548]' : 'bg-[#FFFFFF]'
-                        }`}
+                        className={`border-2 border-black rounded-[10px] w-full flex overflow-hidden transition-colors ${selectedStop?.id === stop.id ? 'bg-[#ED4548]' : 'bg-[#FFFFFF]'
+                          }`}
                       >
                         <div
                           className="bg-gray-300 flex items-center justify-center text-gray-600"
@@ -616,9 +682,8 @@ export default function ModelCourse() {
                           style={{ marginLeft: isMobile ? fsm(16) : fs(16) }}
                         >
                           <h3
-                            className={`italic font-bold font-cousine ${
-                              selectedStop?.id === stop.id ? 'text-[#FFFFFF]' : 'text-[#000000]'
-                            }`}
+                            className={`italic font-bold font-cousine ${selectedStop?.id === stop.id ? 'text-[#FFFFFF]' : 'text-[#000000]'
+                              }`}
                             style={{
                               fontSize: isMobile ? fsm(16) : fs(16),
                               marginTop: isMobile ? fsm(7) : fs(7),
@@ -627,9 +692,8 @@ export default function ModelCourse() {
                             STOP.{stop.id}
                           </h3>
                           <p
-                            className={`font-cairo font-semibold ${
-                              selectedStop?.id === stop.id ? 'text-[#FFFFFF]' : 'text-[#000000]'
-                            }`}
+                            className={`font-cairo font-semibold ${selectedStop?.id === stop.id ? 'text-[#FFFFFF]' : 'text-[#000000]'
+                              }`}
                             style={{ fontSize: isMobile ? fsm(20) : fs(20) }}
                           >
                             {stop.title}
@@ -663,7 +727,7 @@ export default function ModelCourse() {
         </div>
       </div>
 
-      {/* COURSE SHOPS */}
+      {/* COURSE SHOPS - Fixed Slider */}
       <div
         className="relative"
         style={{
@@ -674,53 +738,84 @@ export default function ModelCourse() {
         }}
       >
         <div
-          className="border-2 border-black rounded-[10px] overflow-visible relative"
-          style={{ paddingTop: isMobile ? fsm(76) : fs(76) }}
+          className="border-2 border-black rounded-[10px]  relative"
+          style={{ paddingTop: fsm(76) }}
         >
           <div
             className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap"
             style={{
-              paddingLeft: isMobile ? fsm(2) : fs(14),
-              paddingRight: isMobile ? fsm(2) : fs(14),
+              paddingLeft: fsm(2),
+              paddingRight: fsm(2),
               fontSize: autoSize(31),
             }}
           >
             COURSE SHOPS
           </div>
-          <div className="overflow-hidden">
-            <div
-              className="flex transition-transform duration-300 ease-in-out px-[25%]"
-              style={{
-                transform: `translateX(-${currentIndex * 25}%)`,
-                width: `${selectedCourse.products.length * 25}%`,
-              }}
-            >
-              {selectedCourse.products.map((product, i) => (
-                <div key={i} className="flex-shrink-0 p-2" style={{ width: isMobile ? fsm(210) : fs(350), height: isMobile ? fsm(301) : fs(496) }}>
-                  <ShopItem {...product} imageUrl={product.imageUrl} />
-                </div>
-              ))}
+
+          {loading ? (
+            <div className="flex justify-center items-center h-48">
+              <p className="text-xl">Loading...</p>
             </div>
-          </div>
-          <div
-            className="flex justify-between px-4"
-            style={{ height: autoSize(76) }}
-          >
-            <button
-              onClick={handlePrev}
-              className="text-4xl disabled:opacity-30"
-              disabled={currentIndex === 0}
-            >
-              ←
-            </button>
-            <button
-              onClick={handleNext}
-              className="text-4xl disabled:opacity-30"
-              disabled={currentIndex >= selectedCourse.products.length - (isMobile ? 1 : 3)}
-            >
-              →
-            </button>
-          </div>
+          ) : mixedItems.length === 0 ? (
+            <div className="flex justify-center items-center h-48">
+              <p className="text-xl text-gray-500">No items found for this category.</p>
+            </div>
+          ) : (
+            <>
+              {/* Slider Container */}
+              <div className="overflow-hidden">
+                <div
+                  className="flex transition-transform duration-300 ease-in-out"
+                  style={{
+                    // প্রতি আইটেমের width = isMobile ? 210 : 350 (fsm/fs unit)
+                    // আমরা 100% base এ কাজ করবো না, absolute width দিবো
+                    transform: `translateX(-${currentIndex * (isMobile ? 210 : 350)}px)`,
+                  }}
+                >
+                  {mixedItems.map((item, i) => (
+                    <div
+                      key={item.id}
+                      className="flex-shrink-0 p-2"
+                      style={{
+                        width: isMobile ? fsm(210) : fs(350),
+                        height: isMobile ? fsm(301) : fs(496),
+                      }}
+                    >
+                      <ShopItem
+                        id={item.id}
+                        title={item.name}
+                        imageUrl={item.image_url}
+                        description={item.description}
+                        likes={item.love_count}
+                        views={item.review_count || 0}
+                        category={item.category}
+                        category_id={item.category_id}
+                        type={item.type}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between px-4" style={{ height: autoSize(76) }}>
+                <button
+                  onClick={handlePrev}
+                  className="text-4xl disabled:opacity-30"
+                  disabled={currentIndex === 0}
+                >
+                  ←
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="text-4xl disabled:opacity-30"
+                  disabled={currentIndex >= mixedItems.length - (isMobile ? 1 : 3)}
+                >
+                  →
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
