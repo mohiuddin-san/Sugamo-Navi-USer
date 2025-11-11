@@ -68,7 +68,7 @@ export default function Shoppage() {
     <div className="min-h-screen">
       <Header />
       <CommonCategoryTop
-        title="SEE&DO"
+        title="シー＆ドゥ"//SEE&DO
         subtitle="観る・遊ぶ"
         imageSrc="/src/see-do.jpg"
         imageAlt="See and Do Image"

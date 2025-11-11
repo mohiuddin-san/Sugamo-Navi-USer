@@ -193,7 +193,7 @@ useEffect(() => {
     <div className="min-h-screen">
       <Header />
       <CommonCategoryTop
-        title="BOOKMARK"
+        title="ブックマーク"//BOOKMARK
         subtitle="⛉"
         imageSrc="/src/food.png"
         imageAlt="Food and Drink Image"

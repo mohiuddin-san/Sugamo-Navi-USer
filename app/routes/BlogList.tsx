@@ -205,80 +205,11 @@ export default function BlogList() {
     return lines.slice(0, maxLines).join("\n");
   };
 
-  //if (loading) return <ShimmerLayout />;
-
-  if (error)
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-6 rounded-lg max-w-4xl">
-            <h2 className="text-xl font-bold mb-2">🚧 Database Setup Required</h2>
-            <p className="mb-4">The blog database tables are not set up yet.</p>
-            
-            {error.includes('table') && (
-              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded mb-4">
-                <h3 className="font-semibold text-yellow-800 mb-2">📝 Database Setup Instructions:</h3>
-                <div className="text-sm text-yellow-700 space-y-2">
-                  <p>1. Go to your Supabase dashboard</p>
-                  <p>2. Run this SQL in the SQL Editor:</p>
-                  <pre className="bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto mt-2">
-{`-- Create categories table
-CREATE TABLE categories (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create blogs table  
-CREATE TABLE blogs (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title TEXT NOT NULL,
-  details TEXT,
-  status TEXT DEFAULT 'draft',
-  category_id UUID REFERENCES categories(id),
-  top_image TEXT,
-  publish_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Insert sample categories
-INSERT INTO categories (name) VALUES 
-  ('観光スポット'), ('寺社・パワースポット'), ('グルメ・食事');`}
-                  </pre>
-                  <p>3. Refresh this page after running the SQL</p>
-                </div>
-              </div>
-            )}
-            
-            <details className="mt-4">
-              <summary className="cursor-pointer font-semibold">Technical Details</summary>
-              <p className="mt-2 text-sm bg-red-50 p-2 rounded">{error}</p>
-            </details>
-            
-            <div className="mt-4 space-x-2">
-              <button 
-                onClick={() => window.location.reload()} 
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-              >
-                Try Again
-              </button>
-              <button 
-                onClick={() => setError(null)} 
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Use Demo Data
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   return (
     <div className="max-w-full">
       <Header />
       <CommonCategoryTop
-        title="TRAVEL TIPS"
+        title="旅のヒント"//TRAVEL TIPS
         subtitle="旅の情報"
         imageSrc="/src/bookmark.jpg"
         imageAlt="Travel tips Image"

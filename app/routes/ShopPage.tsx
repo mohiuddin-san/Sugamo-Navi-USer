@@ -121,7 +121,7 @@ export default function Shoppage() {
     <div className="min-h-screen">
       <Header />
       <CommonCategoryTop
-        title="FOOD&DRINK"
+        title="食べ物＆飲み物"//FOOD&DRINK
         subtitle="食べる"
         imageSrc="/src/food.png"
         imageAlt="Food and Drink Image"

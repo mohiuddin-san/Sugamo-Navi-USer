@@ -428,7 +428,7 @@ export default function ShopDetails() {
         try {
           setLoading(true);
           const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
-          const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours';
+          const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours,website_url';
 
           console.log(`useEffect: Fetching from ${table} with id: ${location.state.item.id}`);
           const { data: shopData, error: shopError } = await supabase
@@ -471,7 +471,7 @@ export default function ShopDetails() {
             category_id: shopData.category_id || 'Unknown',
             category: categoryName,
             opening_hours: shopData.opening_hours || 'OPEN 10:00 ~ 22:00',
-
+            website_url: shopData.website_url || 'https://example.com',
           };
 
           setShop(newShop);
@@ -506,6 +506,7 @@ export default function ShopDetails() {
         other_images: parseOtherImages(menu.other_images),
         opening_hours: menu.hours,
         category: menu.category,
+        website_url: menu.website_url || 'https://example.com',
       });
       setLoading(false);
     } else {
@@ -731,7 +732,7 @@ export default function ShopDetails() {
                   className="text-[#313131] font-cairo font-medium"
                   style={{ fontSize: autoSize(13) }}
                 >
-                  OPEN{" "}
+                  オープン: {" "}
                   {shop.opening_hours ? (
                     <span dangerouslySetInnerHTML={{ __html: shop.opening_hours }} />
                   ) : (
@@ -740,10 +741,10 @@ export default function ShopDetails() {
                 </p>
 
                 <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
-                  Address: {shop.address || 'Not available'}
+                  アドレス: {shop.address || 'Not available'}
                 </p>
                 <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
-                  Near: {shop.near_station || 'Not available'}
+                  ニア: {shop.near_station || 'Not available'}
                 </p>
               </div>
               <a

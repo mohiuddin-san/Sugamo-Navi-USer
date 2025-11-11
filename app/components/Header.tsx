@@ -26,7 +26,7 @@ const Header: React.FC = () => {
     "モデルコース",
     "旅の情報",
     "おすすめの店",
-    "ブックマーク", // Added new menu item for mobile view
+    "ブックマーク",
   ];
 
   const menuRoutes: Record<string, string> = {
@@ -35,25 +35,36 @@ const Header: React.FC = () => {
     モデルコース: "/ModelCourse",
     旅の情報: "/BlogList",
     おすすめの店: "/Recomondation",
-    ブックマーク: "/BookMark", // Route for the new bookmark item
+    ブックマーク: "/BookMark",
   };
 
   const handleSearchClick = () => setIsSearchOpen(true);
-  const handleBookmarkClick = () => navigate("/BookMark");
+  const handleBookmarkClick = () => {
+    if (document.startViewTransition) {
+      document.startViewTransition(() => navigate("/BookMark"));
+    } else {
+      navigate("/BookMark");
+    }
+  };
+
   const handleHomeClick = () => {
-    console.log("🏠 Header: Navigating to home"); // Debug
-    navigate("/", { replace: true });
-    if (revalidator.state === "idle") {
-      revalidator.revalidate();
+    console.log("Home: Navigating to home");
+    if (document.startViewTransition) {
+      document.startViewTransition(() => {
+        navigate("/", { replace: true });
+        if (revalidator.state === "idle") {
+          revalidator.revalidate();
+        }
+      });
+    } else {
+      navigate("/", { replace: true });
+      if (revalidator.state === "idle") {
+        revalidator.revalidate();
+      }
     }
-    // Close search modal if it's open
-    if (isSearchOpen) {
-      setIsSearchOpen(false);
-    }
-    // Close menu if it's open
-    if (isMenuOpen) {
-      setIsMenuOpen(false);
-    }
+
+    if (isSearchOpen) setIsSearchOpen(false);
+    if (isMenuOpen) setIsMenuOpen(false);
   };
 
   const handleLanguageSelect = (language: string) => {
@@ -69,7 +80,7 @@ const Header: React.FC = () => {
         setShopsError(null);
         const { data: shopsData, error } = await supabaseShops
           .from('shops')
-          .select('id, name'); // Select only id and name for search functionality
+          .select('id, name');
 
         if (error) {
           console.error('Error fetching shops:', error);
@@ -99,10 +110,8 @@ const Header: React.FC = () => {
   const [selectedShop, setSelectedShop] = useState<{id: string, name: string} | null>(null);
 
   const handleShopClick = (shopId: string, shopName: string) => {
-    // Put shop name in search input and store shop data
     setSearchQuery(shopName);
     setSelectedShop({id: shopId, name: shopName});
-    // Keep search window open - don't close automatically
   };
 
   useEffect(() => {
@@ -120,10 +129,7 @@ const Header: React.FC = () => {
     };
 
     window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
@@ -139,7 +145,7 @@ const Header: React.FC = () => {
 
   return (
     <div
-      className={` w-full transition-opacity duration-500`}
+      className={`w-full transition-opacity duration-500`}
       style={{
         paddingTop: fs(33),
         height: fs(90)
@@ -162,11 +168,12 @@ const Header: React.FC = () => {
             className="flex flex-nowrap items-center justify-center"
             style={{ gap: isMobile ? fsm(48) : fs(17) }}
           >
-            {menuItems.slice(0, -1).map((item) => ( // Exclude bookmark item for desktop
+            {menuItems.slice(0, -1).map((item) => (
               <Link
                 key={item}
                 to={menuRoutes[item]}
-                className=" relative py-1 pt-2 font-bold font-cousine transition duration-300 ease-in-out rounded-full cursor-pointer group whitespace-nowrap"
+                viewTransition // View Transition যোগ করা হয়েছে
+                className="relative py-1 pt-2 font-bold font-cousine transition duration-300 ease-in-out rounded-full cursor-pointer group whitespace-nowrap"
                 style={{ fontSize: fs(16), paddingLeft: fs(15), paddingRight: fs(15) }}
               >
                 <span className="relative text-center z-10 text-black group-hover:text-white transition-colors duration-300">
@@ -193,7 +200,7 @@ const Header: React.FC = () => {
                 className="font-cousine font-bold italic whitespace-nowrap"
                 style={{ fontSize: fs(16) }}
               >
-                Search
+                検索
               </span>
             </div>
             <button
@@ -368,6 +375,7 @@ const Header: React.FC = () => {
                 <div key={item} className="flex justify-between items-center">
                   <Link
                     to={menuRoutes[item]}
+                    viewTransition // View Transition যোগ করা হয়েছে
                     className="text-black font-bold cursor-pointer fsm-[16] flex items-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -486,7 +494,7 @@ const Header: React.FC = () => {
             )}
             <div className="flex justify-center">
               <div
-                className="flex items-center justify-center border-2 border-black overflow-hidden"
+                className="flex items-center justify-center border-  border-2 border-black overflow-hidden"
                 style={{
                   width: isMobile ? fsm(400) : fs(950),
                   height: isMobile ? fsm(65) : fs(108),
@@ -508,7 +516,7 @@ const Header: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    setSelectedShop(null); // Clear selected shop when manually typing
+                    setSelectedShop(null);
                   }}
                   placeholder="ブーランジェリーボヌール"
                   className="w-full h-full bg-transparent border-none focus:outline-none font-cousine pl-3"
@@ -529,14 +537,17 @@ const Header: React.FC = () => {
                   }}
                   onClick={() => {
                     if (selectedShop) {
-                      // Open selected shop in new window
-                      window.open(`/ShopDetails?id=${selectedShop.id}&type=shops`, '_blank');
-                    } else {
-                      // Focus search input if no shop selected
-                      const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
-                      if (searchInput) {
-                        searchInput.focus();
+                      const url = `/ShopDetails?id=${selectedShop.id}&type=shops`;
+                      if (document.startViewTransition) {
+                        document.startViewTransition(() => {
+                          window.open(url, '_blank');
+                        });
+                      } else {
+                        window.open(url, '_blank');
                       }
+                    } else {
+                      const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+                      if (searchInput) searchInput.focus();
                     }
                   }}
                 >
@@ -563,7 +574,7 @@ const Header: React.FC = () => {
                 filteredShops.slice(0, 4).map((shop) => (
                   <li
                     key={shop.id}
-                    className=" font-Cousine font-bold cursor-pointer hover:bg-gray-200 hover:text-black active:bg-black active:text-white transition-colors duration-200"
+                    className="font-Cousine font-bold cursor-pointer hover:bg-gray-200 hover:text-black active:bg-black active:text-white transition-colors duration-200"
                     style={{ 
                       fontSize: isMobile ? fsm(16) : fs(20),
                       fontWeight: 700,

@@ -1,4 +1,4 @@
-import { Link } from '@remix-run/react';
+import { Link,useNavigate } from '@remix-run/react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useIsMobile } from '~/hooks/useIsMobile';
 import React, { useState, useEffect } from 'react';
@@ -39,7 +39,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
   map_embed,
   other_images,
   opening_hours,
+  website_url,
 }) => {
+  const navigate = useNavigate();
   const { fs, fsm } = useUniversalFluid();
   const { isMobile } = useIsMobile();
   const targetLink = `/ShopDetails?id=${id}&type=${type}s`;
@@ -183,6 +185,39 @@ const ProductCard: React.FC<ProductCardProps> = ({
       setIsBookmarked(true);
     }
   };
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Prevent navigation if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('img[alt="Love"]') ||
+      target.closest('img[alt="Bookmark"]') ||
+      target.tagName === 'A'
+    ) {
+      return;
+    }
+    navigate(targetLink, {
+      state: {
+        type: `${type}s`,
+        item: {
+          id,
+          title: title || 'Untitled',
+          imageUrl: imageUrl || (type === 'place' ? '/src/see-do.png' : '/src/shop.png'),
+          description: description || 'No description available',
+          likes: likesCount,
+          views: views || 0,
+          category_id,
+          category: getCategoryName(category_id),
+          near_station: near_station || '',
+          address: address || '',
+          map_embed: map_embed || '',
+          other_images: other_images || [],
+          opening_hours: opening_hours || '',
+          website_url: website_url || 'https://example.com',
+        },
+      },
+    });
+  };
 
   return (
     <div
@@ -191,6 +226,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         borderRadius: isMobile ? fsm(10) : fs(10),
         ...style,
       }}
+      onClick={handleCardClick}
     >
       <div
         className="flex items-center justify-center w-full"
@@ -358,6 +394,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               map_embed: map_embed || '',
               other_images: other_images || [],
               opening_hours: opening_hours || '',
+              website_url: website_url || 'https://example.com',
             },
           }}
           className="italic font-bold font-cousine text-center md:text-end"
@@ -368,7 +405,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             paddingRight: isMobile ? fsm(0) : fs(18),
           }}
         >
-          more+
+          もっと+
         </Link>
       </div>
     </div>
