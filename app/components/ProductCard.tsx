@@ -239,11 +239,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
       }}
     >
       <h1
-        className="text-center font-bold font-cairo flex items-center justify-center"
+        className="text-center font-bold font-cairo flex items-center justify-center line-clamp-2"
         style={{
           fontSize: isMobile ? fsm(25) : fs(25),
           color: '#313131',
           height: isMobile ? fsm(87) : fs(87),
+          paddingLeft: isMobile ? fsm(9) : fs(25),
+          paddingRight: isMobile ? fsm(9) : fs(25),
+          lineHeight: '1.2',
         }}
       >
         {title || 'No Title Available'}

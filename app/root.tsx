@@ -3,6 +3,8 @@ import { DeviceProvider } from "~/routes/contexts/DeviceContext";
 import { useLocation } from "@remix-run/react";
 import { useEffect } from "react";
 import "~/styles/app.css";
+import i18n from "./i18n";
+import "./i18n";
 
 function ViewTransitionOutlet() {
   const location = useLocation();
@@ -34,7 +36,7 @@ export default function App() {
     };
   }, []);
   return (
-    <html lang="en">
+    <html >
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
