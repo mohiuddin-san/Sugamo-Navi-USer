@@ -3,8 +3,6 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation } from "@r
 import { DeviceProvider } from "~/routes/contexts/DeviceContext";
 import { useEffect, useRef } from "react";
 import "~/styles/app.css";
-import i18n from "./i18n";
-import "./i18n";
 import { ErrorBoundary } from "~/components/ErrorBoundary"; // ← যোগ করো
 
 function ViewTransitionOutlet() {

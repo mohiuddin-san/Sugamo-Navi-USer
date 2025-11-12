@@ -1,25 +1,32 @@
+// app/components/MarqueeHeader.tsx
 import React from "react";
 import { useUniversalFluid } from "../hooks/useUniversalFluid";
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useTranslation } from "react-i18next";
+
 interface MarqueeHeaderProps {
-  text: string; // Dynamic text prop
-  backgroundColor?: string; // Optional background color prop
-  textColor?: string; // Optional text color prop
+  text: string;
+  backgroundColor?: string;
+  textColor?: string;
   animationDuration?: string;
-  marginBottom?: number; // Optional dynamic margin bottom
-  marginTop?: number; // Optional dynamic margin top
+  marginBottom?: number;
+  marginTop?: number;
 }
 
 const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
-  text,
-  backgroundColor = "transparent", // Default to transparent
-  textColor = "black", // Default to black
-  animationDuration = "20s", // Default animation duration
-  marginBottom = 0, 
-  marginTop = 0, 
+  text = "FOLLOW US AND SEE MORE!",
+  backgroundColor = "transparent",
+  textColor = "black",
+  animationDuration = "20s",
+  marginBottom = 0,
+  marginTop = 0,
 }) => {
-  const { fs,fsm, fluidStyle, fluidClass } = useUniversalFluid();
-  const isMobile =  useIsMobile();
+  const { fs, fsm, fluidStyle, fluidClass } = useUniversalFluid();
+  const { isMobile } = useIsMobile();
+  const { t } = useTranslation();
+
+  // Safe text handling
+  const safeText = text ? t(text).toUpperCase() : "FOLLOW US AND SEE MORE!";
 
   return (
     <div
@@ -32,24 +39,34 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
         ...fluidStyle({
           paddingTop: 8,
           paddingBottom: 8,
-          marginBottom: fs(marginBottom), // Dynamic fluid margin bottom
-          marginTop: fs(marginTop), // Dynamic fluid margin top
+          marginBottom: fs(marginBottom),
+          marginTop: fs(marginTop),
         }),
-        backgroundColor, // Apply dynamic background color
+        backgroundColor,
       }}
     >
       <div
-        className={`inline-block animate-marquee font-bold font-cousine italic`}
+        className="inline-block animate-marquee font-bold font-cousine italic"
         style={{
-          fontSize: isMobile? fsm(25):fs(25),
-          color: textColor, // Apply dynamic text color
-          animationDuration, // Apply dynamic animation duration
+          fontSize: isMobile ? fsm(25) : fs(25),
+          color: textColor,
+          animationDuration,
           animationTimingFunction: "linear",
           animationIterationCount: "infinite",
         }}
       >
-        {text.repeat(4)} {/* Repeat text 5 times for marquee effect */}
+        {safeText.repeat(4)}
       </div>
+      <style>{`
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-100%); }
+        }
+        .animate-marquee {
+          display: inline-block;
+          white-space: nowrap;
+        }
+      `}</style>
     </div>
   );
 };
