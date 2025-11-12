@@ -25,23 +25,14 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
   const { isMobile } = useIsMobile();
   const { t } = useTranslation();
 
-  // এই লাইনটা অবশ্যই component-এর ভিতরে থাকতে হবে
-  const FALLBACK_TEXT = "FOLLOW US AND SEE MORE!";
-
-  // t(text) শুধু string হলে
-  const translated = typeof text === "string" ? t(text) : "";
-
-  // fallback দিয়ে safe string
-  const displayText = translated || FALLBACK_TEXT;
-
-  // toUpperCase শুধু string হলে
-  const safeText = displayText.toUpperCase();
+  // শুধু safe text — uppercase করবো না
+  const displayText = typeof text === "string" ? t(text) : "FOLLOW US AND SEE MORE!";
 
   return (
     <div
       className={`w-full border-t-2 border-b-2 border-black overflow-hidden whitespace-nowrap ${fluidClass({
         paddingBottom: 1,
-        marginBottom: marginBottom,
+        marginBottom,
         marginTop: fs(marginTop),
       })}`}
       style={{
@@ -64,18 +55,9 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
           animationIterationCount: "infinite",
         }}
       >
-        {safeText.repeat(4)}
+        {displayText.repeat(4)}
       </div>
-      <style>{`
-        @keyframes marquee {
-          0% { transform: translateX(0%); }
-          100% { transform: translateX(-100%); }
-        }
-        .animate-marquee {
-          display: inline-block;
-          white-space: nowrap;
-        }
-      `}</style>
+    
     </div>
   );
 };
