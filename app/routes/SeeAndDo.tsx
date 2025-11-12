@@ -9,7 +9,7 @@ import CommonCategoryTop from '~/components/CommonCategoryTop';
 import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
-import supabase from '~/supabase'; // আপনার Supabase client
+import supabase from '~/supabase';
 type place= {
   id: string;
   name: string;

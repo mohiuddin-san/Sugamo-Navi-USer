@@ -9,9 +9,9 @@ const TermsOfService = () => {
   const { fs, fsm } = useUniversalFluid();
 
   return (
-    <div className="w-full min-h-screen bg-white text-black p-4 md:p-8" style={{ fontFamily: 'Cousine, monospace' }}>
+    <div className="w-full min-h-screen bg-white text-black" style={{ fontFamily: 'Cousine, monospace' }}>
       <Header/>
-      <div className="max-w-4xl mx-auto" style={{marginTop: fs(50),marginBottom: fs(50)}}>
+      <div className="mx-auto p-10" style={{marginTop: fs(50)}}>
         <h1 
           className="text-3xl md:text-4xl font-bold mb-6 text-center" 
           style={{ fontFamily: 'Cairo, sans-serif', fontSize: isMobile ? fsm(24) : fs(32) }}

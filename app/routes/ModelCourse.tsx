@@ -44,8 +44,8 @@ export async function loader({ }: LoaderFunctionArgs) {
     modelCourses: [
       {
         id: 1,
-        title: "食べ歩きとお守り巡り",
-        subtitle: "王道（巣鴨地蔵通り商店街）コース",
+        title: "王道（巣鴨地蔵通り商店街）コース",
+        subtitle: "巣鴨地蔵通り商店街はとげぬき地蔵尊・高岩寺のある商店街。和菓子や惣菜、昔懐かしい日用品の店が並び、世代を超えて楽しめる人情味あふれる商店街です。そちらの名店を巡る王道コース。",
         imageUrl: "/src/model-course-1.jpg",
         svgPath: "/src/map-pin.svg",
         stops: [
@@ -95,8 +95,8 @@ export async function loader({ }: LoaderFunctionArgs) {
       },
       {
         id: 2,
-        title: "巣鴨スイーツ巡り",
-        subtitle: "甘党のための至福のコース",
+        title: "散策コース",
+        subtitle: "気候の良い季節には巣鴨から少し散策してみませんか？しだれ桜や紅葉などが見どころの都内屈指の美しい庭園【六義園】を中心に、散策の途中に訪れるのにオススメのお店のご紹介です。",
         imageUrl: "/src/model-course-2.jpg",
         svgPath: "/src/model_course-2.svg",
         stops: [
@@ -108,8 +108,8 @@ export async function loader({ }: LoaderFunctionArgs) {
       },
       {
         id: 3,
-        title: "巣鴨スイーツ巡り",
-        subtitle: "甘党のための至福のコース",
+        title: "お参りコース",
+        subtitle: "巣鴨といえば“おばあちゃんの原宿”のイメージが強いですが、実は歴史ある寺社が集まる 参拝スポットの宝庫。心を整えながら、のんびり散策できるコースにしました。",
         imageUrl: "/src/model-course-1.jpg",
         svgPath: "/src/model_course3.svg",
         stops: [
@@ -133,8 +133,8 @@ export async function loader({ }: LoaderFunctionArgs) {
       },
       {
         id: 4,
-        title: "巣鴨スイーツ巡り",
-        subtitle: "甘党のための至福のコース",
+        title: "食べ歩きコース",
+        subtitle: "全長約800mの商店街には、和菓子やお煎餅、揚げ物、甘味処まで“食べ歩きグルメ”がずらり。名物「塩大福」に、熱々の「磯揚げ」や「豚まん」もおすすめ！参拝やお買い物の合間にちょこっとずつつまめるのが、地蔵通りならではの楽しみ方。懐かしさと新しさが混ざり合う商店街で、あなただけの“食べ歩きコース”を見つけてみて！",
         imageUrl: "/src/model-course-2.jpg",
         svgPath: "/src/model_course4.svg",
         stops: [
@@ -444,7 +444,7 @@ const handleNext = () => {
                         color: '#111827',
                       }}
                     >
-                      {selectedCourse.subtitle}
+                      {selectedCourse.title}
                     </p>
                   </div>
                 )}
@@ -544,7 +544,7 @@ const handleNext = () => {
                         className="font-cairo font-semibold text-black"
                         style={{ fontSize: isMobile ? fsm(24) : fs(26) }}
                       >
-                        {selectedCourse.subtitle}
+                        {selectedCourse.title}
                       </p>
                       <div
                         className="font-cairo text-gray-700"
@@ -554,7 +554,7 @@ const handleNext = () => {
                           marginBottom: "50px",
                           lineHeight: '40px',
                         }}
-                        dangerouslySetInnerHTML={{ __html: selectedStop.description }}
+                        dangerouslySetInnerHTML={{ __html: selectedCourse.subtitle }}
                       />
                     </div>
                     <div className="w-full border-t-2 border-black mb-4"></div>
@@ -607,9 +607,16 @@ const handleNext = () => {
                         fontSize: isMobile ? fsm(16) : fs(16),
                       }}
                     >
-                      <p className="font-cairo text-gray-500" style={{ lineHeight: '40px' }}>
-                        {selectedStop.description.replace(/<[^>]*>/g, '').substring(0, 200)}...
-                      </p>
+                      <div
+                        className="font-cairo text-gray-700"
+                        style={{
+                          fontSize: isMobile ? fsm(16) : fs(16),
+                          marginTop: isMobile ? fsm(6) : fs(8),
+                          marginBottom: "50px",
+                          lineHeight: '40px',
+                        }}
+                        dangerouslySetInnerHTML={{ __html: selectedStop.description }}
+                      />
                     </div>
                   </div>
                 ) : (
@@ -751,7 +758,6 @@ const handleNext = () => {
         </div>
       </div>
 
-      {/* COURSE SHOPS - Fixed Slider */}
       <div
         className="relative"
         style={{
@@ -786,13 +792,10 @@ const handleNext = () => {
             </div>
           ) : (
             <>
-              {/* Slider Container */}
               <div className="overflow-hidden">
                 <div
                   className="flex transition-transform duration-300 ease-in-out"
                   style={{
-                    // প্রতি আইটেমের width = isMobile ? 210 : 350 (fsm/fs unit)
-                    // আমরা 100% base এ কাজ করবো না, absolute width দিবো
                     transform: `translateX(-${currentIndex * (isMobile ? 210 : 350)}px)`,
                   }}
                 >
