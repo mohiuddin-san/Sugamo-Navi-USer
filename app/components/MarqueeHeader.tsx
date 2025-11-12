@@ -25,12 +25,17 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
   const { isMobile } = useIsMobile();
   const { t } = useTranslation();
 
-  // ১. text আছে কিনা চেক করো
-  // ২. t(text) valid string কিনা চেক করো
-  // ৩. fallback দাও
-  const translatedText = typeof text === "string" ? t(text) : null;
-  const fallbackText = "FOLLOW US AND SEE MORE!";
-  const finalText = (translatedText || fallbackText).toUpperCase();
+  // ১. fallback সরাসরি string হিসেবে দাও
+  const fallback = "FOLLOW US AND SEE MORE!";
+
+  // ২. t(text) শুধু string হলে
+  const translated = typeof text === "string" ? t(text) : null;
+
+  // ৩. কোনোটাই না থাকলে fallback
+  const displayText = translated ?? fallback;
+
+  // ৪. toUpperCase শুধু string হলে
+  const safeText = typeof displayText === "string" ? displayText.toUpperCase() : fallback.toUpperCase();
 
   return (
     <div
@@ -59,7 +64,7 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
           animationIterationCount: "infinite",
         }}
       >
-        {finalText.repeat(4)}
+        {safeText.repeat(4)}
       </div>
       <style>{`
         @keyframes marquee {
