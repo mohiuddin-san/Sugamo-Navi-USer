@@ -23,7 +23,7 @@ const Header: React.FC = () => {
   const isMobile = useMediaQuery({ maxWidth: 767 });
 
   const { i18n, t } = useTranslation();
-  const currentLanguage = i18n.language.toUpperCase();
+  const currentLanguage = i18n.language;
 
   // Menu Config - আগের ডিজাইন একদম একই
   const menuConfig = [
