@@ -25,17 +25,17 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
   const { isMobile } = useIsMobile();
   const { t } = useTranslation();
 
-  // ১. fallback সরাসরি string হিসেবে দাও
-  const fallback = "FOLLOW US AND SEE MORE!";
+  // এই লাইনটা অবশ্যই component-এর ভিতরে থাকতে হবে
+  const FALLBACK_TEXT = "FOLLOW US AND SEE MORE!";
 
-  // ২. t(text) শুধু string হলে
-  const translated = typeof text === "string" ? t(text) : null;
+  // t(text) শুধু string হলে
+  const translated = typeof text === "string" ? t(text) : "";
 
-  // ৩. কোনোটাই না থাকলে fallback
-  const displayText = translated ?? fallback;
+  // fallback দিয়ে safe string
+  const displayText = translated || FALLBACK_TEXT;
 
-  // ৪. toUpperCase শুধু string হলে
-  const safeText = typeof displayText === "string" ? displayText.toUpperCase() : fallback.toUpperCase();
+  // toUpperCase শুধু string হলে
+  const safeText = displayText.toUpperCase();
 
   return (
     <div
