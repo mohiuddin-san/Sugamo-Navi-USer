@@ -5,7 +5,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { useTranslation } from "react-i18next";
 
 interface MarqueeHeaderProps {
-  text?: string; // ← optional করো
+  text?: string;
   backgroundColor?: string;
   textColor?: string;
   animationDuration?: string;
@@ -14,7 +14,7 @@ interface MarqueeHeaderProps {
 }
 
 const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
-  text, // ← default আর দরকার নেই
+  text,
   backgroundColor = "transparent",
   textColor = "black",
   animationDuration = "20s",
@@ -25,10 +25,12 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
   const { isMobile } = useIsMobile();
   const { t } = useTranslation();
 
-  // সবচেয়ে সেফ উপায়
-  const translated = typeof text === "string" ? t(text) : null;
-  const displayText = translated ?? t("follow_us_default", { defaultValue: "FOLLOW US AND SEE MORE!" });
-  const safeText = displayText.toUpperCase();
+  // ১. text আছে কিনা চেক করো
+  // ২. t(text) valid string কিনা চেক করো
+  // ৩. fallback দাও
+  const translatedText = typeof text === "string" ? t(text) : null;
+  const fallbackText = "FOLLOW US AND SEE MORE!";
+  const finalText = (translatedText || fallbackText).toUpperCase();
 
   return (
     <div
@@ -57,7 +59,7 @@ const MarqueeHeader: React.FC<MarqueeHeaderProps> = ({
           animationIterationCount: "infinite",
         }}
       >
-        {safeText.repeat(4)}
+        {finalText.repeat(4)}
       </div>
       <style>{`
         @keyframes marquee {
