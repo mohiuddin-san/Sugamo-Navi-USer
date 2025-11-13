@@ -695,9 +695,9 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2" style={{ paddingTop: isMobile ? fsm(50) : fs(71) }}>
             <ModelCourseItem
               imageUrl="./src/model-course-1.jpg"
-              title="食べ歩きとお守り巡り"
-              details="巣鴨地蔵通り商店街をスタート。昔ながらの和菓子や塩せんべいを片手に、ぶらり食べ歩きはいかがですか？"
-              categories={["Temple", "Tea", "History", "???????"]}
+              title="王道（巣鴨地蔵通り商店街）コース"
+              details="巣鴨地蔵通り商店街はとげぬき地蔵尊・高岩寺のある商店街。和菓子や惣菜、昔懐かしい日用品の店が並び、世代を超えて楽しめる人情味あふれる商店街です。そちらの名店を巡る王道コース。"
+              categories={["Temple", "Shop", "History", "???????"]}
               itemNumber={1}
             />
             <div className="relative flex flex-col">
@@ -709,9 +709,9 @@ export default function HomePage() {
               </div>
               <ModelCourseItem
                 imageUrl="./src/model-course-2.jpg"
-                title="寺社巡り〜歴史と癒しの旅〜"
-                details="巣鴨地蔵通り商店街をスタート。昔ながらの和菓子や塩せんべいを片手に、ぶらり食べ歩きはいかがですか？"
-                categories={["Temple", "Tea", "History"]}
+                title="散策コース"
+                details="気候の良い季節には巣鴨から少し散策してみませんか？しだれ桜や紅葉などが見どころの都内屈指の美しい庭園【六義園】を中心に、散策の途中に訪れるのにオススメのお店のご紹介です。"
+                categories={["Temple", "Garden", "History"]}
                 itemNumber={2}
               />
             </div>

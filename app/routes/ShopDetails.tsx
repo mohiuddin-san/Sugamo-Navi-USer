@@ -550,17 +550,41 @@ export default function ShopDetails() {
       </div>
 
       {/* Opening Hours & Website */}
-      <div className="flex items-center justify-between" style={{ marginTop: isMobile ? fsm(54) : fs(30), paddingBottom: isMobile ? fsm(0) : fs(61), paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}>
-        <div>
-          <p className="text-[#313131] font-cairo font-medium" style={{ fontSize: isMobile ? fsm(13) : fs(18) }}>
-            オープン: {shop.opening_hours ? <span dangerouslySetInnerHTML={{ __html: shop.opening_hours }} /> : "Not available"}
+
+      <div
+        className="relative flex items-start justify-between"
+        style={{
+          marginTop: isMobile ? fsm(54) : fs(40),
+          paddingLeft: isMobile ? fsm(40) : fs(90),
+          paddingRight: isMobile ? fsm(40) : fs(90)
+        }}
+      >
+        {/* Left Content */}
+        <div className="pr-32"> {/* Space for the icon */}
+          <p
+            className="text-[#313131] font-cairo font-medium"
+            style={{ fontSize: isMobile ? fsm(13) : fs(18) }}
+          >
+            オープン: {shop.opening_hours ? (
+              <span dangerouslySetInnerHTML={{ __html: shop.opening_hours }} />
+            ) : "Not available"}
           </p>
         </div>
-        <a href={shop.website_url} target="_blank" rel="noopener noreferrer">
-          <img src="/src/link_url.png" alt="Link Icon" />
+
+        {/* Fixed Top-Right Link Icon */}
+        <a
+          href={shop.website_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute top-0 right-0 w-24 h-24"
+          style={{ marginRight: isMobile ? fsm(40) : fs(90) }}
+        >
+          <img src="/src/link_url.png" alt="Link Icon" className="w-full h-full object-contain" />
         </a>
       </div>
-
+      <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: isMobile ? fsm(13) : fs(18), marginTop: isMobile ? fsm(10) : fs(10), paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}>
+        ニア: {shop.near_station || 'Not available'}
+      </p>
       {/* Google Map */}
       {shop.map_embed && (
         <div>

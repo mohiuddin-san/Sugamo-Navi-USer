@@ -109,7 +109,7 @@ export default function Recommendation() {
     <div className="min-h-screen">
       <Header />
       <CommonCategoryTop
-        title="リコメンド"//RECOMMENDATION
+        title="RECOMMENDATION"//RECOMMENDATION
         subtitle="推奨"
         imageSrc="/src/food.png"
         imageAlt="Food and Drink Image"

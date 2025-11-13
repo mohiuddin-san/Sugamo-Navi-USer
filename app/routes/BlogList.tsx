@@ -209,7 +209,7 @@ export default function BlogList() {
     <div className="max-w-full">
       <Header />
       <CommonCategoryTop
-        title="旅のヒント"//TRAVEL TIPS
+        title="TRAVEL TIPS"//TRAVEL TIPS
         subtitle="旅の情報"
         imageSrc="/src/bookmark.jpg"
         imageAlt="Travel tips Image"

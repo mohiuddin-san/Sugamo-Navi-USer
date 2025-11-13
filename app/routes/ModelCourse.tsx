@@ -173,7 +173,7 @@ export default function ModelCourse() {
   const [searchParams] = useSearchParams();
   const categoryId = searchParams.get('category') || 'all';
   const { modelCourses } = data;
-  const [selectedCourse, setSelectedCourse] = useState(modelCourses[1]);
+  const [selectedCourse, setSelectedCourse] = useState(modelCourses[0]);
   const [mixedItems, setMixedItems] = useState<MixedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { isMobile } = useIsMobile();
@@ -335,7 +335,7 @@ const handleNext = () => {
     <div className="min-h-screen">
       <Header />
       <CommonCategoryTop
-        title="モデルコース"//MODEL COURSE
+        title="MODEL COURSE"//MODEL COURSE
         subtitle="モデルコース"
         imageSrc="/src/food.png"
         imageAlt="Food"
