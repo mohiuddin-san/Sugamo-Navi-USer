@@ -3,6 +3,9 @@ import { DeviceProvider } from "~/routes/contexts/DeviceContext";
 import { useLocation } from "@remix-run/react";
 import { useEffect } from "react";
 import "~/styles/app.css";
+import { I18nextProvider } from "react-i18next";
+import i18n from "~/i18n";
+import { getLocale } from "~/i18n.server";
 
 function ViewTransitionOutlet() {
   const location = useLocation();
@@ -18,32 +21,37 @@ function ViewTransitionOutlet() {
 
   return <Outlet />;
 }
-
+export const loader = async ({ request }: { request: Request }) => {
+  const locale = await getLocale(request);
+  return { locale };
+};
+export const meta = () => [
+  { charset: "utf-8" },
+  { title: "Sugamo Navi" },
+  { name: "viewport", content: "width=device-width, initial-scale=1" },
+];
 export const links = () => [
   { rel: "icon", href: "/favicon-v2.ico" },
 ];
 
 export default function App() {
-    useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://www.tiktok.com/embed.js";
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+
   return (
-    <html lang="en">
+    <html lang="jp">
       <head>
         <meta charSet="utf-8" />
         <Meta />
         <Links />
       </head>
       <body>
-        <DeviceProvider>
-          <ViewTransitionOutlet />
-        </DeviceProvider>
+        <I18nextProvider i18n={i18n}>
+          {/* DeviceProvider ভিতরে */}
+          <DeviceProvider>
+            <main>
+              <ViewTransitionOutlet />
+            </main>
+          </DeviceProvider>
+        </I18nextProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

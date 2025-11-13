@@ -4,6 +4,7 @@ import { useUniversalFluid } from "../hooks/useUniversalFluid";
 import { useMediaQuery } from "react-responsive";
 import supabaseShops from "~/supabase";
 import { useTranslation } from "react-i18next";
+import i18n from "~/i18n";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,29 +16,48 @@ const Header: React.FC = () => {
   const [shops, setShops] = useState<{ id: string; name: string }[]>([]);
   const [loadingShops, setLoadingShops] = useState(true);
   const [shopsError, setShopsError] = useState<string | null>(null);
+  const [menuItems, setMenuItems] = useState<string[]>([]);
+  const [menuRoutes, setMenuRoutes] = useState<Record<string, string>>({});
+
   const { fs, fsm } = useUniversalFluid();
   const revalidator = useRevalidator();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery({ maxWidth: 767 });
+  const { t } = useTranslation();
 
-  const menuItems = [
-    "食べる",
-    "観る・遊ぶ",
-    "モデルコース",
-    "旅の情報",
-    "おすすめの店",
-    "ブックマーク",
+  // মেনু আইটেম + রুট ডায়নামিক
+  const getMenuItems = () => [
+    t("menu.eat"),
+    t("menu.see"),
+    t("menu.model"),
+    t("menu.info"),
+    t("menu.recommend"),
+    t("menu.bookmark"),
   ];
 
-  const menuRoutes: Record<string, string> = {
-    食べる: "/ShopPage",
-    "観る・遊ぶ": "/SeeAndDo",
-    モデルコース: "/ModelCourse",
-    旅の情報: "/BlogList",
-    おすすめの店: "/Recomondation",
-    ブックマーク: "/BookMark",
-  };
+  const getMenuRoutes = (): Record<string, string> => ({
+    [t("menu.eat")]: "/ShopPage",
+    [t("menu.see")]: "/SeeAndDo",
+    [t("menu.model")]: "/ModelCourse",
+    [t("menu.info")]: "/BlogList",
+    [t("menu.recommend")]: "/Recomondation",
+    [t("menu.bookmark")]: "/BookMark",
+  });
+
+  // ভাষা চেঞ্জে মেনু আপডেট
+  useEffect(() => {
+    setMenuItems(getMenuItems());
+    setMenuRoutes(getMenuRoutes());
+  }, [i18n.language]);
+
+  // selectedLanguage সিঙ্ক
+  useEffect(() => {
+    const lang = i18n.language.toUpperCase();
+    if (["JA", "EN", "ZH"].includes(lang)) {
+      setSelectedLanguage(lang);
+    }
+  }, [i18n.language]);
 
   const handleSearchClick = () => setIsSearchOpen(true);
   const handleBookmarkClick = () => {
@@ -68,10 +88,19 @@ const Header: React.FC = () => {
     if (isMenuOpen) setIsMenuOpen(false);
   };
 
-  const handleLanguageSelect = (language: string) => {
-    i18n.changeLanguage(language);
+
+const handleLanguageSelect = async (language: string) => {
+    const lng = language.toLowerCase();
     setSelectedLanguage(language);
     setIsLanguageDropdownOpen(false);
+
+    // Cookie সেট
+    document.cookie = `i18next=${lng}; path=/; max-age=31536000; SameSite=Lax`;
+
+    // i18n চেঞ্জ
+    await i18n.changeLanguage(lng);
+
+    // মেনু আপডেট হবে useEffect থেকে
   };
 
   // Fetch shops data from Supabase
