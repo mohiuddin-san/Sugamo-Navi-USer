@@ -1,0 +1,44 @@
+{
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "env.d.ts",
+    "netlify-edge-plugin.ts",
+    ".next/types/**/*.ts"
+, "app/components/TikTokVideo.tsx", "app/hooks/DeviceContext.tsx"  ],
+  "compilerOptions": {
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "jsx": "preserve",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "target": "ES2022",
+    "strict": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "~/*": [
+        "./app/*"
+      ]
+    },
+    // Vite takes care of building everything, not tsc.
+    "noEmit": true,
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}

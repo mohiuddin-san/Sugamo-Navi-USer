@@ -1,0 +1,16 @@
+{
+  "name": "巣鴨ナビ",
+  "short_name": "巣鴨ナビ",
+  "description": "巣鴨地蔵通り商店街の観光ガイド。おすすめのお店、モデルコース、最新情報。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/favicon-v2.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
