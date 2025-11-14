@@ -21,7 +21,6 @@ export const loader: LoaderFunction = async () => {
     { url: "BlogList", priority: "0.9", changefreq: "daily" },
   ];
 
-  // Blogs
   const { data: blogs } = await supabaseBlog
     .from("blogs")
     .select("id, publish_date, updated_at")
@@ -38,10 +37,9 @@ export const loader: LoaderFunction = async () => {
     changefreq: "weekly",
   }));
 
-  // Shops
   const { data: shops } = await supabaseShops.from("shops").select("id, updated_at");
   const shopUrls: UrlEntry[] = (shops || []).map(s => ({
-    url: `ShopDetails?id=${s.id}&type=shops`,
+    url: `ShopDetails?id=${s.id}&amp;type=shops`, // এখানে &amp;
     lastmod: s.updated_at
       ? new Date(s.updated_at).toISOString().split("T")[0]
       : undefined,
@@ -49,10 +47,9 @@ export const loader: LoaderFunction = async () => {
     changefreq: "monthly",
   }));
 
-  // Places
   const { data: places } = await supabaseShops.from("tourist_places").select("id, updated_at");
   const placeUrls: UrlEntry[] = (places || []).map(p => ({
-    url: `ShopDetails?id=${p.id}&type=places`,
+    url: `ShopDetails?id=${p.id}&amp;type=places`, // এখানে &amp;
     lastmod: p.updated_at
       ? new Date(p.updated_at).toISOString().split("T")[0]
       : undefined,
@@ -62,7 +59,6 @@ export const loader: LoaderFunction = async () => {
 
   const urls: UrlEntry[] = [...staticUrls, ...blogUrls, ...shopUrls, ...placeUrls];
 
-  // এখানে প্রতিটি <url> আলাদা লাইনে, সঠিক ট্যাগ সহ
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls
