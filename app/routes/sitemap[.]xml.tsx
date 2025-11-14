@@ -1,3 +1,4 @@
+// app/routes/sitemap[.]xml.ts
 
 import { LoaderFunction } from "@remix-run/node";
 import supabaseShops from "~/supabase";
@@ -15,11 +16,12 @@ export const loader: LoaderFunction = async () => {
 
   const staticUrls: UrlEntry[] = [
     { url: "", priority: "1.0", changefreq: "daily" },
-    { url: "/FoodAndDrink", priority: "0.9", changefreq: "daily" },
-    { url: "/SeeAndDo", priority: "0.9", changefreq: "daily" },
-    { url: "/BlogList", priority: "0.9", changefreq: "daily" },
+    { url: "FoodAndDrink", priority: "0.9", changefreq: "daily" }, // /FoodAndDrink
+    { url: "SeeAndDo", priority: "0.9", changefreq: "daily" },
+    { url: "BlogList", priority: "0.9", changefreq: "daily" },
   ];
 
+  // Blogs
   const { data: blogs } = await supabaseBlog
     .from("blogs")
     .select("id, publish_date, updated_at")
@@ -35,10 +37,9 @@ export const loader: LoaderFunction = async () => {
     priority: "0.8",
     changefreq: "weekly",
   }));
-  const { data: shops } = await supabaseShops
-    .from("shops")
-    .select("id, updated_at");
 
+  // Shops
+  const { data: shops } = await supabaseShops.from("shops").select("id, updated_at");
   const shopUrls: UrlEntry[] = (shops || []).map(s => ({
     url: `ShopDetails?id=${s.id}&type=shops`,
     lastmod: s.updated_at
@@ -48,10 +49,8 @@ export const loader: LoaderFunction = async () => {
     changefreq: "monthly",
   }));
 
-  const { data: places } = await supabaseShops
-    .from("tourist_places")
-    .select("id, updated_at");
-
+  // Places
+  const { data: places } = await supabaseShops.from("tourist_places").select("id, updated_at");
   const placeUrls: UrlEntry[] = (places || []).map(p => ({
     url: `ShopDetails?id=${p.id}&type=places`,
     lastmod: p.updated_at
@@ -66,16 +65,14 @@ export const loader: LoaderFunction = async () => {
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls
-  .map(
-    ({ url, lastmod, priority, changefreq }) => `
+  .map(({ url, lastmod, priority, changefreq }) => `
   <url>
     <loc>${baseUrl}/${url}</loc>
     ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}
-    <changefreq>${changefreq || "monthly"}</changefreq>
+    ${changefreq ? `<changefreq>${changefreq}</changefreq>` : ""}
     <priority>${priority}</priority>
-  </url>`
-  )
-  .join("")}
+  </url>`.trim())
+  .join("\n")}
 </urlset>`.trim();
 
   return new Response(sitemap, {
