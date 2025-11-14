@@ -16,7 +16,7 @@ export const loader: LoaderFunction = async () => {
 
   const staticUrls: UrlEntry[] = [
     { url: "", priority: "1.0", changefreq: "daily" },
-    { url: "FoodAndDrink", priority: "0.9", changefreq: "daily" }, // /FoodAndDrink
+    { url: "FoodAndDrink", priority: "0.9", changefreq: "daily" },
     { url: "SeeAndDo", priority: "0.9", changefreq: "daily" },
     { url: "BlogList", priority: "0.9", changefreq: "daily" },
   ];
@@ -62,18 +62,21 @@ export const loader: LoaderFunction = async () => {
 
   const urls: UrlEntry[] = [...staticUrls, ...blogUrls, ...shopUrls, ...placeUrls];
 
+  // এখানে প্রতিটি <url> আলাদা লাইনে, সঠিক ট্যাগ সহ
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls
-  .map(({ url, lastmod, priority, changefreq }) => `
-  <url>
+  .map(entry => {
+    const { url, lastmod, priority, changefreq } = entry;
+    return `  <url>
     <loc>${baseUrl}/${url}</loc>
-    ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}
-    ${changefreq ? `<changefreq>${changefreq}</changefreq>` : ""}
+    ${lastmod ? `    <lastmod>${lastmod}</lastmod>` : ""}
+    ${changefreq ? `    <changefreq>${changefreq}</changefreq>` : ""}
     <priority>${priority}</priority>
-  </url>`.trim())
+  </url>`;
+  })
   .join("\n")}
-</urlset>`.trim();
+</urlset>`;
 
   return new Response(sitemap, {
     headers: {
