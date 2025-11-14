@@ -3,9 +3,15 @@ node_modules
 /.cache
 /public/build
 /build
+/.next
 .env
 
 # Local Netlify folder
 .netlify
 .DS_Store
 cache/
+
+# Claude Code and AI tools
+.claude/
+.serena/
+CLAUDE.md
