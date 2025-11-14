@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate, useLocation, useRevalidator } from "@remix-run/react";
 import { useUniversalFluid } from "../hooks/useUniversalFluid";
 import { useMediaQuery } from "react-responsive";
@@ -10,6 +10,7 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const [isLanguageDropdownClosing, setIsLanguageDropdownClosing] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("JA");
   const [pageTransition, setPageTransition] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,6 +19,7 @@ const Header: React.FC = () => {
   const [shopsError, setShopsError] = useState<string | null>(null);
   const [menuItems, setMenuItems] = useState<string[]>([]);
   const [menuRoutes, setMenuRoutes] = useState<Record<string, string>>({});
+  const [selectedShop, setSelectedShop] = useState<{id: string, name: string} | null>(null);
 
   const { fs, fsm } = useUniversalFluid();
   const revalidator = useRevalidator();
@@ -26,32 +28,33 @@ const Header: React.FC = () => {
   const isMobile = useMediaQuery({ maxWidth: 767 });
   const { t } = useTranslation();
 
-  // মেনু আইটেম + রুট ডায়নামিক
-  const getMenuItems = () => [
+  // Get menu items dynamically based on current language
+  const getMenuItems = useCallback(() => [
     t("menu.eat"),
     t("menu.see"),
     t("menu.model"),
     t("menu.info"),
     t("menu.recommend"),
     t("menu.bookmark"),
-  ];
+  ], [t]);
 
-  const getMenuRoutes = (): Record<string, string> => ({
+  // Get menu routes mapping
+  const getMenuRoutes = useCallback((): Record<string, string> => ({
     [t("menu.eat")]: "/ShopPage",
     [t("menu.see")]: "/SeeAndDo",
     [t("menu.model")]: "/ModelCourse",
     [t("menu.info")]: "/BlogList",
     [t("menu.recommend")]: "/Recomondation",
     [t("menu.bookmark")]: "/BookMark",
-  });
+  }), [t]);
 
-  // ভাষা চেঞ্জে মেনু আপডেট
+  // Update menu items when language changes
   useEffect(() => {
     setMenuItems(getMenuItems());
     setMenuRoutes(getMenuRoutes());
-  }, [i18n.language]);
+  }, [i18n.language, getMenuItems, getMenuRoutes]);
 
-  // selectedLanguage সিঙ্ক
+  // Sync selectedLanguage state with i18n language
   useEffect(() => {
     const lang = i18n.language.toUpperCase();
     if (["JA", "EN", "ZH"].includes(lang)) {
@@ -69,7 +72,6 @@ const Header: React.FC = () => {
   };
 
   const handleHomeClick = () => {
-    console.log("Home: Navigating to home");
     if (document.startViewTransition) {
       document.startViewTransition(() => {
         navigate("/", { replace: true });
@@ -87,20 +89,36 @@ const Header: React.FC = () => {
     if (isSearchOpen) setIsSearchOpen(false);
     if (isMenuOpen) setIsMenuOpen(false);
   };
+  const handleLanguageDropdownToggle = () => {
+    if (isLanguageDropdownOpen) {
+      setIsLanguageDropdownClosing(true);
+      setTimeout(() => {
+        setIsLanguageDropdownOpen(false);
+        setIsLanguageDropdownClosing(false);
+      }, 300); // Match animation duration
+    } else {
+      setIsLanguageDropdownOpen(true);
+    }
+  };
 
-
-const handleLanguageSelect = async (language: string) => {
+  const handleLanguageSelect = async (language: string) => {
     const lng = language.toLowerCase();
     setSelectedLanguage(language);
-    setIsLanguageDropdownOpen(false);
 
-    // Cookie সেট
+    // Close with animation
+    setIsLanguageDropdownClosing(true);
+    setTimeout(() => {
+      setIsLanguageDropdownOpen(false);
+      setIsLanguageDropdownClosing(false);
+    }, 300);
+
+    // Set language cookie
     document.cookie = `i18next=${lng}; path=/; max-age=31536000; SameSite=Lax`;
 
-    // i18n চেঞ্জ
+    // Change language
     await i18n.changeLanguage(lng);
 
-    // মেনু আপডেট হবে useEffect থেকে
+    // Menu will be updated by useEffect
   };
 
   // Fetch shops data from Supabase
@@ -134,11 +152,11 @@ const handleLanguageSelect = async (language: string) => {
   }, []);
 
   // Filter shops based on search query
-  const filteredShops = shops.filter((shop) =>
-    shop.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredShops = useMemo(() =>
+    shops.filter((shop) =>
+      shop.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [shops, searchQuery]
   );
-
-  const [selectedShop, setSelectedShop] = useState<{id: string, name: string} | null>(null);
 
   const handleShopClick = (shopId: string, shopName: string) => {
     setSearchQuery(shopName);
@@ -192,7 +210,7 @@ const handleLanguageSelect = async (language: string) => {
           style={{ fontSize: fs(28) }}
           onClick={handleHomeClick}
         >
-          SUGAMO NAVI
+          巣鴨ナビ
         </div>
         <div className="flex flex-row justify-between items-center">
           <nav
@@ -203,14 +221,17 @@ const handleLanguageSelect = async (language: string) => {
               <Link
                 key={item}
                 to={menuRoutes[item]}
-                viewTransition // View Transition যোগ করা হয়েছে
-                className="relative py-1 pt-2 font-bold font-cousine transition duration-300 ease-in-out rounded-full cursor-pointer group whitespace-nowrap"
-                style={{ fontSize: fs(16), paddingLeft: fs(15), paddingRight: fs(15) }}
+                viewTransition
+                className="font-bold font-cousine rounded-full cursor-pointer hover:bg-black hover:text-white whitespace-nowrap"
+                style={{
+                  fontSize: fs(16),
+                  paddingTop: fs(4),
+                  paddingBottom: fs(4),
+                  paddingLeft: fs(15),
+                  paddingRight: fs(15)
+                }}
               >
-                <span className="relative text-center z-10 text-black group-hover:text-white transition-colors duration-300">
-                  {item}
-                </span>
-                <span className="absolute inset-0 rounded-full bg-black scale-0 group-hover:scale-100 transition-shadow duration-300 ease-linear z-0"></span>
+                {item}
               </Link>
             ))}
           </nav>
@@ -234,63 +255,62 @@ const handleLanguageSelect = async (language: string) => {
                 検索
               </span>
             </div>
-            <button
-              className="py-1 transition-transform duration-300 hover:scale-125"
-              onClick={handleBookmarkClick}
-            >
-              <img
-                src="/src/bookmark.svg"
-                alt="Bookmark Icon"
-                style={{ height: isMobile ? fsm(21) : fs(21), width: isMobile ? fsm(26) : fs(26) }}
-              />
-            </button>
-            <div className="relative flex items-center justify-center">
-              <div
-                className="flex items-center justify-center bg-white cursor-pointer transition-transform duration-300 hover:scale-125"
-                style={{ width: fs(27), height: fs(27) }}
-                onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+            <div className="flex items-center" style={{ gap: fs(12) }}>
+              <button
+                className="py-1 transition-transform duration-300 hover:scale-125"
+                onClick={handleBookmarkClick}
               >
                 <img
-                  className="w-full h-full object-cover"
-                  src="/src/world.svg"
-                  alt="World Icon"
+                  src="/src/bookmark.svg"
+                  alt="Bookmark Icon"
+                  style={{ height: isMobile ? fsm(21) : fs(21), width: isMobile ? fsm(26) : fs(26) }}
                 />
-              </div>
-              {isLanguageDropdownOpen && (
+              </button>
+              <div className="relative flex items-center justify-center">
                 <div
-                  className="absolute inset-0 flex flex-col items-center justify-start bg-white border rounded-full shadow-md"
-                  style={{
-                    borderRadius: fs(30),
-                    width: fs(40),
-                    height: fs(160),
-                  }}
+                  className="flex items-center justify-center bg-white cursor-pointer"
+                  style={{ width: fs(27), height: fs(27) }}
+                  onClick={handleLanguageDropdownToggle}
                 >
-                  <div
-                    className="flex justify-center rounded-full cursor-pointer"
-                    onClick={() => setIsLanguageDropdownOpen(false)}
-                  >
-                    <img src="/src/world.svg" alt="World Icon" />
-                  </div>
-                  {["JA", "EN", "ZH"].map((lang) => (
-                    <div
-                      key={lang}
-                      onClick={() => handleLanguageSelect(lang)}
-                      className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${
-                        selectedLanguage === lang
-                          ? "bg-black text-white"
-                          : "border border-black text-black"
-                      } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
-                      style={{
-                        width: fs(28),
-                        height: fs(28),
-                        fontSize: fs(12),
-                      }}
-                    >
-                      {lang}
-                    </div>
-                  ))}
+                  <img
+                    className="w-full h-full object-cover"
+                    src="/src/world.svg"
+                    alt="World Icon"
+                  />
                 </div>
-              )}
+                {isLanguageDropdownOpen && (
+                  <div
+                    className="absolute top-full flex flex-col items-center justify-center bg-white border border-black rounded-full shadow-md z-50"
+                    style={{
+                      marginTop: fs(8),
+                      width: fs(40),
+                      paddingTop: fs(8),
+                      paddingBottom: fs(8),
+                      gap: fs(6),
+                      animation: isLanguageDropdownClosing ? 'fadeOut 0.3s ease-out' : 'fadeIn 0.3s ease-out',
+                    }}
+                  >
+                    {["JA", "EN", "ZH"].map((lang) => (
+                      <div
+                        key={lang}
+                        onClick={() => handleLanguageSelect(lang)}
+                        className={`flex items-center justify-center rounded-full font-bold cursor-pointer ${
+                          selectedLanguage === lang
+                            ? "bg-black text-white"
+                            : "border border-black text-black"
+                        } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
+                        style={{
+                          width: fs(28),
+                          height: fs(28),
+                          fontSize: fs(12),
+                        }}
+                      >
+                        {lang}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -298,43 +318,35 @@ const handleLanguageSelect = async (language: string) => {
 
       {/* Mobile Header */}
       <div className="md:hidden flex justify-between items-center px-4 relative">
-        <div className="relative flex items-center justify-center">
+        <div className="relative flex items-center justify-center" style={{ marginLeft: fsm(6) }}>
           <div
-            className="flex items-center justify-center bg-white cursor-pointer transition-transform duration-300 hover:scale-125"
+            className="flex items-center justify-center bg-white cursor-pointer"
             style={{ width: fsm(27), height: fsm(27) }}
-            onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+            onClick={handleLanguageDropdownToggle}
           >
             <img
               src="/src/world.svg"
               alt="World Icon"
               className="w-full h-full object-cover"
-              style={{ marginLeft: fsm(6) }}
             />
           </div>
           {isLanguageDropdownOpen && (
             <div
-              className="absolute inset-0 flex flex-col items-center justify-start bg-white border rounded-full shadow-md"
+              className="absolute top-full flex flex-col items-center justify-center bg-white border border-black rounded-full shadow-md z-50"
               style={{
-                borderRadius: fsm(30),
+                marginTop: fsm(8),
                 width: fsm(40),
-                height: fsm(128),
+                paddingTop: fsm(8),
+                paddingBottom: fsm(8),
+                gap: fsm(6),
+                animation: isLanguageDropdownClosing ? 'fadeOut 0.3s ease-out' : 'fadeIn 0.3s ease-out',
               }}
             >
-              <div
-                className="flex justify-center rounded-full cursor-pointer"
-                onClick={() => setIsLanguageDropdownOpen(false)}
-              >
-                <img
-                  src="/src/world.svg"
-                  alt="World Icon"
-                  style={{ height: fsm(28), width: fsm(28) }}
-                />
-              </div>
               {["JA", "EN", "ZH"].map((lang) => (
                 <div
                   key={lang}
                   onClick={() => handleLanguageSelect(lang)}
-                  className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${
+                  className={`flex items-center justify-center rounded-full font-bold cursor-pointer ${
                     selectedLanguage === lang
                       ? "bg-black text-white"
                       : "border border-black text-black"
@@ -356,7 +368,7 @@ const handleLanguageSelect = async (language: string) => {
           style={{ fontSize: fsm(25) }}
           onClick={handleHomeClick}
         >
-          SUGAMO NAVI
+          巣鴨ナビ
         </div>
         <div className="flex items-center space-x-4">
           <div
@@ -388,7 +400,7 @@ const handleLanguageSelect = async (language: string) => {
               style={{ fontSize: fsm(25) }}
               onClick={handleHomeClick}
             >
-              SUGAMO NAVI
+              巣鴨ナビ
             </div>
             <img
               onClick={() => setIsMenuOpen(false)}
@@ -406,7 +418,7 @@ const handleLanguageSelect = async (language: string) => {
                 <div key={item} className="flex justify-between items-center">
                   <Link
                     to={menuRoutes[item]}
-                    viewTransition // View Transition যোগ করা হয়েছে
+                    viewTransition
                     className="text-black font-bold cursor-pointer fsm-[16] flex items-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -437,47 +449,44 @@ const handleLanguageSelect = async (language: string) => {
             {isMobile ? (
               <div className="absolute top-0 left-0 w-full flex items-center justify-between pt-4 px-4">
                 <div className="relative flex items-center justify-center">
-                  <img
-                    src="/src/world.svg"
-                    alt="World Icon"
-                    className="cursor-pointer transition-transform duration-300 hover:scale-110"
+                  <div
+                    className="cursor-pointer"
                     style={{
                       width: fsm(37),
                       height: fsm(37),
                     }}
-                    onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-                  />
+                    onClick={handleLanguageDropdownToggle}
+                  >
+                    <img
+                      src="/src/world.svg"
+                      alt="World Icon"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                   {isLanguageDropdownOpen && (
                     <div
-                      className="absolute top-0 left-0 flex flex-col items-center justify-start bg-white border rounded-full shadow-md z-10"
+                      className="absolute top-full flex flex-col items-center justify-center bg-white border border-black rounded-full shadow-md z-10"
                       style={{
-                        borderRadius: fsm(30),
-                        width: fsm(40),
-                        height: fsm(128),
+                        marginTop: fsm(8),
+                        width: fsm(45),
+                        paddingTop: fsm(8),
+                        paddingBottom: fsm(8),
+                        gap: fsm(6),
+                        animation: isLanguageDropdownClosing ? 'fadeOut 0.3s ease-out' : 'fadeIn 0.3s ease-out',
                       }}
                     >
-                      <div
-                        className="flex justify-center rounded-full cursor-pointer"
-                        onClick={() => setIsLanguageDropdownOpen(false)}
-                      >
-                        <img
-                          src="/src/world.svg"
-                          alt="World Icon"
-                          style={{ height: fsm(20), width: fsm(20) }}
-                        />
-                      </div>
                       {["JA", "EN", "ZH"].map((lang) => (
                         <div
                           key={lang}
                           onClick={() => handleLanguageSelect(lang)}
-                          className={`flex items-center justify-center rounded-full font-bold cursor-pointer my-1 ${
+                          className={`flex items-center justify-center rounded-full font-bold cursor-pointer ${
                             selectedLanguage === lang
                               ? "bg-black text-white"
                               : "border border-black text-black"
                           } font-cousine text-center transition-colors duration-300 hover:bg-black hover:text-white`}
                           style={{
-                            height: fsm(27),
-                            width: fsm(27),
+                            height: fsm(32),
+                            width: fsm(32),
                             fontSize: fsm(12),
                           }}
                         >
@@ -489,14 +498,14 @@ const handleLanguageSelect = async (language: string) => {
                 </div>
                 <div
                   className="font-bold font-cousine cursor-pointer absolute left-1/2 transform -translate-x-1/2"
-                  style={{ 
+                  style={{
                     fontSize: fsm(25),
                     fontWeight: 700,
                     color: '#000000'
                   }}
                   onClick={handleHomeClick}
                 >
-                  SUGAMO NAVI
+                  巣鴨ナビ
                 </div>
                 <img
                   src="/src/cross.svg"
@@ -512,7 +521,7 @@ const handleLanguageSelect = async (language: string) => {
             ) : (
               <div
                 className="font-bold font-cousine cursor-pointer"
-                style={{ 
+                style={{
                   height: fs(100),
                   fontSize: fs(61.4),
                   fontWeight: 700,
@@ -520,7 +529,7 @@ const handleLanguageSelect = async (language: string) => {
                 }}
                 onClick={handleHomeClick}
               >
-                SUGAMO NAVI
+                巣鴨ナビ
               </div>
             )}
             <div className="flex justify-center">
