@@ -39,6 +39,7 @@ export default function App() {
   return (
     <html lang="jp">
       <head>
+        <meta name="google-site-verification" content="9CLFMsHmfETMAJ4uw926BzK1qBqLEapvtLvsmvVwSgA" />
         <meta charSet="utf-8" />
         <Meta />
         <Links />

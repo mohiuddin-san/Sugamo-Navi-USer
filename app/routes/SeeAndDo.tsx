@@ -10,6 +10,8 @@ import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import supabase from '~/supabase';
+import type { MetaFunction } from "@remix-run/react";
+
 type place= {
   id: string;
   name: string;
@@ -24,6 +26,14 @@ type place= {
   map_embed: string;
   other_images: JSON;
   opening_hours: string;
+};
+export const meta: MetaFunction = () => {
+  return [
+    { title: "見る・遊ぶ | See & Do - Sugamo Navi" },
+    { name: "description", content: "巣鴨の観光スポット、寺社、パワースポットを巡るモデルコース。歴史ある場所から隠れスポットまで、地元民おすすめの散策ルートをご紹介。" },
+    { property: "og:title", content: "見る・遊ぶ | See & Do - Sugamo Navi" },
+    { property: "og:image", content: "https://sugamo-navi.com/src/see-do.jpg" },
+  ];
 };
 
 export default function Shoppage() {

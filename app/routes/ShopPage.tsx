@@ -9,6 +9,8 @@ import Footer from '../components/Footer';
 import { ResponsiveGrid, GridItem } from "../components/ResponsiveGrid";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
+import type { MetaFunction } from "@remix-run/react";
+
 type Shop = {
   id: string;
   name: string;
@@ -24,7 +26,14 @@ type Shop = {
   other_images: JSON;
   opening_hours: string;
 };
-
+export const meta: MetaFunction = () => {
+  return [
+    { title: "食べる | Food & Drink - Sugamo Navi" },
+    { name: "description", content: "巣鴨の名物グルメ、老舗和菓子店、カフェ、ラーメン、食べ歩きスポットを完全ガイド。塩大福、古奈屋のカレーうどん、雪菓のかき氷など、地元民おすすめの味を堪能。" },
+    { property: "og:title", content: "食べる | Food & Drink - Sugamo Navi" },
+    { property: "og:image", content: "https://sugamo-navi.com/src/food.png" },
+  ];
+};
 export default function Shoppage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = Number(searchParams.get('page') || '1');

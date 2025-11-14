@@ -7,6 +7,8 @@ import Footer from '~/components/Footer';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useIsMobile } from '../hooks/useIsMobile';
 import supabase from '~/supabase';
+import { MetaFunction } from "@remix-run/react";
+
 
 interface Shop {
   id: string;
@@ -44,6 +46,31 @@ const parseOtherImages = (images: any) => {
   return [];
 };
 
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if (!data?.menu) {
+    return [
+      { title: "Not Found | Sugamo Navi" },
+      { name: "description", content: "お探しのページは見つかりません。" },
+    ];
+  }
+
+  const { menu, type } = data;
+  const isPlace = type === "places";
+  const title = `${menu.name} | ${isPlace ? "見る・遊ぶ" : "食べる"} - Sugamo Navi`;
+  const desc = menu.description?.replace(/<[^>]*>/g, '').slice(0, 150) + "...";
+
+  return [
+    { title },
+    { name: "description", content: desc },
+    { property: "og:title", content: title },
+    { property: "og:description", content: desc },
+    { property: "og:image", content: menu.image },
+    { property: "og:url", content: `https://sugamo-navi.com/ShopDetails?id=${menu.id}&type=${type}` },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ];
+};
 export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
@@ -583,7 +610,7 @@ export default function ShopDetails() {
         </a>
       </div>
       <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: isMobile ? fsm(13) : fs(18), marginTop: isMobile ? fsm(10) : fs(10), paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}>
-        ニア: {shop.near_station || 'Not available'}
+        最寄り: {shop.near_station || 'Not available'}
       </p>
       {/* Google Map */}
       {shop.map_embed && (

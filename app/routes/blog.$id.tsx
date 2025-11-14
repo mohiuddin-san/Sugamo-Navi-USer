@@ -2,6 +2,7 @@ import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import supabase from "~/supabase_blog";
 import BlogDetail from "~/components/BlogDetail";
+import type { MetaFunction } from "@remix-run/react";
 
 interface Blog {
   id: string;
@@ -24,7 +25,32 @@ interface BlogDetailData {
 interface Category {
   name: string;
 }
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if (!data || !data.blog) {
+    return [
+      { title: "ブログが見つかりません | Sugamo Navi" },
+      { name: "description", content: "お探しのブログ記事は存在しません。" },
+    ];
+  }
 
+  const { blog, categoryName } = data;
+  const plainText = blog.details.replace(/<[^>]*>/g, '').replace(/\n/g, ' ').trim();
+  const description = plainText.slice(0, 155) + (plainText.length > 155 ? "..." : "");
+
+  return [
+    { title: `${blog.title} | ${categoryName} - Sugamo Navi` },
+    { name: "description", content: description },
+    { property: "og:title", content: blog.title },
+    { property: "og:description", content: description },
+    { property: "og:image", content: blog.top_image ? `https://sugamo-navi.com${blog.top_image}` : "https://sugamo-navi.com/src/sugamo-navi.webp" },
+    { property: "og:url", content: `https://sugamo-navi.com/blog/${blog.id}` },
+    { property: "og:type", content: "article" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: blog.title },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: blog.top_image ? `https://sugamo-navi.com${blog.top_image}` : "https://sugamo-navi.com/src/sugamo-navi.webp" },
+  ];
+};
 export async function loader({ params }: LoaderFunctionArgs) {
   const { id } = params; // Extract the blog ID from the URL
 

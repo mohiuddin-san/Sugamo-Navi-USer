@@ -30,6 +30,7 @@ interface Heading {
   level: number;
 }
 
+
 export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -129,7 +130,36 @@ export default function BlogDetail({ blog, categoryName }: BlogDetailProps) {
       }
     }
   }, [activeHeading]);
+  useEffect(() => {
+  // JSON-LD for Article
+  const script = document.createElement("script");
+  script.type = "application/ld+json";
+  script.text = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": blog.title,
+    "image": blog.top_image ? `https://sugamo-navi.com${blog.top_image}` : undefined,
+    "datePublished": blog.publish_date,
+    "author": {
+      "@type": "Organization",
+      "name": "Sugamo Navi"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Sugamo Navi",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://sugamo-navi.com/src/logo.png"
+      }
+    },
+    "description": blog.details.replace(/<[^>]*>/g, '').slice(0, 200) + "..."
+  });
+  document.head.appendChild(script);
 
+  return () => {
+    document.head.removeChild(script);
+  };
+}, [blog]);
   useEffect(() => {
     if (ulRef.current && headings.length > 0) {
       const firstLi = ulRef.current.querySelector('li');

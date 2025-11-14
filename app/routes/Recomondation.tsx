@@ -1,14 +1,16 @@
-import { useLocation } from '@remix-run/react';
-import Header from '~/components/Header';
-import React, { useEffect, useState } from 'react';
-import ProductCard from '~/components/ShopItem';
-import MarqueeHeader from '~/components/MarqueeHeader';
-import CommonCategoryTop from '~/components/CommonCategoryTop';
-import Footer from '../components/Footer';
-import supabaseShops from '~/supabase';
-import { ResponsiveGrid, GridItem } from '../components/ResponsiveGrid';
-import { useIsMobile } from '~/hooks/useIsMobile';
-import { useUniversalFluid } from '../hooks/useUniversalFluid';
+// app/routes/recommendation.tsx
+import { useLocation } from "@remix-run/react";
+import Header from "~/components/Header";
+import Footer from "~/components/Footer";
+import ProductCard from "~/components/ShopItem";
+import MarqueeHeader from "~/components/MarqueeHeader";
+import CommonCategoryTop from "~/components/CommonCategoryTop";
+import { ResponsiveGrid, GridItem } from "~/components/ResponsiveGrid";
+import { useIsMobile } from "~/hooks/useIsMobile";
+import { useUniversalFluid } from "~/hooks/useUniversalFluid";
+import supabaseShops from "~/supabase";
+
+import React, { useEffect, useState } from "react";
 
 type Shop = {
   id: string;
@@ -22,73 +24,71 @@ type Shop = {
   review_count: number;
   near_station: string;
   map_embed: string;
-  other_images: JSON;
+  other_images: string[];               // <-- now a real array
   opening_hours: string;
 };
 
-
 export default function Recommendation() {
-  const location = useLocation();
+  const location = useLocation();               // works because file is a route
   const [topShops, setTopShops] = useState<Shop[]>([]);
   const [shopsLoading, setShopsLoading] = useState(true);
   const [shopsError, setShopsError] = useState<string | null>(null);
   const { fs, fsm } = useUniversalFluid();
-    const { isMobile} = useIsMobile();
+  const { isMobile } = useIsMobile();
 
   useEffect(() => {
-    window.dispatchEvent(new Event('resize'));
+    window.dispatchEvent(new Event("resize"));
   }, [location]);
-
   useEffect(() => {
     const fetchTopShops = async () => {
       try {
         setShopsLoading(true);
         setShopsError(null);
-        console.log('Fetching recommendations...');
-        const { data: recommendations, error: recError } = await supabaseShops
-          .from('recommendations')
-          .select('*')
-          .eq('is_active', true)
-          .order('priority', { ascending: true });
 
-        if (recError) {
-          throw new Error(`Failed to fetch recommendations: ${recError.message}`);
-        }
-        console.log('Recommendations:', recommendations);
-        if (!recommendations || recommendations.length === 0) {
-          setShopsError('No active recommendations found.');
-          setTopShops([]);
+        // 1. Active recommendations
+        const { data: recs, error: recErr } = await supabaseShops
+          .from("recommendations")
+          .select("shop_id, priority")
+          .eq("is_active", true)
+          .order("priority", { ascending: true });
+
+        if (recErr) throw recErr;
+        if (!recs?.length) {
+          setShopsError("No active recommendations found.");
           return;
         }
 
-        const shopIds = recommendations.map(rec => rec.shop_id);
-        console.log('Shop IDs:', shopIds);
+        const shopIds = recs.map((r) => r.shop_id);
 
-        const { data: shops, error: shopsError } = await supabaseShops
-          .from('shops')
-          .select('*')
-          .in('id', shopIds);
+        // 2. Shops for those IDs
+        const { data: shops, error: shopErr } = await supabaseShops
+          .from("shops")
+          .select("*")
+          .in("id", shopIds);
 
-        if (shopsError) {
-          throw new Error(`Failed to fetch shops: ${shopsError.message}`);
-        }
-        console.log('Shops:', shops);
-        const sortedShops = recommendations
-          .map(rec => shops.find(shop => shop.id === rec.shop_id))
-          .filter(shop => shop !== undefined)
-          .map(shop => ({
-            ...shop,
-            other_images: Array.isArray(shop.other_images) ? shop.other_images : [],
-          })) as Shop[];
+        if (shopErr) throw shopErr;
 
-        if (sortedShops.length === 0) {
-          setShopsError('No matching shops found for recommendations.');
-        }
-        setTopShops(sortedShops);
-      } catch (error) {
-        const errMsg = error instanceof Error ? error.message : 'Unknown error fetching top shops';
-        setShopsError(errMsg);
-        console.error('Error details:', error);
+        // Preserve recommendation order
+        const sorted: Shop[] = recs
+          .map((rec) => {
+            const shop = shops.find((s) => s.id === rec.shop_id);
+            if (!shop) return null;
+            return {
+              ...shop,
+              // Normalise other_images to an array
+              other_images: Array.isArray(shop.other_images)
+                ? shop.other_images
+                : [],
+            };
+          })
+          .filter((s): s is Shop => s !== null);
+
+        setTopShops(sorted);
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Unknown error";
+        setShopsError(msg);
+        console.error(err);
       } finally {
         setShopsLoading(false);
       }
@@ -108,25 +108,28 @@ export default function Recommendation() {
   return (
     <div className="min-h-screen">
       <Header />
+
       <CommonCategoryTop
-        title="RECOMMENDATION"//RECOMMENDATION
+        title="RECOMMENDATION"
         subtitle="推奨"
         imageSrc="/src/food.png"
         imageAlt="Food and Drink Image"
       />
+
       <MarqueeHeader
-        text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
+        text="Welcome to Sugamo! Pick your faves! "
         backgroundColor="#FFFFFF"
         textColor="#000000"
         animationDuration="90s"
         marginBottom={120}
         marginTop={98}
       />
+
       {shopsLoading ? (
-        <div className="container mx-auto p-4">Loading shops...</div>
+        <div className="container mx-auto p-4">Loading shops…</div>
       ) : (
         <ResponsiveGrid
-          columns={isMobile ? '1fr 1fr' : '1fr 1fr 1fr'}
+          columns={isMobile ? "1fr 1fr" : "1fr 1fr 1fr"}
           rows="auto"
           className="flex justify-center"
           style={{
@@ -136,36 +139,48 @@ export default function Recommendation() {
             marginRight: isMobile ? fsm(20) : fs(161),
           }}
         >
-          {topShops.map((shop, index) => (
-            <GridItem
-              key={shop.id}
-              column={isMobile ? (index % 2) + 1 : (index % 3) + 1}
-              row={isMobile ? Math.floor(index / 2) + 1 : Math.floor(index / 3) + 1}
-              columnSpan={1}
-              rowSpan={1}
-              style={{ minHeight: isMobile ? 'auto' : 'auto', height: 'auto', marginTop: isMobile ? fsm(0) : fs(8) }}
-              className="w-full"
-            >
+          {topShops.map((shop, idx) => {
+            const col = isMobile ? (idx % 2) + 1 : (idx % 3) + 1;
+            const row = isMobile
+              ? Math.floor(idx / 2) + 1
+              : Math.floor(idx / 3) + 1;
+
+            return (
+              <GridItem
+                key={shop.id}
+                column={col}
+                row={row}
+                columnSpan={1}
+                rowSpan={1}
+                style={{
+                  minHeight: "auto",
+                  height: "auto",
+                  marginTop: isMobile ? fsm(0) : fs(8),
+                }}
+                className="w-full"
+              >
                 <ProductCard
                   id={shop.id}
                   title={shop.name}
-                  imageUrl={shop.image_url || '/src/shop.png'}
-                  description={shop.description || 'No description available'}
-                  likes={shop.love_count || 0}
-                  views={shop.review_count || 0}
-                  category={shop.category || 'shop'}
+                  imageUrl={shop.image_url || "/src/shop.png"}
+                  description={shop.description || "No description available"}
+                  likes={shop.love_count ?? 0}
+                  views={shop.review_count ?? 0}
+                  category={shop.category ?? "shop"}
                   category_id={shop.category_id}
                   type="shop"
-                  opening_hours={shop.opening_hours || 'Not specified'}
-                  near_station={shop.near_station || 'Not specified'}
-                  address={shop.address || 'Not specified'}
-                  map_embed={shop.map_embed || ''}
-                  other_images={shop.other_images ? [JSON.stringify(shop.other_images)] : []}
+                  opening_hours={shop.opening_hours ?? "Not specified"}
+                  near_station={shop.near_station ?? "Not specified"}
+                  address={shop.address ?? "Not specified"}
+                  map_embed={shop.map_embed ?? ""}
+                  other_images={shop.other_images}
                 />
-            </GridItem>
-          ))}
+              </GridItem>
+            );
+          })}
         </ResponsiveGrid>
       )}
+
       <Footer marginTop={64} />
     </div>
   );
