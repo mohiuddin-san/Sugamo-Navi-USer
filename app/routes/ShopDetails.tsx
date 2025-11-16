@@ -9,7 +9,6 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import supabase from '~/supabase';
 import { MetaFunction } from "@remix-run/react";
 
-
 interface Shop {
   id: string;
   title: string;
@@ -33,19 +32,37 @@ interface LoaderData {
   products: any[];
   error?: string;
 }
+interface WebsiteLink {
+  logo: string;   // URL to the icon image
+  url: string;    // Destination URL
+}
 
+function parseWebsiteLinks(raw?: string): WebsiteLink[] {
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed
+        .filter((it): it is WebsiteLink =>
+          typeof it.logo === 'string' && typeof it.url === 'string' &&
+          it.logo.trim() !== '' && it.url.trim() !== ''
+        )
+        .map(it => ({ logo: it.logo.trim(), url: it.url.trim() }));
+    }
+  } catch (e) {
+    console.warn('Failed to parse website_url JSON:', e);
+  }
+
+  return []; // No fallback – only API-provided logos
+}
 const parseOtherImages = (images: any) => {
   if (Array.isArray(images)) return images;
   if (typeof images === 'string') {
-    try {
-      return JSON.parse(images);
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(images); } catch { return []; }
   }
   return [];
 };
-
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data?.menu) {
@@ -71,6 +88,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { name: "twitter:card", content: "summary_large_image" },
   ];
 };
+
 export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
@@ -124,7 +142,7 @@ export async function loader({ request }: { request: Request }) {
           other_images: parseOtherImages(itemData.other_images) || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
           likes: itemData.love_count || 0,
           views: itemData.review_count || 0,
-          website_url: itemData.website_url || 'https://example.com',
+          website_url: itemData.website_url || '',
         },
         products: [],
         error: `Failed to fetch related ${type}s: ${relatedError.message}`,
@@ -146,7 +164,7 @@ export async function loader({ request }: { request: Request }) {
         other_images: parseOtherImages(itemData.other_images) || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
         likes: itemData.love_count || 0,
         views: itemData.review_count || 0,
-        website_url: itemData.website_url || 'https://example2.com',
+        website_url: itemData.website_url || '',
       },
       products: relatedData.map((item) => ({
         id: item.id,
@@ -162,7 +180,7 @@ export async function loader({ request }: { request: Request }) {
         opening_hours: item.opening_hours,
         category_id: item.category_id,
         category: categoryName,
-        website_url: item.website_url || 'https://example3.com',
+        website_url: item.website_url || '',
       })),
       type,
       error: null,
@@ -195,66 +213,54 @@ export default function ShopDetails() {
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   const visibleCards = 4;
 
+  const websiteLinks = shop ? parseWebsiteLinks(shop.website_url) : [];
+
   // Combine main image + other images
   const allImages = shop
     ? [shop.imageUrl, ...(shop.other_images || [])].filter(Boolean)
     : [];
 
-  // Infinite slider setup - triple loop for seamless infinite scroll
+  // Infinite slider setup
   const totalSlides = products.length;
-  const extendedProducts = totalSlides > 0 ? [
-    ...products,
-    ...products,
-    ...products,
-  ] : [];
+  const extendedProducts = totalSlides > 0 ? [...products, ...products, ...products] : [];
 
-  // Smooth Infinite Navigation with no visible jump
   const goToNext = () => {
     if (isTransitioning) return;
-
     setIsTransitioning(true);
-    setCurrentIndex((prev) => prev + 1);
+    setCurrentIndex(prev => prev + 1);
   };
 
   const goToPrev = () => {
     if (isTransitioning) return;
-
     setIsTransitioning(true);
-    setCurrentIndex((prev) => prev - 1);
+    setCurrentIndex(prev => prev - 1);
   };
 
-  // Handle transition end to reset position seamlessly
   useEffect(() => {
     if (!isTransitioning) return;
-
     const timer = setTimeout(() => {
       if (currentIndex >= totalSlides) {
-        // Reset to beginning of second set without animation
         setCurrentIndex(currentIndex - totalSlides);
       } else if (currentIndex < 0) {
-        // Reset to end of second set without animation
         setCurrentIndex(currentIndex + totalSlides);
       }
       setIsTransitioning(false);
-    }, 500); // Match transition duration
-
+    }, 500);
     return () => clearTimeout(timer);
   }, [currentIndex, isTransitioning, totalSlides]);
 
   useEffect(() => {
-    // Fetch categories
     const fetchCategories = async () => {
       try {
         const { data, error } = await supabase.from('categories').select('id, name').order('name');
         if (error) throw error;
         setCategoriesShop(data || []);
-      } catch (error) {
-        console.error('Error fetching categories:', error instanceof Error ? error.message : 'Unknown error');
+      } catch (e) {
+        console.error('Error fetching categories:', e);
       }
     };
     fetchCategories();
 
-    // Load bookmark and love state
     if (shop?.id) {
       const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
       const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
@@ -265,10 +271,11 @@ export default function ShopDetails() {
 
   const handleLoveClick = async () => {
     if (!shop?.id) return alert('Cannot like item: Invalid ID');
-
     const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
     const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
-    const rpcName = effectiveType === 'places' ? (hasLoved ? 'decrement_love_count_place' : 'increment_love_count_place') : (hasLoved ? 'decrement_love_count' : 'increment_love_count');
+    const rpcName = effectiveType === 'places'
+      ? (hasLoved ? 'decrement_love_count_place' : 'increment_love_count_place')
+      : (hasLoved ? 'decrement_love_count' : 'increment_love_count');
     const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
 
     try {
@@ -352,7 +359,7 @@ export default function ShopDetails() {
           category_id: shopData.category_id || 'Unknown',
           category: categoryName,
           opening_hours: shopData.opening_hours || 'OPEN 10:00 ~ 22:00',
-          website_url: shopData.website_url || 'https://example.com',
+          website_url: shopData.website_url || '',
         };
 
         setShop(newShop);
@@ -380,7 +387,7 @@ export default function ShopDetails() {
         other_images: parseOtherImages(menu.other_images),
         opening_hours: menu.hours,
         category: menu.category,
-        website_url: menu.website_url || 'https://example.com',
+        website_url: menu.website_url || '',
       };
       setShop(newShop);
       setCurrentIndex(0);
@@ -406,17 +413,16 @@ export default function ShopDetails() {
         category_id: shopFromState.category_id || 'Unknown',
         opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
         category: shopFromState.category || 'No Category',
-        website_url: shopFromState.website_url || 'https://example.com',
+        website_url: shopFromState.website_url || '',
       };
       setShop(newShop);
       setCurrentIndex(0);
     }
   }, [shopFromState, effectiveType, shop]);
 
-  // View increment (once per user)
+  // View increment
   useEffect(() => {
     if (!shop?.id || visitAttemptedRef.current) return;
-
     const visitKey = `${effectiveType}:${shop.id}`;
     const visitedShops = JSON.parse(localStorage.getItem('visitedShops') || '{}');
     if (visitedShops[visitKey]) {
@@ -433,22 +439,14 @@ export default function ShopDetails() {
         const { error } = await supabase.rpc(rpcName, param);
         if (error) throw error;
 
-        const { data: updatedData, error: updatedError } = await supabase.from(table).select('review_count').eq('id', shop.id).single();
-        if (updatedError) {
-          console.error('Failed to fetch updated review_count:', updatedError);
-        }
-        setShop(prev => {
-          if (!prev) return prev;
-          const newViews = updatedData?.review_count ?? prev.views;
-          return { ...prev, views: newViews };
-        });
+        const { data: updatedData } = await supabase.from(table).select('review_count').eq('id', shop.id).single();
+        setShop(prev => prev ? { ...prev, views: updatedData?.review_count ?? prev.views } : prev);
         visitedShops[visitKey] = true;
         localStorage.setItem('visitedShops', JSON.stringify(visitedShops));
       } catch (err) {
         console.error('View increment error:', err);
       }
     };
-
     incrementVisit();
   }, [shop?.id, effectiveType]);
 
@@ -457,7 +455,7 @@ export default function ShopDetails() {
 
   const getCategoryName = (categoryId?: string) => {
     if (!categoryId) return shop.category || 'No Category';
-    const category = categoriesShop.find((cat) => cat.id === categoryId);
+    const category = categoriesShop.find(cat => cat.id === categoryId);
     return category ? category.name : shop.category || 'No Category';
   };
 
@@ -466,12 +464,11 @@ export default function ShopDetails() {
       <Header />
       <MarqueeHeader text="Welcome to Sugamo! Pick your faves! ..." backgroundColor="#FFFFFF" textColor="#000000" animationDuration="90s" marginBottom={120} marginTop={100} />
 
+      {/* MAIN LAYOUT */}
       <div className="flex flex-col md:flex-row items-stretch justify-center min-h-0" style={{ paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}>
-        {/* Left Side */}
+        {/* LEFT */}
         <div className="flex flex-col w-full md:w-1/2">
-          {isMobile && (
-            <h2 className="font-semibold font-cairo text-brown-700" style={{ marginBottom: fsm(20), fontSize: autoSize(22) }}>{shop.title}</h2>
-          )}
+          {isMobile && <h2 className="font-semibold font-cairo text-brown-700" style={{ marginBottom: fsm(20), fontSize: autoSize(22) }}>{shop.title}</h2>}
           {isMobile && (
             <div className="flex flex-row justify-between items-center" style={{ marginBottom: fsm(20) }}>
               <div className="flex flex-row items-center space-x-3">
@@ -505,16 +502,16 @@ export default function ShopDetails() {
               alt={shop.title}
               className="w-full h-full object-cover"
               style={{ maxHeight: isMobile ? fsm(401) : fs(540), aspectRatio: isMobile ? 'auto' : '1 / 1' }}
-              onError={(e) => { e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'; }}
+              onError={e => { e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'; }}
             />
           </div>
 
           {isMobile && allImages.length > 1 && (
-            <div className="mt-4 ">
+            <div className="mt-4">
               <div className="flex space-x-2 overflow-x-auto scrollbar-hide">
                 {allImages.map((image, index) => (
                   <div key={index} className={`flex-shrink-0 cursor-pointer border-2 ${currentIndex === index ? 'border-[#ED4548]' : 'border-transparent'}`} style={{ width: fsm(117), height: fsm(88) }} onClick={() => setCurrentIndex(index)}>
-                    <img src={image} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover rounded" onError={(e) => { e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'; }} />
+                    <img src={image} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover rounded" onError={e => { e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'; }} />
                   </div>
                 ))}
               </div>
@@ -522,15 +519,11 @@ export default function ShopDetails() {
           )}
         </div>
 
-        {/* Right Side */}
+        {/* RIGHT */}
         <div className="flex flex-col w-full md:w-1/2">
           <div className="flex-1 flex flex-col pl-0 md:pl-8 justify-between">
             <div className="space-y-4">
-
-              {!isMobile && (
-                <h2 className="font-semibold font-cairo text-brown-700" style={{ fontSize: autoSize(22) }}>{shop.title}</h2>
-              )}
-
+              {!isMobile && <h2 className="font-semibold font-cairo text-brown-700" style={{ fontSize: autoSize(22) }}>{shop.title}</h2>}
               {!isMobile && (
                 <div className="flex justify-between items-start">
                   <div className="flex flex-wrap items-center gap-3">
@@ -566,7 +559,7 @@ export default function ShopDetails() {
                 <div className="flex space-x-4 overflow-x-auto scrollbar-hide">
                   {allImages.map((image, index) => (
                     <div key={index} className={`flex-shrink-0 cursor-pointer border-2 ${currentIndex === index ? 'border-[#ED4548]' : 'border-transparent'} rounded-lg overflow-hidden`} style={{ width: fs(200), height: fs(150) }} onClick={() => setCurrentIndex(index)}>
-                      <img src={image} alt={`Related ${index + 1}`} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'; }} />
+                      <img src={image} alt={`Related ${index + 1}`} className="w-full h-full object-cover" onError={e => { e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'; }} />
                     </div>
                   ))}
                 </div>
@@ -576,43 +569,60 @@ export default function ShopDetails() {
         </div>
       </div>
 
-      {/* Opening Hours & Website */}
-
+      {/* OPENING HOURS & MULTIPLE LINKS */}
       <div
-        className="relative flex items-start justify-between"
+        className="relative flex flex-col md:flex-row items-start justify-between gap-4"
         style={{
           marginTop: isMobile ? fsm(54) : fs(40),
           paddingLeft: isMobile ? fsm(40) : fs(90),
-          paddingRight: isMobile ? fsm(40) : fs(90)
+          paddingRight: isMobile ? fsm(40) : fs(90),
         }}
       >
-        {/* Left Content */}
-        <div className="pr-32"> {/* Space for the icon */}
+        {/* LEFT: Opening Hours */}
+        <div className="flex-1">
           <p
             className="text-[#313131] font-cairo font-medium"
             style={{ fontSize: isMobile ? fsm(13) : fs(18) }}
           >
-            オープン: {shop.opening_hours ? (
+            オープン:{' '}
+            {shop.opening_hours ? (
               <span dangerouslySetInnerHTML={{ __html: shop.opening_hours }} />
-            ) : "Not available"}
+            ) : (
+              'Not available'
+            )}
           </p>
         </div>
-
-        {/* Fixed Top-Right Link Icon */}
-        <a
-          href={shop.website_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute top-0 right-0 w-24 h-24"
-          style={{ marginRight: isMobile ? fsm(40) : fs(90) }}
-        >
-          <img src="/src/link_url.png" alt="Link Icon" className="w-full h-full object-contain" />
-        </a>
+        <div className="grid grid-cols-3 gap-2 justify-end max-w-xs">
+          {websiteLinks.length > 0 ? (
+            websiteLinks.map(({ url, logo }, idx) => (
+              <a
+                key={idx}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-16 h-16 mx-auto transition-transform hover:scale-110"
+              >
+                <img
+                  src={logo}
+                  alt={`Visit site ${idx + 1}`}
+                  className="w-full h-full object-contain rounded-md shadow-sm bg-white p-1"
+                  onError={(e) => {
+                    e.currentTarget.src = '/src/link_url.png'; // Default fallback icon
+                  }}
+                />
+              </a>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 col-span-3 text-center">No links available</p>
+          )}
+        </div>
       </div>
+
       <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: isMobile ? fsm(13) : fs(18), marginTop: isMobile ? fsm(10) : fs(10), paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}>
         最寄り: {shop.near_station || 'Not available'}
       </p>
-      {/* Google Map */}
+
+      {/* GOOGLE MAP */}
       {shop.map_embed && (
         <div>
           <div className="text-[#ED4548] italic underline w-full text-center font-cousine" style={{ fontSize: autoSize(25), marginTop: isMobile ? fsm(138) : fs(90), marginBottom: isMobile ? fsm(24) : fs(0) }}>
@@ -624,61 +634,27 @@ export default function ShopDetails() {
         </div>
       )}
 
-      {/* SEE MORE - Perfect Infinite Slider (No Shake, 100% Smooth) */}
+      {/* SEE MORE SLIDER */}
       {products.length > 0 ? (
         <div className="relative" style={{ paddingTop: isMobile ? fsm(141) : fs(180), paddingLeft: isMobile ? fsm(20) : fs(90), paddingRight: isMobile ? fsm(20) : fs(90), marginBottom: isMobile ? fsm(144) : fs(130) }}>
           <div className="border-2 border-black rounded-[30px] overflow-visible relative" style={{ paddingTop: isMobile ? fsm(70) : fs(76) }}>
             <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap" style={{ paddingLeft: isMobile ? fsm(20) : fs(45), paddingRight: isMobile ? fsm(20) : fs(45), fontSize: autoSize(31) }}>
               SEE MORE
             </div>
-
             <div className="overflow-hidden">
-              <div
-                ref={sliderRef}
-                className={`flex gap-4 ${isTransitioning ? 'transition-transform duration-500 ease-in-out' : 'transition-none'}`}
-                style={{
-                  transform: `translateX(calc(-${(currentIndex + totalSlides) * (100 / visibleCards)}% - ${(currentIndex + totalSlides) * 1}rem))`,
-                }}
-              >
+              <div ref={sliderRef} className={`flex gap-4 ${isTransitioning ? 'transition-transform duration-500 ease-in-out' : 'transition-none'}`} style={{ transform: `translateX(calc(-${(currentIndex + totalSlides) * (100 / visibleCards)}% - ${(currentIndex + totalSlides) * 1}rem))` }}>
                 {extendedProducts.map((product: any, index: number) => (
-                  <div
-                    key={`${product.id}-${index}`}
-                    className="flex-shrink-0"
-                    style={{
-                      width: `calc(${100 / visibleCards}% - 1rem)`,
-                      minWidth: isMobile ? fsm(210) : fs(350),
-                    }}
-                  >
+                  <div key={`${product.id}-${index}`} className="flex-shrink-0" style={{ width: `calc(${100 / visibleCards}% - 1rem)`, minWidth: isMobile ? fsm(210) : fs(350) }}>
                     <div className="h-full">
-                      <ShopItem
-                        id={product.id}
-                        title={product.title}
-                        imageUrl={product.imageUrl}
-                        description={product.description}
-                        likes={product.likes}
-                        views={product.views}
-                        type={effectiveType === 'places' ? 'place' : 'shop'}
-                        near_station={product.near_station}
-                        address={product.address}
-                        map_embed={product.map_embed}
-                        other_images={product.other_images}
-                        opening_hours={product.opening_hours}
-                        category_id={product.category_id}
-                        category={product.category}
-                      />
+                      <ShopItem id={product.id} title={product.title} imageUrl={product.imageUrl} description={product.description} likes={product.likes} views={product.views} type={effectiveType === 'places' ? 'place' : 'shop'} near_station={product.near_station} address={product.address} map_embed={product.map_embed} other_images={product.other_images} opening_hours={product.opening_hours} category_id={product.category_id} category={product.category} />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-
             <div className="flex justify-between px-4" style={{ height: isMobile ? fsm(106) : fs(76) }}>
-              <button onClick={goToPrev} className="text-4xl hover:scale-110 transition-transform">
-                ←
-              </button>
-              <button onClick={goToNext} className="text-4xl hover:scale-110 transition-transform">
-                →
-              </button>
+              <button onClick={goToPrev} className="text-4xl hover:scale-110 transition-transform">Left Arrow</button>
+              <button onClick={goToNext} className="text-4xl hover:scale-110 transition-transform">Right Arrow</button>
             </div>
           </div>
         </div>
@@ -687,6 +663,7 @@ export default function ShopDetails() {
           No related shops available.
         </div>
       )}
+
       <Footer />
     </div>
   );
