@@ -60,7 +60,7 @@ export async function getTikTokVideos(): Promise<Video[]> {
 
     const currentDate = DateTime.now().setZone('Asia/Tokyo');
     const cacheExpiryDate = cachedData?.lastUpdated
-      ? DateTime.fromISO(cachedData.lastUpdated, { zone: 'Asia/Tokyo' }).plus({ days: 3 })
+      ? DateTime.fromISO(cachedData.lastUpdated, { zone: 'Asia/Tokyo' }).plus({ days: 2 })
       : null;
     const shouldFetch = !cachedData || !cachedData.lastUpdated || !cacheExpiryDate || currentDate > cacheExpiryDate;
     let videos: Video[] = [];
