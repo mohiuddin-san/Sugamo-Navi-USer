@@ -1,5 +1,5 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
-import { DeviceProvider } from "~/routes/contexts/DeviceContext";
+import  DeviceProvider  from "~/routes/contexts/DeviceContext";
 import { useLocation } from "@remix-run/react";
 import { useEffect } from "react";
 import "~/styles/app.css";

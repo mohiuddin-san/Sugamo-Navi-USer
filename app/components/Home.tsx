@@ -3,7 +3,7 @@ import { Link , useLoaderData } from '@remix-run/react';
 import Header from '~/components/Header';
 import React, { useEffect, useState, useRef } from 'react';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
-import { useIsMobile } from '../hooks/useIsMobile';
+
 import Footer from './Footer';
 import MarqueeHeader from "./MarqueeHeader";
 import ProductCard from '~/components/ProductCard';
@@ -16,6 +16,7 @@ import supabaseBlogs from "~/supabase_blog";
 import TikTokVideos from '~/components/TiktokVideos';
 import LoadingScreen from '~/components/LoadingScreen';
 import { useTypingEffect } from '~/hooks/useTypingEffect';
+import { useDevice } from '~/routes/contexts/DeviceContext';
 
 
 type Blog = {
@@ -68,7 +69,7 @@ export function loader() {
 }
 
 export default function HomePage() {
-  const { isMobile, mounted } = useIsMobile();
+  const { isMobile, isClient: mounted } = useDevice();
   const { posts, tiktokVideos } = useLoaderData<{
     posts: any[];
     tiktokVideos: any[];

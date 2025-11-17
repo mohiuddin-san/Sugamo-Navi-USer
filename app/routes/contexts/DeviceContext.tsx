@@ -1,39 +1,43 @@
+// ~/routes/contexts/DeviceContext.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useMediaQuery } from "react-responsive";
 
-// Define the context type
 interface DeviceContextType {
   isMobile: boolean;
+  isClient: boolean;
 }
 
-// Create a Device Context with default value
-const DeviceContext = createContext<DeviceContextType | undefined>(undefined);
+const DeviceContext = createContext<DeviceContextType>({
+  isMobile: false,
+  isClient: false,
+});
 
-// Device Provider Component
-export function DeviceProvider({ children }: { children: React.ReactNode }) {
-  const [isMounted, setIsMounted] = useState(false);
-  const isMobile = useMediaQuery({ maxWidth: 480 });
-  
+export default function DeviceProvider({ children }: { children: React.ReactNode }) {
+  const [isClient, setIsClient] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
-    setIsMounted(true);
+    setIsClient(true);
+
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768); // তোমার কোডে 480px
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
-  
-  // Only provide the actual value after component has mounted
-  const value: DeviceContextType = { 
-    isMobile: isMounted ? isMobile : false 
-  };
-  
+
   return (
-    <DeviceContext.Provider value={value}>
+    <DeviceContext.Provider value={{ isMobile, isClient }}>
       {children}
     </DeviceContext.Provider>
   );
 }
 
-// Custom hook to use the device context
 export function useDevice() {
   const context = useContext(DeviceContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useDevice must be used within a DeviceProvider');
   }
   return context;
