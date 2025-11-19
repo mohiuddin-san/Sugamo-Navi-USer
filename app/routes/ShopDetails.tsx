@@ -8,7 +8,7 @@ import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useIsMobile } from '../hooks/useIsMobile';
 import supabase from '~/supabase';
 import { MetaFunction } from "@remix-run/react";
-import localShopsData from '../../cache/shops.json';
+import { getCachedShops } from '~/utils/readCache';
 
 interface Shop {
   id: string;
