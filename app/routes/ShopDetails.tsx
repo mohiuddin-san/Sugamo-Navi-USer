@@ -32,6 +32,7 @@ interface LoaderData {
   menu: any;
   products: any[];
   error?: string;
+  instagramShops: any[];
 }
 interface WebsiteLink {
   logo: string;   // URL to the icon image
@@ -149,6 +150,14 @@ export async function loader({ request }: { request: Request }) {
         error: `Failed to fetch related ${type}s: ${relatedError.message}`,
       };
     }
+    let instagramShops: any[] = [];
+    try {
+      const cached = await getCachedShops();
+      instagramShops = cached.shops || [];
+    } catch (err) {
+      console.warn('Instagram cache failed to load (this is okay)');
+      instagramShops = [];
+    }
 
     return {
       menu: {
@@ -185,35 +194,35 @@ export async function loader({ request }: { request: Request }) {
       })),
       type,
       error: null,
+      instagramShops: instagramShops,
     };
   } catch (error) {
     return { type, menu: null, products: [], error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
-const localShopsData = await getCachedShops();
-const getInstagramMediaForShop = (shopName: string, address?: string): string[] => {
-  if (!shopName || !localShopsData?.shops?.length) return [];
 
-  const normalizedName = shopName.trim().toLowerCase();
-  const normalizedAddr = (address || '').toLowerCase();
-
-  const matchedShop = localShopsData.shops.find((s: any) => {
-    const candidates = [
-      s.name
-    ].filter(Boolean);
-
-    return candidates.some((text: string) => {
-      const lower = text.toLowerCase();
-      return lower.includes(normalizedName) ||
-        normalizedName.includes(lower) ||
-        (normalizedAddr && lower.includes(normalizedAddr));
-    });
-  });
-
-  return matchedShop?.images || [];
-};
 export default function ShopDetails() {
-  const { menu, products, type, error: loaderError } = useLoaderData<LoaderData>();
+  const { menu, products, type, error: loaderError, instagramShops = [] } = useLoaderData<LoaderData>();
+  const getInstagramMediaForShop = (shopName: string, address?: string): string[] => {
+    if (!shopName || !instagramShops.length) return [];
+
+    const normalizedName = shopName.trim().toLowerCase();
+    const normalizedAddr = (address || '').toLowerCase();
+
+    const matchedShop = instagramShops.find((s: any) => {
+      const candidates = [s.name].filter(Boolean);
+      return candidates.some((text: string) => {
+        const lower = text.toLowerCase();
+        return (
+          lower.includes(normalizedName) ||
+          normalizedName.includes(lower) ||
+          (normalizedAddr && lower.includes(normalizedAddr))
+        );
+      });
+    });
+
+    return matchedShop?.images || [];
+  };
   const location = useLocation();
   const shopFromState = location.state?.item as Shop | undefined;
   const typeFromState = location.state?.type as 'shops' | 'places' | undefined;
@@ -542,17 +551,17 @@ export default function ShopDetails() {
 
                 return isVideo ? (
                   <video
-                    key={mediaUrl} 
+                    key={mediaUrl}
                     src={mediaUrl}
                     controls
                     loop
                     muted
                     playsInline
-                    autoPlay 
+                    autoPlay
                     className="w-a h-full max-w-[100%] max-h-[100%] object-contain"
                     style={{
                       maxHeight: isMobile ? fsm(401) : fs(500),
-                       minHeight: isMobile ? fsm(401) : fs(540),
+                      minHeight: isMobile ? fsm(401) : fs(540),
                     }}
                   />
                 ) : (
@@ -560,6 +569,7 @@ export default function ShopDetails() {
                     src={mediaUrl}
                     alt={shop.title}
                     className="w-full h-full object-cover rounded-lg"
+
                     style={{ height: isMobile ? fsm(401) : fs(540) }}
                     onError={(e) => (e.currentTarget.src = '/src/shop.png')}
                   />
@@ -662,7 +672,7 @@ export default function ShopDetails() {
                   alt={`Visit site ${idx + 1}`}
                   className="w-full h-full object-contain rounded-md shadow-sm bg-white p-1"
                   onError={(e) => {
-                    e.currentTarget.src = '/src/link_url.png'; 
+                    e.currentTarget.src = '/src/link_url.png';
                   }}
                 />
               </a>
