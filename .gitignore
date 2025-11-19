@@ -1,6 +1,4 @@
 node_modules
-
-/.cache
 /public/build
 /build
 .env
@@ -8,4 +6,4 @@ node_modules
 # Local Netlify folder
 .netlify
 .DS_Store
-cache/
+
