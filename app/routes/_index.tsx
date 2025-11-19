@@ -22,11 +22,19 @@ export const loader = async () => {
       getInstagramVideos(),
       getTikTokVideos(),
     ]);
-    console.log('Instagram posts count:', instagramPosts?.length || 0);
-    console.log('TikTok videos count:', tiktokVideos?.length || 0);
-    
+    const instagramVideoPosts = (instagramPosts || []).filter((post: any) => {
+      if (post.media_type === 'VIDEO') return true;
+      if (typeof post.media_url === 'string' && post.media_url.includes('.mp4')) return true;
+      if (post.media_type === 'CAROUSEL_ALBUM' && Array.isArray(post.children?.data)) {
+        return post.children.data.some((child: any) =>
+          child.media_type === 'VIDEO' || 
+          (child.media_url && child.media_url.includes('.mp4'))
+        );
+      }
+      return false;
+    }); 
     return json({
-      posts: Array.isArray(instagramPosts) ? instagramPosts : [],
+      posts: Array.isArray(instagramVideoPosts) ? instagramVideoPosts : [],
       tiktokVideos: Array.isArray(tiktokVideos) ? tiktokVideos : [],
       error: null,
     });

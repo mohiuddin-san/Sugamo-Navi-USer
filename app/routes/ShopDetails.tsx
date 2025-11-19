@@ -8,6 +8,7 @@ import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useIsMobile } from '../hooks/useIsMobile';
 import supabase from '~/supabase';
 import { MetaFunction } from "@remix-run/react";
+import localShopsData from '../../cache/shops.json';
 
 interface Shop {
   id: string;
@@ -189,7 +190,27 @@ export async function loader({ request }: { request: Request }) {
     return { type, menu: null, products: [], error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
+const getInstagramMediaForShop = (shopName: string, address?: string): string[] => {
+  if (!shopName || !localShopsData?.shops?.length) return [];
 
+  const normalizedName = shopName.trim().toLowerCase();
+  const normalizedAddr = (address || '').toLowerCase();
+
+  const matchedShop = localShopsData.shops.find((s: any) => {
+    const candidates = [
+      s.name
+    ].filter(Boolean);
+
+    return candidates.some((text: string) => {
+      const lower = text.toLowerCase();
+      return lower.includes(normalizedName) ||
+        normalizedName.includes(lower) ||
+        (normalizedAddr && lower.includes(normalizedAddr));
+    });
+  });
+
+  return matchedShop?.images || [];
+};
 export default function ShopDetails() {
   const { menu, products, type, error: loaderError } = useLoaderData<LoaderData>();
   const location = useLocation();
@@ -215,11 +236,25 @@ export default function ShopDetails() {
 
   const websiteLinks = shop ? parseWebsiteLinks(shop.website_url) : [];
 
-  // Combine main image + other images
-  const allImages = shop
-    ? [shop.imageUrl, ...(shop.other_images || [])].filter(Boolean)
-    : [];
+  const allImages = (() => {
+    if (!shop) return [];
 
+    const instagramMedia = getInstagramMediaForShop(shop.title, shop.address);
+    const mainImage = shop.imageUrl && !shop.imageUrl.includes('src/shop.png') && !shop.imageUrl.includes('src/see-do.png')
+      ? [shop.imageUrl]
+      : [];
+
+    return [...mainImage, ...instagramMedia].filter(Boolean);
+  })();
+  useEffect(() => {
+    if (allImages.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % allImages.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [allImages.length]);
   // Infinite slider setup
   const totalSlides = products.length;
   const extendedProducts = totalSlides > 0 ? [...products, ...products, ...products] : [];
@@ -458,7 +493,9 @@ export default function ShopDetails() {
     const category = categoriesShop.find(cat => cat.id === categoryId);
     return category ? category.name : shop.category || 'No Category';
   };
-
+  const isVideoUrl = (url: string) => {
+    return /\.(mp4|webm|ogg)$/i.test(url) || url.includes('video') || url.includes('.mp4') || url.includes('dash');
+  };
   return (
     <div className="min-h-screen">
       <Header />
@@ -496,30 +533,63 @@ export default function ShopDetails() {
             </div>
           )}
 
-          <div className="flex-1 flex items-center justify-center">
-            <img
-              src={allImages[currentIndex] || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')}
-              alt={shop.title}
-              className="w-full h-full object-cover"
-              style={{ maxHeight: isMobile ? fsm(401) : fs(540), aspectRatio: isMobile ? 'auto' : '1 / 1' }}
-              onError={e => { e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'; }}
-            />
-          </div>
+          <div className="flex-1 flex items-center justify-center relative bg-black rounded-lg overflow-hidden">
+            {allImages.length > 0 ? (
+              (() => {
+                const mediaUrl = allImages[currentIndex % allImages.length];
+                const isVideo = isVideoUrl(mediaUrl);
 
-          {isMobile && allImages.length > 1 && (
-            <div className="mt-4">
-              <div className="flex space-x-2 overflow-x-auto scrollbar-hide">
-                {allImages.map((image, index) => (
-                  <div key={index} className={`flex-shrink-0 cursor-pointer border-2 ${currentIndex === index ? 'border-[#ED4548]' : 'border-transparent'}`} style={{ width: fsm(117), height: fsm(88) }} onClick={() => setCurrentIndex(index)}>
-                    <img src={image} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover rounded" onError={e => { e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'; }} />
-                  </div>
+                return isVideo ? (
+                  <video
+                    key={mediaUrl} 
+                    src={mediaUrl}
+                    controls
+                    loop
+                    muted
+                    playsInline
+                    autoPlay 
+                    className="w-a h-full max-w-[100%] max-h-[100%] object-contain"
+                    style={{
+                      maxHeight: isMobile ? fsm(401) : fs(500),
+                       minHeight: isMobile ? fsm(401) : fs(540),
+                    }}
+                    poster={shop.imageUrl}
+                  />
+                ) : (
+                  <img
+                    src={mediaUrl}
+                    alt={shop.title}
+                    className="w-full h-full object-cover rounded-lg"
+                    style={{ maxHeight: isMobile ? fsm(401) : fs(540) }}
+                    onError={(e) => (e.currentTarget.src = '/src/shop.png')}
+                  />
+                );
+              })()
+            ) : (
+              <img
+                src={shop.imageUrl}
+                alt={shop.title}
+                className="w-full h-full object-cover rounded-lg"
+                style={{ maxHeight: isMobile ? fsm(401) : fs(540) }}
+              />
+            )}
+            {/* {allImages.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
+                {allImages.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`h-1 rounded-full transition-all duration-300 ${idx === currentIndex % allImages.length
+                        ? 'bg-white w-6'
+                        : 'bg-white/50 w-2'
+                      }`}
+                  />
                 ))}
               </div>
-            </div>
-          )}
-        </div>
+            )} */}
+          </div>
 
-        {/* RIGHT */}
+
+        </div>
         <div className="flex flex-col w-full md:w-1/2">
           <div className="flex-1 flex flex-col pl-0 md:pl-8 justify-between">
             <div className="space-y-4">
@@ -553,23 +623,9 @@ export default function ShopDetails() {
             <div className="flex-1 overflow-y-auto">
               <p className="text-[#313131] font-normal font-cairo leading-loose" style={{ marginTop: isMobile ? fsm(16) : fs(19), fontSize: autoSize(16), maxHeight: isMobile ? 'none' : fs(210), overflowY: 'auto', paddingRight: '4px' }} dangerouslySetInnerHTML={{ __html: shop.description }} />
             </div>
-
-            {!isMobile && allImages.length > 1 && (
-              <div className="mt-6 border-t border-gray-300 pt-4">
-                <div className="flex space-x-4 overflow-x-auto scrollbar-hide">
-                  {allImages.map((image, index) => (
-                    <div key={index} className={`flex-shrink-0 cursor-pointer border-2 ${currentIndex === index ? 'border-[#ED4548]' : 'border-transparent'} rounded-lg overflow-hidden`} style={{ width: fs(200), height: fs(150) }} onClick={() => setCurrentIndex(index)}>
-                      <img src={image} alt={`Related ${index + 1}`} className="w-full h-full object-cover" onError={e => { e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'; }} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
-
-      {/* OPENING HOURS & MULTIPLE LINKS */}
       <div
         className="relative flex flex-col md:flex-row items-start justify-between gap-4"
         style={{
@@ -578,7 +634,6 @@ export default function ShopDetails() {
           paddingRight: isMobile ? fsm(40) : fs(90),
         }}
       >
-        {/* LEFT: Opening Hours */}
         <div className="flex-1">
           <p
             className="text-[#313131] font-cairo font-medium"
@@ -607,7 +662,7 @@ export default function ShopDetails() {
                   alt={`Visit site ${idx + 1}`}
                   className="w-full h-full object-contain rounded-md shadow-sm bg-white p-1"
                   onError={(e) => {
-                    e.currentTarget.src = '/src/link_url.png'; // Default fallback icon
+                    e.currentTarget.src = '/src/link_url.png'; 
                   }}
                 />
               </a>

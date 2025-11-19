@@ -1,3 +1,4 @@
+
 import fs from 'fs/promises';
 import path from 'path';
 import { DateTime } from 'luxon';
@@ -11,6 +12,23 @@ if (typeof window !== 'undefined') {
 const CACHE_DIR = path.join(process.cwd(), 'cache');
 const TIKTOK_CACHE_FILE = path.join(CACHE_DIR, 'tiktok_videos.json');
 const INSTAGRAM_CACHE_FILE = path.join(CACHE_DIR, 'instagram_videos.json');
+const SHOPS_CACHE = path.join(CACHE_DIR, 'shops.json');
+
+export interface Shop {
+  id: string;
+  name: string;
+  address: string;
+  location: string;
+  description: string;
+  all_descriptions: string[];
+  images: string[];
+  thumbnail: string;
+  permalink: string;
+  like_count: number;
+  comments_count: number;
+  posted_at: string;
+  hashtags: string[];
+}
 
 interface Video {
   id: string;
@@ -23,15 +41,18 @@ interface Video {
   source: 'tiktok';
 }
 
-interface InstagramVideo {
+interface InstagramPost {
   id: string;
-  media_type: string;
+  media_type: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM';
   media_url: string;
-  thumbnail_url: string;
+  thumbnail_url?: string;
   caption: string;
   like_count: number;
+  comments_count: number;
   permalink: string;
   timestamp: string;
+  username?: string;
+  children?: { media_url: string; media_type: string }[];
   source: 'instagram';
 }
 interface Video {
@@ -41,6 +62,233 @@ interface Video {
   webVideoUrl: string;
   videoMeta: { coverUrl: string };
   source: 'tiktok';
+}
+function isVideoPost(post: InstagramPost): boolean {
+  if (post.media_type === 'VIDEO') return true;
+  if (post.media_type === 'CAROUSEL_ALBUM' && post.children) {
+    return post.children.some(child => child.media_type === 'VIDEO');
+  }
+  return false;
+}
+function extractVideoUrlsFromPost(post: InstagramPost): string[] {
+  const urls: string[] = [];
+
+  if (post.media_type === 'VIDEO') {
+    if (post.media_url) urls.push(post.media_url);
+  }
+
+  if (post.media_type === 'CAROUSEL_ALBUM' && post.children) {
+    post.children.forEach(child => {
+      if (child.media_type === 'VIDEO' && child.media_url) {
+        urls.push(child.media_url);
+      }
+    });
+  }
+
+  return urls;
+}
+export async function refreshInstagramData() {
+  await fs.mkdir(CACHE_DIR, { recursive: true });
+  const posts = await fetchInstagramPosts();
+  await parseShopsFromPosts(posts);
+
+  console.log(`Instagram থেকে ${posts.length} টি পোস্ট পাওয়া গেছে → shops.json তৈরি হয়ে গেছে`);
+  return posts;
+}
+
+async function fetchInstagramPosts() {
+  let cached: any = null;
+  try {
+    const data = await fs.readFile(INSTAGRAM_CACHE_FILE, 'utf-8');
+    cached = JSON.parse(data);
+  } catch { }
+
+  const today = DateTime.now().setZone('Asia/Tokyo').toISODate();
+  if (cached?.date === today && cached?.posts?.length > 0) {
+    return cached.posts;
+  }
+
+  const token = process.env.FB_PAGE_ACCESS_TOKEN;
+  const pageId = process.env.FB_PAGE_ID;
+  if (!token || !pageId) throw new Error('FB_PAGE_ACCESS_TOKEN or FB_PAGE_ID missing');
+  let igId = process.env.IG_USER_ID;
+  if (!igId) {
+    const res = await fetch(
+      `https://graph.facebook.com/v23.0/${pageId}?fields=instagram_business_account&access_token=${token}`
+    );
+    const json = await res.json();
+    igId = json.instagram_business_account?.id;
+    if (!igId) throw new Error('Instagram Business Account not connected');
+  }
+
+  const fields = 'id,media_type,media_url,thumbnail_url,caption,like_count,comments_count,permalink,timestamp,children{media_url,media_type}';
+  const url = `https://graph.facebook.com/v23.0/${igId}/media?fields=${fields}&access_token=${token}&limit=100`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Instagram API Error: ' + err);
+  }
+  const { data } = await res.json();
+  const posts = data.map((p: any) => ({
+    id: p.id,
+    media_type: p.media_type,
+    media_url: p.media_url || p.thumbnail_url || '',
+    thumbnail_url: p.thumbnail_url || p.media_url || '',
+    caption: p.caption || '',
+    like_count: p.like_count || 0,
+    comments_count: p.comments_count || 0,
+    permalink: p.permalink || '',
+    timestamp: p.timestamp || '',
+    children: p.media_type === 'CAROUSEL_ALBUM' ? p.children?.data : undefined,
+  }));
+  await fs.writeFile(INSTAGRAM_CACHE_FILE, JSON.stringify({ posts, date: today }, null, 2));
+  return posts;
+}
+
+function parseCaption(caption: string) {
+  const lines = caption.split('\n');
+  let name = '', address = '', location = '', description = '';
+  const hashtags: string[] = [];
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('📍')) location = trimmed.replace('📍', '').trim();
+    if (trimmed.includes('『') && trimmed.includes('』')) {
+      name = trimmed.replace(/『|』/g, '').trim();
+    }
+    if (trimmed.includes('◼︎') || trimmed.includes('住所')) {
+      address = trimmed.replace(/◼︎|住所：?/g, '').trim();
+    }
+    if (trimmed.startsWith('#')) {
+      trimmed.split(' ').filter(t => t.startsWith('#') && t.length > 1).forEach(t => hashtags.push(t));
+    }
+  });
+
+  const infoIndex = lines.findIndex(l => l.includes('お店情報'));
+  description = infoIndex !== -1 ? lines.slice(0, infoIndex).join('\n').trim() : caption.split('お店情報')[0]?.trim() || '';
+
+  return {
+    name: name || '名前不明',
+    address,
+    location: location || '巣鴨',
+    description,
+    hashtags
+  };
+}
+async function createShopsJson(posts: InstagramPost[]) {
+  const shopMap = new Map<string, Shop>();
+
+  for (const p of posts) {
+    if (!isVideoPost(p)) continue;
+    if (!p.caption) continue;
+    const info = parseCaption(p.caption);
+    if (!info.name || info.name.includes('不明')) continue;
+    const key = info.name.trim();
+    const videoUrls = extractVideoUrlsFromPost(p);
+    if (videoUrls.length === 0) continue;
+    const existing = shopMap.get(key);
+    if (existing) {
+      const uniqueNewVideos = videoUrls.filter(url => !existing.images.includes(url));
+      existing.images.push(...uniqueNewVideos);
+      if (info.description && info.description.trim()) {
+        const cleanDesc = info.description.trim();
+        if (!existing.all_descriptions.includes(cleanDesc)) {
+          existing.all_descriptions.push(cleanDesc);
+        }
+      }
+      existing.like_count += p.like_count;
+      existing.comments_count += p.comments_count;
+      info.hashtags.forEach(tag => {
+        if (!existing.hashtags.includes(tag)) existing.hashtags.push(tag);
+      });
+      if (new Date(p.timestamp) > new Date(existing.posted_at)) {
+        existing.thumbnail = p.thumbnail_url || videoUrls[0];
+        existing.permalink = p.permalink;
+        existing.posted_at = p.timestamp;
+        existing.address = info.address || existing.address;
+        existing.location = info.location || existing.location;
+        existing.description = info.description.trim() || existing.description;
+      }
+    } else {
+      shopMap.set(key, {
+        id: p.id + "_" + Date.now(),
+        name: info.name,
+        address: info.address || '',
+        location: info.location || '巣鴨',
+        description: info.description.trim() || '',
+        all_descriptions: info.description.trim() ? [info.description.trim()] : [],
+        images: videoUrls, // শুধু ভিডিও URL
+        thumbnail: p.thumbnail_url || videoUrls[0],
+        permalink: p.permalink,
+        like_count: p.like_count,
+        comments_count: p.comments_count,
+        posted_at: p.timestamp,
+        hashtags: info.hashtags || [],
+      });
+    }
+  }
+
+  const shops = Array.from(shopMap.values())
+    .sort((a, b) => new Date(b.posted_at).getTime() - new Date(a.posted_at).getTime());
+
+  await fs.writeFile(
+    SHOPS_CACHE,
+    JSON.stringify({
+      generated_at: new Date().toISOString(),
+      total_shops: shops.length,
+      video_only: true,
+      note: "শুধুমাত্র Instagram Reels/Video পোস্ট। ছবি বাদ দেওয়া হয়েছে। একই দোকানের সব ভিডিও মার্জ করা হয়েছে।",
+      shops
+    }, null, 2)
+  );
+
+  console.log(`শুধুমাত্র ${shops.length} টি দোকানের ভিডিও সেভ হয়েছে (ছবি বাদ)!`);
+}
+
+function parseShopsFromPosts(posts: any[]) {
+  const shops: Shop[] = [];
+
+  for (const p of posts) {
+    if (!p.caption) continue;
+
+    const info = parseCaption(p.caption);
+    if (!info.name || info.name.includes('不明')) continue;
+
+    const images = [p.media_url];
+    if (p.children) {
+      p.children.forEach((c: any) => c.media_url && images.push(c.media_url));
+    }
+
+    shops.push({
+      id: p.id,
+      name: info.name,
+      address: info.address,
+      location: info.location,
+      description: info.description,
+      images,
+      thumbnail: p.thumbnail_url || p.media_url,
+      permalink: p.permalink,
+      like_count: p.like_count,
+      comments_count: p.comments_count,
+      all_descriptions: info.description ? [info.description] : [],
+      posted_at: p.timestamp,
+      hashtags: info.hashtags,
+    });
+  }
+
+  // shops.json সেভ করো
+  fs.writeFile(
+    SHOPS_CACHE,
+    JSON.stringify({
+      generated_at: new Date().toISOString(),
+      total_shops: shops.length,
+      shops
+    }, null, 2)
+  );
+
+  return shops;
 }
 
 export async function getTikTokVideos(): Promise<Video[]> {
@@ -162,7 +410,8 @@ export async function getTikTokVideos(): Promise<Video[]> {
     }
   }
 }
-export async function getInstagramVideos(): Promise<InstagramVideo[]> {
+
+export async function getInstagramVideos(): Promise<InstagramPost[]> {
   try {
     const pageAccessToken = process.env.FB_PAGE_ACCESS_TOKEN;
     const pageId = process.env.FB_PAGE_ID;
@@ -178,75 +427,105 @@ export async function getInstagramVideos(): Promise<InstagramVideo[]> {
     try {
       const cacheContent = await fs.readFile(INSTAGRAM_CACHE_FILE, 'utf-8');
       cachedData = JSON.parse(cacheContent);
-    } catch (err) {
-    }
+    } catch { }
 
-    const currentDate = DateTime.now().setZone('Asia/Tokyo').toISODate();
-    const shouldFetch = !cachedData || !cachedData.lastUpdated || cachedData.lastUpdated !== currentDate;
+    const currentDate = DateTime.now().setZone('Asia/Tokyo');
+    const cacheExpiryDate = cachedData?.lastUpdated
+      ? DateTime.fromISO(cachedData.lastUpdated, { zone: 'Asia/Tokyo' }).plus({ days: 2 })
+      : null;
 
-    let posts: InstagramVideo[] = [];
+    const shouldFetch = !cachedData
+      || !cachedData.lastUpdated
+      || !cacheExpiryDate
+      || currentDate > cacheExpiryDate;
+
+    let posts: InstagramPost[] = [];
+
     if (shouldFetch) {
       if (!igUserId) {
         const igResponse = await fetch(
           `https://graph.facebook.com/v23.0/${pageId}?fields=instagram_business_account&access_token=${pageAccessToken}`
         );
-        if (!igResponse.ok) {
-          throw new Error('Failed to fetch IG User ID');
-        }
+        if (!igResponse.ok) throw new Error('Failed to fetch IG User ID');
         const igData = await igResponse.json();
         igUserId = igData.instagram_business_account?.id;
-        if (!igUserId) {
-          throw new Error('No Instagram Business Account linked');
-        }
+        if (!igUserId) throw new Error('No Instagram Business Account linked');
       }
+
+      const fields = [
+        'id', 'media_type', 'media_url', 'thumbnail_url', 'caption',
+        'like_count', 'comments_count', 'permalink', 'timestamp', 'username',
+        'children{media_url,media_type}'
+      ].join(',');
 
       const mediaResponse = await fetch(
-        `https://graph.facebook.com/v23.0/${igUserId}/media?fields=media_type,media_url,thumbnail_url,caption,like_count,timestamp,permalink&access_token=${pageAccessToken}&limit=10`
+        `https://graph.facebook.com/v23.0/${igUserId}/media?fields=${fields}&access_token=${pageAccessToken}&limit=100`
       );
+
       if (!mediaResponse.ok) {
-        throw new Error('Failed to fetch Instagram media');
+        const err = await mediaResponse.text();
+        throw new Error(`Failed to fetch Instagram media: ${err}`);
       }
+
       const mediaData = await mediaResponse.json();
 
-      posts = mediaData.data
-        .filter((post: any) => post.media_type === 'VIDEO')
-        .map((post: any) => ({
+      posts = mediaData.data.map((post: any): InstagramPost => {
+        let children: { media_url: string; media_type: string }[] = [];
+        if (post.media_type === 'CAROUSEL_ALBUM' && post.children?.data) {
+          children = post.children.data.map((child: any) => ({
+            media_url: child.media_url || '',
+            media_type: child.media_type || 'IMAGE',
+          }));
+        }
+
+        return {
           id: post.id || '',
-          media_type: post.media_type || '',
+          media_type: post.media_type || 'IMAGE',
           media_url: post.media_url || '',
-          thumbnail_url: post.thumbnail_url || '',
+          thumbnail_url: post.thumbnail_url || post.media_url || '',
           caption: post.caption || 'No caption',
           like_count: post.like_count || 0,
+          comments_count: post.comments_count || 0,
           permalink: post.permalink || '',
           timestamp: post.timestamp || '',
+          username: post.username || '',
+          children: children.length > 0 ? children : undefined,
           source: 'instagram' as const,
-        }))
-        .filter((post: InstagramVideo) => post.id && post.thumbnail_url);
+        };
+      });
+
+      // instagram_videos.json সেভ
       await fs.writeFile(
         INSTAGRAM_CACHE_FILE,
-        JSON.stringify({ posts, lastUpdated: currentDate }, null, 2),
-        'utf-8'
+        JSON.stringify({ posts, lastUpdated: currentDate }, null, 2)
       );
+
+      // এখানেই ম্যাজিক — shops.json অটো তৈরি
+      await createShopsJson(posts);
+
+      console.log(`getInstagramVideos() → instagram_videos.json + shops.json দুটোই তৈরি! (${posts.length} পোস্ট)`);
     } else {
       posts = Array.isArray(cachedData.posts) ? cachedData.posts : [];
     }
 
     return posts;
   } catch (error) {
+    console.error('Instagram fetch error:', error);
+    // ক্যাশ থেকে ফিরিয়ে দাও
     try {
       const cacheContent = await fs.readFile(INSTAGRAM_CACHE_FILE, 'utf-8');
       const cachedData = JSON.parse(cacheContent);
       return Array.isArray(cachedData.posts) ? cachedData.posts : [];
-    } catch (cacheErr) {
+    } catch {
       return [];
     }
   }
 }
 
-export function mixVideos(tiktokVideos: Video[] | undefined, instagramVideos: InstagramVideo[] | undefined): Array<Video | InstagramVideo> {
+export function mixVideos(tiktokVideos: Video[] | undefined, instagramVideos: InstagramPost[] | undefined): Array<Video | InstagramPost> {
   const tiktok = Array.isArray(tiktokVideos) ? tiktokVideos : [];
   const instagram = Array.isArray(instagramVideos) ? instagramVideos : [];
-  const mixed: Array<Video | InstagramVideo> = [];
+  const mixed: Array<Video | InstagramPost> = [];
   const maxLength = Math.max(tiktok.length, instagram.length);
 
   for (let i = 0; i < maxLength; i++) {

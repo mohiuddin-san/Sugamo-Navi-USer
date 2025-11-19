@@ -7,6 +7,8 @@ import Footer from '~/components/Footer';
 import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useIsMobile } from '../hooks/useIsMobile';
 import supabase from '~/supabase';
+import { MetaFunction } from "@remix-run/react";
+import localShopsData from '../../cache/shops.json';
 
 interface Shop {
   id: string;
@@ -31,64 +33,90 @@ interface LoaderData {
   products: any[];
   error?: string;
 }
+interface WebsiteLink {
+  logo: string;   // URL to the icon image
+  url: string;    // Destination URL
+}
 
+function parseWebsiteLinks(raw?: string): WebsiteLink[] {
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed
+        .filter((it): it is WebsiteLink =>
+          typeof it.logo === 'string' && typeof it.url === 'string' &&
+          it.logo.trim() !== '' && it.url.trim() !== ''
+        )
+        .map(it => ({ logo: it.logo.trim(), url: it.url.trim() }));
+    }
+  } catch (e) {
+    console.warn('Failed to parse website_url JSON:', e);
+  }
+
+  return []; // No fallback – only API-provided logos
+}
 const parseOtherImages = (images: any) => {
   if (Array.isArray(images)) return images;
   if (typeof images === 'string') {
-    try {
-      return JSON.parse(images);
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(images); } catch { return []; }
   }
   return [];
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if (!data?.menu) {
+    return [
+      { title: "Not Found | Sugamo Navi" },
+      { name: "description", content: "お探しのページは見つかりません。" },
+    ];
+  }
+
+  const { menu, type } = data;
+  const isPlace = type === "places";
+  const title = `${menu.name} | ${isPlace ? "見る・遊ぶ" : "食べる"} - Sugamo Navi`;
+  const desc = menu.description?.replace(/<[^>]*>/g, '').slice(0, 150) + "...";
+
+  return [
+    { title },
+    { name: "description", content: desc },
+    { property: "og:title", content: title },
+    { property: "og:description", content: desc },
+    { property: "og:image", content: menu.image },
+    { property: "og:url", content: `https://sugamo-navi.com/ShopDetails?id=${menu.id}&type=${type}` },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ];
+};
+
 export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
   const type = url.searchParams.get('type') || 'shops';
-  console.log('Loader: Fetching with type:', type, 'id:', id);
 
-  if (!id) {
-    console.log('Loader: Missing id');
-    return { type, menu: null, products: [], error: 'Missing id' };
-  }
-
-  if (!['shops', 'places'].includes(type)) {
-    console.log('Loader: Invalid type:', type);
-    return { type, menu: null, products: [], error: `Invalid type: ${type}` };
-  }
+  if (!id) return { type, menu: null, products: [], error: 'Missing id' };
+  if (!['shops', 'places'].includes(type)) return { type, menu: null, products: [], error: `Invalid type: ${type}` };
 
   const table = type === 'places' ? 'tourist_places' : 'shops';
-  //const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours,website_url';
 
   try {
-    console.log(`Loader: Fetching from ${table} with id: ${id}`);
     const { data: itemData, error: itemError } = await supabase
       .from(table)
       .select('*')
       .eq('id', id)
       .single();
 
-    if (itemError || !itemData) {
-      console.log(`Loader: Supabase ${table} error or no data:`, itemError);
-      return { type, menu: null, products: [], error: itemError?.message || `${type} not found` };
-    }
-
-    console.log(`Loader: Fetched ${table} data:`, itemData);
+    if (itemError || !itemData) return { type, menu: null, products: [], error: itemError?.message || `${type} not found` };
 
     let categoryName = 'No Category';
     if (itemData.category_id) {
-      const { data: categoryData, error: categoryError } = await supabase
+      const { data: categoryData } = await supabase
         .from('categories')
         .select('name')
         .eq('id', itemData.category_id)
         .single();
-      if (categoryError) {
-        console.error('Error fetching category:', categoryError);
-      } else {
-        categoryName = categoryData.name || 'No Category';
-      }
+      categoryName = categoryData?.name || 'No Category';
     }
 
     const { data: relatedData, error: relatedError } = await supabase
@@ -99,7 +127,6 @@ export async function loader({ request }: { request: Request }) {
       .limit(8);
 
     if (relatedError) {
-      console.log(`Loader: Supabase related ${table} error:`, relatedError);
       return {
         type,
         menu: {
@@ -112,18 +139,16 @@ export async function loader({ request }: { request: Request }) {
           category: categoryName,
           lastText: itemData.near_station || 'Unknown station',
           address: itemData.address || 'Unknown address',
-          map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
+          map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?...',
           other_images: parseOtherImages(itemData.other_images) || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
           likes: itemData.love_count || 0,
           views: itemData.review_count || 0,
-          website_url: itemData.website_url || 'https://example.com',
+          website_url: itemData.website_url || '',
         },
         products: [],
         error: `Failed to fetch related ${type}s: ${relatedError.message}`,
       };
     }
-
-    console.log(`Loader: Fetched related ${table} data:`, relatedData);
 
     return {
       menu: {
@@ -136,11 +161,11 @@ export async function loader({ request }: { request: Request }) {
         category: categoryName,
         lastText: itemData.near_station || 'Unknown station',
         address: itemData.address || 'Unknown address',
-        map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
+        map_embed: itemData.map_embed || 'https://www.google.com/maps/embed?...',
         other_images: parseOtherImages(itemData.other_images) || [(type === 'places' ? '/src/see-do.png' : '/src/shop.png')],
         likes: itemData.love_count || 0,
         views: itemData.review_count || 0,
-        website_url: itemData.website_url || 'https://example2.com',
+        website_url: itemData.website_url || '',
       },
       products: relatedData.map((item) => ({
         id: item.id,
@@ -156,90 +181,114 @@ export async function loader({ request }: { request: Request }) {
         opening_hours: item.opening_hours,
         category_id: item.category_id,
         category: categoryName,
-        website_url: item.website_url || 'https://example3.com',
+        website_url: item.website_url || '',
       })),
       type,
       error: null,
     };
   } catch (error) {
-    console.log('Loader: Error:', error);
     return { type, menu: null, products: [], error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
+const getInstagramMediaForShop = (shopName: string, address?: string): string[] => {
+  if (!shopName || !localShopsData?.shops?.length) return [];
 
+  const normalizedName = shopName.trim().toLowerCase();
+  const normalizedAddr = (address || '').toLowerCase();
+
+  const matchedShop = localShopsData.shops.find((s: any) => {
+    const candidates = [
+      s.name
+    ].filter(Boolean);
+
+    return candidates.some((text: string) => {
+      const lower = text.toLowerCase();
+      return lower.includes(normalizedName) ||
+             normalizedName.includes(lower) ||
+             (normalizedAddr && lower.includes(normalizedAddr));
+    });
+  });
+
+  return matchedShop?.images || [];
+};
 export default function ShopDetails() {
   const { menu, products, type, error: loaderError } = useLoaderData<LoaderData>();
   const location = useLocation();
-  console.log('ShopDetails: Loader data:', { menu, products, type, loaderError });
-  console.log('ShopDetails: Navigation state:', location.state);
   const shopFromState = location.state?.item as Shop | undefined;
   const typeFromState = location.state?.type as 'shops' | 'places' | undefined;
   const effectiveType = type || typeFromState || 'shops';
 
-  const [shop, setShop] = useState<Shop | null>(
-    shopFromState
-      ? {
-        id: shopFromState.id,
-        title: shopFromState.title,
-        imageUrl: shopFromState.imageUrl || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
-        description: shopFromState.description || 'No description available',
-        likes: shopFromState.likes || 0,
-        views: shopFromState.views || 0,
-        near_station: shopFromState.near_station || 'Unknown station',
-        address: shopFromState.address || 'Unknown address',
-        map_embed: shopFromState.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
-        other_images: shopFromState.other_images || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
-        category_id: shopFromState.category_id || 'Unknown',
-        opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
-        category: shopFromState.category || 'No Category',
-        website_url: shopFromState.website_url || 'https://example.com',
-      }
-      : menu
-        ? {
-          id: menu.id,
-          title: menu.name,
-          imageUrl: menu.image,
-          description: menu.description,
-          likes: menu.likes || 0,
-          views: menu.views || 0,
-          near_station: menu.lastText,
-          address: menu.address,
-          category_id: menu.category_id,
-          map_embed: menu.map_embed,
-          other_images: menu.other_images,
-          opening_hours: menu.hours,
-          category: menu.category,
-          website_url: menu.website_url || 'https://example.com',
-        }
-        : null
-  );
+  const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(!shopFromState && !menu);
   const [error, setError] = useState<string | null>(loaderError || null);
-  const [currentIndex, setCurrentIndex] = useState(1);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [categoriesShop, setCategoriesShop] = useState<any[]>([]);
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
   const [hasLoved, setHasLoved] = useState<boolean>(false);
   const visitAttemptedRef = useRef<boolean>(false);
   const loveAttemptedRef = useRef<boolean>(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
   const { fs, fsm } = useUniversalFluid();
   const { isMobile } = useIsMobile();
   const autoSize = (size: number) => (isMobile ? fsm(size) : fs(size));
   const visibleCards = 4;
 
+  const websiteLinks = shop ? parseWebsiteLinks(shop.website_url) : [];
+
+ const allImages = (() => {
+    if (!shop) return [];
+
+    const instagramMedia = getInstagramMediaForShop(shop.title, shop.address);
+
+    if (instagramMedia.length > 0) {
+      return instagramMedia;
+    }
+
+    return [shop.imageUrl, ...(shop.other_images || [])].filter(Boolean);
+  })();
+
+  // Infinite slider setup
+  const totalSlides = products.length;
+  const extendedProducts = totalSlides > 0 ? [...products, ...products, ...products] : [];
+
+  const goToNext = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setCurrentIndex(prev => prev + 1);
+  };
+
+  const goToPrev = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setCurrentIndex(prev => prev - 1);
+  };
+
   useEffect(() => {
-    // Fetch categories
+    if (!isTransitioning) return;
+    const timer = setTimeout(() => {
+      if (currentIndex >= totalSlides) {
+        setCurrentIndex(currentIndex - totalSlides);
+      } else if (currentIndex < 0) {
+        setCurrentIndex(currentIndex + totalSlides);
+      }
+      setIsTransitioning(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [currentIndex, isTransitioning, totalSlides]);
+
+  useEffect(() => {
     const fetchCategories = async () => {
       try {
         const { data, error } = await supabase.from('categories').select('id, name').order('name');
         if (error) throw error;
         setCategoriesShop(data || []);
-      } catch (error) {
-        console.error('Error fetching categories:', error instanceof Error ? error.message : 'Unknown error');
+      } catch (e) {
+        console.error('Error fetching categories:', e);
       }
     };
     fetchCategories();
 
-    // Load bookmark and love state
     if (shop?.id) {
       const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
       const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
@@ -248,156 +297,45 @@ export default function ShopDetails() {
     }
   }, [shop?.id]);
 
-  useEffect(() => {
-    if (!shop?.id || visitAttemptedRef.current) {
-      console.log('ShopDetails: Skipping visit increment:', { shopId: shop?.id, visitAttempted: visitAttemptedRef.current });
-      return;
-    }
-
-    const visitKey = `${effectiveType}:${shop.id}`;
-    const visitedShops = JSON.parse(localStorage.getItem('visitedShops') || '{}');
-    if (visitedShops[visitKey]) {
-      console.log('ShopDetails: Already visited:', visitKey);
-      visitAttemptedRef.current = true;
-      return;
-    }
-
-    const incrementVisit = async () => {
-      try {
-        visitAttemptedRef.current = true;
-        console.log('ShopDetails: Incrementing review_count for:', visitKey);
-        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
-        const rpcName = effectiveType === 'places' ? 'increment_review_count_place' : 'increment_review_count';
-        const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
-        const { error } = await supabase.rpc(rpcName, param);
-        if (error) {
-          console.error('Error incrementing review_count:', error);
-          return;
-        }
-        console.log('ShopDetails: Successfully incremented review_count for:', visitKey);
-        const { data: updatedData, error: fetchError } = await supabase
-          .from(table)
-          .select('review_count')
-          .eq('id', shop.id)
-          .single();
-        if (fetchError) {
-          console.error('Error fetching updated review_count:', fetchError);
-          setShop((prevShop) =>
-            prevShop ? { ...prevShop, views: prevShop.views + 1 } : prevShop
-          );
-        } else {
-          setShop((prevShop) =>
-            prevShop ? { ...prevShop, views: updatedData.review_count } : prevShop
-          );
-        }
-        visitedShops[visitKey] = true;
-        localStorage.setItem('visitedShops', JSON.stringify(visitedShops));
-      } catch (err) {
-        console.error('Unexpected error in incrementVisit:', err);
-      }
-    };
-
-    incrementVisit();
-  }, [shop?.id, effectiveType]);
-
   const handleLoveClick = async () => {
-    if (!shop?.id) {
-      console.error('No id provided for love action');
-      alert('Cannot like item: Invalid ID');
-      return;
-    }
-
+    if (!shop?.id) return alert('Cannot like item: Invalid ID');
     const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+    const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+    const rpcName = effectiveType === 'places'
+      ? (hasLoved ? 'decrement_love_count_place' : 'increment_love_count_place')
+      : (hasLoved ? 'decrement_love_count' : 'increment_love_count');
+    const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
 
-    if (hasLoved) {
-      try {
-        loveAttemptedRef.current = true;
-        console.log('ShopDetails: Decrementing love_count for:', shop.id);
-        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
-        const rpcName = effectiveType === 'places' ? 'decrement_love_count_place' : 'decrement_love_count';
-        const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
-        const { error } = await supabase.rpc(rpcName, param);
-        if (error) {
-          console.error('Error decrementing love_count:', error);
-          alert(`Failed to unlike ${effectiveType}: ${error.message}`);
-          return;
-        }
-        console.log('ShopDetails: Successfully decremented love_count for:', shop.id);
-        const { data: updatedData, error: fetchError } = await supabase
-          .from(table)
-          .select('love_count')
-          .eq('id', shop.id)
-          .single();
-        if (fetchError) {
-          console.error('Error fetching updated love_count:', fetchError);
-          setShop((prevShop) =>
-            prevShop ? { ...prevShop, likes: Math.max(prevShop.likes - 1, 0) } : prevShop
-          );
-        } else {
-          setShop((prevShop) =>
-            prevShop ? { ...prevShop, likes: updatedData.love_count } : prevShop
-          );
-        }
+    try {
+      loveAttemptedRef.current = true;
+      const { error } = await supabase.rpc(rpcName, param);
+      if (error) throw error;
+
+      const { data: updatedData }: any = await supabase.from(table).select('love_count').eq('id', shop.id).single();
+      setShop(prev => prev ? { ...prev, likes: updatedData.love_count } : prev);
+
+      if (hasLoved) {
         delete lovedItems[shop.id];
-        localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
         setHasLoved(false);
-        loveAttemptedRef.current = false;
-      } catch (err) {
-        console.error('Unexpected error in decrementLove:', err);
-        alert('Failed to unlike item: Unexpected error');
-      }
-    } else {
-      try {
-        loveAttemptedRef.current = true;
-        console.log('ShopDetails: Incrementing love_count for:', shop.id);
-        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
-        const rpcName = effectiveType === 'places' ? 'increment_love_count_place' : 'increment_love_count';
-        const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
-        const { error } = await supabase.rpc(rpcName, param);
-        if (error) {
-          console.error('Error incrementing love_count:', error);
-          alert(`Failed to like ${effectiveType}: ${error.message}`);
-          return;
-        }
-        console.log('ShopDetails: Successfully incremented love_count for:', shop.id);
-        const { data: updatedData, error: fetchError } = await supabase
-          .from(table)
-          .select('love_count')
-          .eq('id', shop.id)
-          .single();
-        if (fetchError) {
-          console.error('Error fetching updated love_count:', fetchError);
-          setShop((prevShop) =>
-            prevShop ? { ...prevShop, likes: prevShop.likes + 1 } : prevShop
-          );
-        } else {
-          setShop((prevShop) =>
-            prevShop ? { ...prevShop, likes: updatedData.love_count } : prevShop
-          );
-        }
+      } else {
         lovedItems[shop.id] = true;
-        localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
         setHasLoved(true);
-        loveAttemptedRef.current = false;
-      } catch (err) {
-        console.error('Unexpected error in incrementLove:', err);
-        alert('Failed to like item: Unexpected error');
       }
+      localStorage.setItem('lovedItems', JSON.stringify(lovedItems));
+    } catch (err) {
+      alert(`Failed to ${hasLoved ? 'unlike' : 'like'} ${effectiveType}`);
+    } finally {
+      loveAttemptedRef.current = false;
     }
   };
 
   const handleBookmarkClick = () => {
-    if (!shop?.id) {
-      console.error('No id provided for bookmark');
-      return;
-    }
-
+    if (!shop?.id) return;
     const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
     const normalizedType = effectiveType === 'places' ? 'place' : 'shop';
 
     if (isBookmarked) {
       delete savedBookmarks[shop.id];
-      localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
       setIsBookmarked(false);
     } else {
       savedBookmarks[shop.id] = {
@@ -416,83 +354,54 @@ export default function ShopDetails() {
         opening_hours: shop.opening_hours,
         type: normalizedType,
       };
-      localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
       setIsBookmarked(true);
     }
+    localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
   };
 
   useEffect(() => {
-    console.log('ShopDetails: Checking location.state for shop update', location.state);
     if (location.state?.item?.id) {
       const fetchShop = async () => {
-        try {
-          setLoading(true);
-          const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
-          const selectFields = 'id, name, image_url, description, love_count, review_count, category_id, address, near_station, map_embed, other_images, opening_hours,website_url';
+        setLoading(true);
+        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+        const { data: shopData, error: shopError } = await supabase.from(table).select('*').eq('id', location.state.item.id).single();
+        if (shopError || !shopData) throw new Error(shopError?.message || `${effectiveType} not found`);
 
-          console.log(`useEffect: Fetching from ${table} with id: ${location.state.item.id}`);
-          const { data: shopData, error: shopError } = await supabase
-            .from(table)
-            .select(selectFields)
-            .eq('id', location.state.item.id)
-            .single();
-
-          if (shopError || !shopData) {
-            console.log(`useEffect: Supabase ${table} error or no data:`, shopError);
-            throw new Error(shopError?.message || `${effectiveType} not found`);
-          }
-          console.log(`useEffect: Fetched ${table} data:`, shopData);
-
-          let categoryName = location.state.item.category || 'No Category';
-          if (shopData.category_id && !location.state.item.category) {
-            const { data: categoryData, error: categoryError } = await supabase
-              .from('categories')
-              .select('name')
-              .eq('id', shopData.category_id)
-              .single();
-            if (categoryError) {
-              console.error('Error fetching category:', categoryError);
-            } else {
-              categoryName = categoryData.name || 'No Category';
-            }
-          }
-
-          const newShop = {
-            id: shopData.id,
-            title: shopData.name,
-            imageUrl: shopData.image_url || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
-            description: shopData.description || 'No description available',
-            likes: shopData.love_count || 0,
-            views: shopData.review_count || 0,
-            near_station: shopData.near_station || 'Unknown station',
-            address: shopData.address || 'Unknown address',
-            map_embed: shopData.map_embed || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.1234567890123!2d139.728123!3d35.735678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c1234567890%3A0xabcdef1234567890!2sSugamo%2C%20Toshima%20City%2C%20Tokyo%2C%20Japan!5e0!3m2!1sen!2us!4v1692500000',
-            other_images: parseOtherImages(shopData.other_images) || [(effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png')],
-            category_id: shopData.category_id || 'Unknown',
-            category: categoryName,
-            opening_hours: shopData.opening_hours || 'OPEN 10:00 ~ 22:00',
-            website_url: shopData.website_url || 'https://example.com',
-          };
-
-          setShop(newShop);
-          setLoading(false);
-
-          // Reset bookmark and love state for new shop
-          const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
-          const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
-          setIsBookmarked(!!savedBookmarks[newShop.id]);
-          setHasLoved(!!lovedItems[newShop.id]);
-        } catch (err) {
-          console.log('useEffect: Error:', err);
-          setError(err instanceof Error ? err.message : 'Unknown error');
-          setShop(location.state.item);
-          setLoading(false);
+        let categoryName = location.state.item.category || 'No Category';
+        if (shopData.category_id && !location.state.item.category) {
+          const { data: categoryData } = await supabase.from('categories').select('name').eq('id', shopData.category_id).single();
+          categoryName = categoryData?.name || 'No Category';
         }
-      };
 
+        const newShop = {
+          id: shopData.id,
+          title: shopData.name,
+          imageUrl: shopData.image_url || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
+          description: shopData.description || 'No description available',
+          likes: shopData.love_count || 0,
+          views: shopData.review_count || 0,
+          near_station: shopData.near_station || 'Unknown station',
+          address: shopData.address || 'Unknown address',
+          map_embed: shopData.map_embed || 'https://www.google.com/maps/embed?...',
+          other_images: parseOtherImages(shopData.other_images) || [],
+          category_id: shopData.category_id || 'Unknown',
+          category: categoryName,
+          opening_hours: shopData.opening_hours || 'OPEN 10:00 ~ 22:00',
+          website_url: shopData.website_url || '',
+        };
+
+        setShop(newShop);
+        setCurrentIndex(0);
+        setLoading(false);
+
+        const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
+        const lovedItems = JSON.parse(localStorage.getItem('lovedItems') || '{}');
+        setIsBookmarked(!!savedBookmarks[newShop.id]);
+        setHasLoved(!!lovedItems[newShop.id]);
+      };
       fetchShop();
     } else if (menu && !shop) {
-      setShop({
+      const newShop = {
         id: menu.id,
         title: menu.name,
         imageUrl: menu.image,
@@ -506,415 +415,328 @@ export default function ShopDetails() {
         other_images: parseOtherImages(menu.other_images),
         opening_hours: menu.hours,
         category: menu.category,
-        website_url: menu.website_url || 'https://example.com',
-      });
+        website_url: menu.website_url || '',
+      };
+      setShop(newShop);
+      setCurrentIndex(0);
       setLoading(false);
     } else {
-      console.log('ShopDetails: No fetch needed, shop state:', shop);
       setLoading(false);
     }
   }, [location.state?.item?.id, effectiveType, menu]);
 
-  if (loading) {
-    return <div className="container mx-auto p-4">Loading...</div>;
-  }
+  useEffect(() => {
+    if (shopFromState && !shop) {
+      const newShop = {
+        id: shopFromState.id,
+        title: shopFromState.title,
+        imageUrl: shopFromState.imageUrl || (effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'),
+        description: shopFromState.description || 'No description available',
+        likes: shopFromState.likes || 0,
+        views: shopFromState.views || 0,
+        near_station: shopFromState.near_station || 'Unknown station',
+        address: shopFromState.address || 'Unknown address',
+        map_embed: shopFromState.map_embed || 'https://www.google.com/maps/embed?...',
+        other_images: shopFromState.other_images || [],
+        category_id: shopFromState.category_id || 'Unknown',
+        opening_hours: shopFromState.opening_hours || 'OPEN 10:00 ~ 22:00',
+        category: shopFromState.category || 'No Category',
+        website_url: shopFromState.website_url || '',
+      };
+      setShop(newShop);
+      setCurrentIndex(0);
+    }
+  }, [shopFromState, effectiveType, shop]);
 
-  if (error || !shop) {
-    console.log('ShopDetails: Rendering error, error:', error, 'shop:', shop);
-    return <div className="container mx-auto p-4 text-red-600">Error: {error || `${effectiveType} not found`}</div>;
-  }
+  // View increment
+  useEffect(() => {
+    if (!shop?.id || visitAttemptedRef.current) return;
+    const visitKey = `${effectiveType}:${shop.id}`;
+    const visitedShops = JSON.parse(localStorage.getItem('visitedShops') || '{}');
+    if (visitedShops[visitKey]) {
+      visitAttemptedRef.current = true;
+      return;
+    }
+
+    const incrementVisit = async () => {
+      try {
+        visitAttemptedRef.current = true;
+        const table = effectiveType === 'places' ? 'tourist_places' : 'shops';
+        const rpcName = effectiveType === 'places' ? 'increment_review_count_place' : 'increment_review_count';
+        const param = effectiveType === 'places' ? { place_id: shop.id } : { shop_id: shop.id };
+        const { error } = await supabase.rpc(rpcName, param);
+        if (error) throw error;
+
+        const { data: updatedData } = await supabase.from(table).select('review_count').eq('id', shop.id).single();
+        setShop(prev => prev ? { ...prev, views: updatedData?.review_count ?? prev.views } : prev);
+        visitedShops[visitKey] = true;
+        localStorage.setItem('visitedShops', JSON.stringify(visitedShops));
+      } catch (err) {
+        console.error('View increment error:', err);
+      }
+    };
+    incrementVisit();
+  }, [shop?.id, effectiveType]);
+
+  if (loading) return <div className="container mx-auto p-4">Loading...</div>;
+  if (error || !shop) return <div className="container mx-auto p-4 text-red-600">Error: {error || `${effectiveType} not found`}</div>;
 
   const getCategoryName = (categoryId?: string) => {
-    if (!categoryId) return shop?.category || 'No Category';
-    const category = categoriesShop.find((cat) => cat.id === categoryId);
-    return category ? category.name : shop?.category || 'No Category';
+    if (!categoryId) return shop.category || 'No Category';
+    const category = categoriesShop.find(cat => cat.id === categoryId);
+    return category ? category.name : shop.category || 'No Category';
   };
-
+  const isVideoUrl = (url: string) => {
+    return /\.(mp4|webm|ogg)$/i.test(url) || url.includes('video') || url.includes('.mp4') || url.includes('dash');
+  };
   return (
     <div className="min-h-screen">
       <Header />
-      <MarqueeHeader
-        text="Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves! Welcome to Sugamo! Pick your faves!"
-        backgroundColor="#FFFFFF"
-        textColor="#000000"
-        animationDuration="90s"
-        marginBottom={120}
-        marginTop={100}
-      />
-      <div
-        className="flex flex-col md:flex-row items-center justify-center"
-        style={{ paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}
-      >
-        <div className="md:auto w-full">
+      <MarqueeHeader text="Welcome to Sugamo! Pick your faves! ..." backgroundColor="#FFFFFF" textColor="#000000" animationDuration="90s" marginBottom={120} marginTop={100} />
+
+      {/* MAIN LAYOUT */}
+      <div className="flex flex-col md:flex-row items-stretch justify-center min-h-0" style={{ paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}>
+        {/* LEFT */}
+        <div className="flex flex-col w-full md:w-1/2">
+          {isMobile && <h2 className="font-semibold font-cairo text-brown-700" style={{ marginBottom: fsm(20), fontSize: autoSize(22) }}>{shop.title}</h2>}
           {isMobile && (
             <div className="flex flex-row justify-between items-center" style={{ marginBottom: fsm(20) }}>
-              <div className="flex flex-row">
-                <div className="flex space-x-2 ml-auto">
-                  {(getCategoryName(shop.category_id) || "Shop")
-                    .split("、") // যদি Japanese comma হয়
-                    .map((category: string, index: React.Key | null | undefined) => (
-                      <button
-                        key={index}
-                        className="bg-[#ED4548] text-white rounded-full italic font-bold font-cairo text-center"
-                        style={{
-                          width: isMobile ? fsm(92) : fs(92),
-                          minWidth: isMobile ? fsm(72) : fs(72),
-                          height: isMobile ? fsm(22) : fs(22),
-                          minHeight: isMobile ? fsm(17) : fs(17),
-                          fontSize: isMobile ? fsm(12) : fs(12),
-                        }}
-                      >
-                        {category.trim()}
-                      </button>
-                    ))}
-                  <span className="flex items-center gap-1">
-                    <button onClick={handleLoveClick}>
-                      <img
-                        src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'}
-                        alt="Love"
-                        style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20), cursor: 'pointer' }}
-                      />
+              <div className="flex flex-row items-center space-x-3">
+                <div className="flex flex-wrap gap-2">
+                  {(getCategoryName(shop.category_id) || "Shop").split("、").map((category: string, index: React.Key) => (
+                    <button key={index} className="bg-[#ED4548] text-white rounded-full italic font-bold font-cairo text-center" style={{ width: fsm(92), minWidth: fsm(72), height: fsm(22), fontSize: fsm(12), padding: '0 8px' }}>
+                      {category.trim()}
                     </button>
-                    <p
-                      className="font-bold font-cairo"
-                      style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
-                    >
-                      {shop.likes}
-                    </p>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <img
-                      src="/src/eye.svg"
-                      alt="Views"
-                      style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
-                    />
-                    <p
-                      className="font-bold font-cairo"
-                      style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
-                    >
-                      {shop.views}
-                    </p>
-                  </span>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={handleLoveClick} className="flex items-center gap-1">
+                    <img src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'} alt="Love" style={{ width: fsm(20), height: fsm(20) }} />
+                    <span className="font-bold font-cairo text-gray-900" style={{ fontSize: fsm(14) }}>{shop.likes}</span>
+                  </button>
+                  <div className="flex items-center gap-1">
+                    <img src="/src/eye.svg" alt="Views" style={{ width: fsm(20), height: fsm(20) }} />
+                    <span className="font-bold font-cairo text-gray-900" style={{ fontSize: fsm(14) }}>{shop.views}</span>
+                  </div>
                 </div>
               </div>
-              <button className="py-1 transition-transform duration-300 hover:scale-125" onClick={handleBookmarkClick}>
-                <img
-                  src={isBookmarked ? '/src/bookmark-filled.svg' : '/src/bookmark.svg'}
-                  alt="Bookmark Icon"
-                  style={{ height: autoSize(20), width: autoSize(20), cursor: 'pointer' }}
-                />
+              <button className="transition-transform hover:scale-125" onClick={handleBookmarkClick}>
+                <img src={isBookmarked ? '/src/bookmark-filled.svg' : '/src/bookmark.svg'} alt="Bookmark" style={{ width: autoSize(20), height: autoSize(20) }} />
               </button>
             </div>
           )}
-          <img
-            src={shop.imageUrl}
-            alt={shop.title}
-            className="w-full h-auto"
-            style={{ width: isMobile ? '100%' : fs(540), height: isMobile ? fsm(401) : fs(540) }}
-            onError={(e) => {
-              e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png';
-            }}
-          />
-          {isMobile && shop.other_images && shop.other_images.length > 0 && (
-            <div style={{ marginTop: isMobile ? fsm(16) : fs(90) }}>
-              <div className="flex space-x-2 overflow-x-auto">
-                {shop.other_images.map((image, index) => (
+
+          <div className="flex-1 flex items-center justify-center">
+            {allImages.length > 0 ? (
+              (() => {
+                const mediaUrl = allImages[currentIndex % allImages.length];
+                return isVideoUrl(mediaUrl) ? (
+                  <video
+                    src={mediaUrl}
+                    controls
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover rounded-lg"
+                    style={{ maxHeight: isMobile ? fsm(401) : fs(540) }}
+                    poster={shop.imageUrl}
+                  />
+                ) : (
+                  <img
+                    src={mediaUrl}
+                    alt={shop.title}
+                    className="w-full h-full object-cover rounded-lg"
+                    style={{ maxHeight: isMobile ? fsm(401) : fs(540) }}
+                    onError={e => e.currentTarget.src = '/src/shop.png'}
+                  />
+                );
+              })()
+            ) : (
+              <img src={shop.imageUrl} alt={shop.title} className="w-full h-full object-cover" />
+            )}
+          </div>
+
+          {isMobile && allImages.length > 1 && (
+            <div className="mt-4">
+              <div className="flex space-x-2 overflow-x-auto scrollbar-hide">
+                {allImages.map((mediaUrl, index) => (
                   <div
                     key={index}
-                    style={{ minWidth: isMobile ? fsm(117) : fs(358), height: isMobile ? fsm(88) : fs(270) }}
+                    className={`flex-shrink-0 cursor-pointer border-2 ${currentIndex % allImages.length === index ? 'border-[#ED4548]' : 'border-transparent'} rounded overflow-hidden`}
+                    style={{ width: fsm(117), height: fsm(88) }}
+                    onClick={() => setCurrentIndex(index)}
                   >
-                    <img
-                      src={image}
-                      alt={`Related Item ${index + 1}`}
-                      className="w-full h-auto"
-                      style={{ maxHeight: isMobile ? fsm(88) : fs(270) }}
-                      onError={(e) => {
-                        e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png';
-                      }}
-                    />
+                    {isVideoUrl(mediaUrl) ? (
+                      <div className="relative w-full h-full">
+                        <video src={mediaUrl} className="w-full h-full object-cover" muted />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                          <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7L8 5z"/>
+                          </svg>
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={mediaUrl}
+                        alt={`Thumb ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={e => e.currentTarget.src = '/src/shop.png'}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
         </div>
-        <div
-          className="md:auto w-full max-h-max"
-          style={{ paddingLeft: isMobile ? fsm(0) : fs(20), height: isMobile ? 'auto' : fs(540), paddingTop: fs(63) }}
-        >
-          {!isMobile && (
-            <div className="flex flex-row justify-between items-center">
-              <div className="flex flex-row">
-                <div className="flex space-x-2 ml-auto">
-                  <div className="flex flex-wrap gap-2">
-                    {(getCategoryName(shop.category_id) || "Shop")
-                      .split("、")
-                      .map((category: string, index: React.Key | null | undefined) => (
-                        <button
-                          key={index}
-                          className="bg-[#ED4548] text-white rounded-full italic font-bold font-cairo text-center"
-                          style={{
-                            width: isMobile ? fsm(92) : fs(92),
-                            minWidth: isMobile ? fsm(72) : fs(72),
-                            height: isMobile ? fsm(22) : fs(22),
-                            minHeight: isMobile ? fsm(17) : fs(17),
-                            fontSize: isMobile ? fsm(13) : fs(13),
-                          }}
-                        >
-                          {category.trim()}
-                        </button>
-                      ))}
+        {/* RIGHT */}
+        <div className="flex flex-col w-full md:w-1/2">
+          <div className="flex-1 flex flex-col pl-0 md:pl-8 justify-between">
+            <div className="space-y-4">
+              {!isMobile && <h2 className="font-semibold font-cairo text-brown-700" style={{ fontSize: autoSize(22) }}>{shop.title}</h2>}
+              {!isMobile && (
+                <div className="flex justify-between items-start">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {(getCategoryName(shop.category_id) || "Shop").split("、").map((category: string, index: React.Key) => (
+                      <button key={index} className="bg-[#ED4548] text-white rounded-full italic font-bold font-cairo text-center" style={{ width: fs(92), minWidth: fs(72), height: fs(22), fontSize: fs(13), padding: '0 10px' }}>
+                        {category.trim()}
+                      </button>
+                    ))}
+                    <div className="flex items-center gap-4">
+                      <button onClick={handleLoveClick} className="flex items-center gap-1">
+                        <img src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'} alt="Love" style={{ width: fs(20), height: fs(20) }} />
+                        <span className="font-bold font-cairo text-gray-900" style={{ fontSize: fs(14) }}>{shop.likes}</span>
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <img src="/src/eye.svg" alt="Views" style={{ width: fs(20), height: fs(20) }} />
+                        <span className="font-bold font-cairo text-gray-900" style={{ fontSize: fs(14) }}>{shop.views}</span>
+                      </div>
+                    </div>
                   </div>
+                  <button className="transition-transform hover:scale-125" onClick={handleBookmarkClick}>
+                    <img src={isBookmarked ? '/src/bookmark-filled.svg' : '/src/bookmark.svg'} alt="Bookmark" style={{ width: autoSize(20), height: autoSize(20) }} />
+                  </button>
+                </div>
+              )}
+            </div>
 
-                  <span className="flex items-center gap-1">
-                    <button onClick={handleLoveClick}>
-                      <img
-                        src={hasLoved ? '/src/red-love.svg' : '/src/love.svg'}
-                        alt="Love"
-                        style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20), cursor: 'pointer' }}
-                      />
-                    </button>
-                    <p
-                      className="font-bold font-cairo"
-                      style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
-                    >
-                      {shop.likes}
-                    </p>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <img
-                      src="/src/eye.svg"
-                      alt="Views"
-                      style={{ width: isMobile ? fsm(20) : fs(20), height: isMobile ? fsm(20) : fs(20) }}
-                    />
-                    <p
-                      className="font-bold font-cairo"
-                      style={{ fontSize: isMobile ? fsm(14) : fs(14), color: '#111827' }}
-                    >
-                      {shop.views}
-                    </p>
-                  </span>
+            <div className="flex-1 overflow-y-auto">
+              <p className="text-[#313131] font-normal font-cairo leading-loose" style={{ marginTop: isMobile ? fsm(16) : fs(19), fontSize: autoSize(16), maxHeight: isMobile ? 'none' : fs(210), overflowY: 'auto', paddingRight: '4px' }} dangerouslySetInnerHTML={{ __html: shop.description }} />
+            </div>
+
+            {!isMobile && allImages.length > 1 && (
+              <div className="mt-6 border-t border-gray-300 pt-4">
+                <div className="flex space-x-4 overflow-x-auto scrollbar-hide">
+                  {allImages.map((image, index) => (
+                    <div key={index} className={`flex-shrink-0 cursor-pointer border-2 ${currentIndex === index ? 'border-[#ED4548]' : 'border-transparent'} rounded-lg overflow-hidden`} style={{ width: fs(200), height: fs(150) }} onClick={() => setCurrentIndex(index)}>
+                      <img src={image} alt={`Related ${index + 1}`} className="w-full h-full object-cover" onError={e => { e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png'; }} />
+                    </div>
+                  ))}
                 </div>
               </div>
-              <button className="py-1 transition-transform duration-300 hover:scale-125" onClick={handleBookmarkClick}>
-                <img
-                  src={isBookmarked ? '/src/bookmark-filled.svg' : '/src/bookmark.svg'}
-                  alt="Bookmark Icon"
-                  style={{ height: autoSize(20), width: autoSize(20), cursor: 'pointer' }}
-                />
-              </button>
-            </div>
-          )}
-          <div className="flex-col justify-between">
-            <div>
-              <h2
-                className="font-semibold font-cairo text-brown-700"
-                style={{ marginTop: isMobile ? fsm(34) : fs(35), fontSize: autoSize(22) }}
-              >
-                {shop.title}
-              </h2>
-              <p
-                className="text-[#313131] font-normal font-cairo leading-loose"
-                style={{
-                  marginTop: isMobile ? fsm(16) : fs(19),
-                  fontSize: autoSize(16),
-                  height: isMobile ? "auto" : fs(210),
-                }}
-                dangerouslySetInnerHTML={{ __html: shop.description }}
-              />
-            </div>
-            <div
-              className="flex items-center justify-between"
-              style={{ marginTop: isMobile ? fsm(54) : fs(30), paddingBottom: isMobile ? fsm(0) : fs(61) }}
-            >
-              <div>
-                <p
-                  className="text-[#313131] font-cairo font-medium"
-                  style={{ fontSize: autoSize(13) }}
-                >
-                  オープン: {" "}
-                  {shop.opening_hours ? (
-                    <span dangerouslySetInnerHTML={{ __html: shop.opening_hours }} />
-                  ) : (
-                    "Not available"
-                  )}
-                </p>
-
-                <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
-                  アドレス: {shop.address || 'Not available'}
-                </p>
-                <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: autoSize(13) }}>
-                  ニア: {shop.near_station || 'Not available'}
-                </p>
-              </div>
-              <a
-                href={shop.website_url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <img src="/src/link_url.png" alt="Link Icon" />
-              </a>
-
-            </div>
+            )}
           </div>
         </div>
       </div>
-      {!isMobile && shop.other_images && shop.other_images.length > 0 && (
-        <div style={{ paddingLeft: fs(90), paddingRight: fs(90), marginTop: fs(90) }}>
-          <div
-            className="flex space-x-4 overflow-x-auto"
-            style={{
-              scrollbarWidth: 'none', /* Firefox */
-              msOverflowStyle: 'none', /* IE and Edge */
-            }}
-
+      <div
+        className="relative flex flex-col md:flex-row items-start justify-between gap-4"
+        style={{
+          marginTop: isMobile ? fsm(54) : fs(40),
+          paddingLeft: isMobile ? fsm(40) : fs(90),
+          paddingRight: isMobile ? fsm(40) : fs(90),
+        }}
+      >
+        {/* LEFT: Opening Hours */}
+        <div className="flex-1">
+          <p
+            className="text-[#313131] font-cairo font-medium"
+            style={{ fontSize: isMobile ? fsm(13) : fs(18) }}
           >
-            {shop.other_images.map((image, index) => (
-              <div
-                key={index}
-                style={{
-                  minWidth: isMobile ? fsm(117) : fs(358),
-                  flexShrink: 0, // যেন width কমে না যায়
-                }}
+            オープン:{' '}
+            {shop.opening_hours ? (
+              <span dangerouslySetInnerHTML={{ __html: shop.opening_hours }} />
+            ) : (
+              'Not available'
+            )}
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 justify-end max-w-xs">
+          {websiteLinks.length > 0 ? (
+            websiteLinks.map(({ url, logo }, idx) => (
+              <a
+                key={idx}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-16 h-16 mx-auto transition-transform hover:scale-110"
               >
                 <img
-                  src={image}
-                  alt={`Related Item ${index + 1}`}
-                  className="w-full h-full object-cover rounded-lg"
-                  style={{
-                    maxHeight: isMobile ? fsm(88) : fs(270),
-                    height: isMobile ? fsm(88) : fs(270), // fixed height
-                    minHeight: isMobile ? fsm(88) : fs(270),
-                  }}
+                  src={logo}
+                  alt={`Visit site ${idx + 1}`}
+                  className="w-full h-full object-contain rounded-md shadow-sm bg-white p-1"
                   onError={(e) => {
-                    e.currentTarget.src = effectiveType === 'places' ? '/src/see-do.png' : '/src/shop.png';
+                    e.currentTarget.src = '/src/link_url.png'; // Default fallback icon
                   }}
                 />
-              </div>
-            ))}
-          </div>
+              </a>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 col-span-3 text-center">No links available</p>
+          )}
         </div>
-      )}
+      </div>
+
+      <p className="text-[#313131] mt-2 font-cairo font-medium" style={{ fontSize: isMobile ? fsm(13) : fs(18), marginTop: isMobile ? fsm(10) : fs(10), paddingLeft: isMobile ? fsm(40) : fs(90), paddingRight: isMobile ? fsm(40) : fs(90) }}>
+        最寄り: {shop.near_station || 'Not available'}
+      </p>
+
+      {/* GOOGLE MAP */}
       {shop.map_embed && (
         <div>
-          <div
-            className="text-[#ED4548] italic underline w-full text-center font-cousine"
-            style={{ fontSize: autoSize(25), marginTop: isMobile ? fsm(138) : fs(90), marginBottom: isMobile ? fsm(24) : fs(0) }}
-          >
+          <div className="text-[#ED4548] italic underline w-full text-center font-cousine" style={{ fontSize: autoSize(25), marginTop: isMobile ? fsm(138) : fs(90), marginBottom: isMobile ? fsm(24) : fs(0) }}>
             Google Map
           </div>
-          <div
-            className="mx-auto border-2 border-black rounded-lg overflow-hidden"
-            style={{ height: isMobile ? fsm(332) : fs(591), marginLeft: isMobile ? fsm(20) : fs(160), marginRight: isMobile ? fsm(20) : fs(160) }}
-          >
-            <iframe
-              src={shop.map_embed}
-              width="100%"
-              height="100%"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            ></iframe>
+          <div className="mx-auto border-2 border-black rounded-lg overflow-hidden" style={{ height: isMobile ? fsm(332) : fs(591), marginLeft: isMobile ? fsm(20) : fs(160), marginRight: isMobile ? fsm(20) : fs(160) }}>
+            <iframe src={shop.map_embed} width="100%" height="100%" loading="lazy" referrerPolicy="no-referrer-when-downgrade"></iframe>
           </div>
         </div>
       )}
+
+      {/* SEE MORE SLIDER */}
       {products.length > 0 ? (
-        <div
-          className="relative"
-          style={{
-            paddingTop: isMobile ? fsm(141) : fs(180),
-            paddingLeft: isMobile ? fsm(20) : fs(90),
-            paddingRight: isMobile ? fsm(20) : fs(90),
-            marginBottom: isMobile ? fsm(144) : fs(130),
-          }}
-        >
+        <div className="relative" style={{ paddingTop: isMobile ? fsm(141) : fs(180), paddingLeft: isMobile ? fsm(20) : fs(90), paddingRight: isMobile ? fsm(20) : fs(90), marginBottom: isMobile ? fsm(144) : fs(130) }}>
           <div className="border-2 border-black rounded-[30px] overflow-visible relative" style={{ paddingTop: isMobile ? fsm(70) : fs(76) }}>
-            <div
-              className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap"
-              style={{ paddingLeft: isMobile ? fsm(20) : fs(45), paddingRight: isMobile ? fsm(20) : fs(45), fontSize: autoSize(31) }}
-            >
+            <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white text-center font-bold italic font-cousine inline-block text-wrap" style={{ paddingLeft: isMobile ? fsm(20) : fs(45), paddingRight: isMobile ? fsm(20) : fs(45), fontSize: autoSize(31) }}>
               SEE MORE
             </div>
             <div className="overflow-hidden">
-              <div
-                className="flex transition-transform duration-300 ease-in-out px-[25%]"
-                style={{
-                  transform: `translateX(-${currentIndex * (100 / visibleCards)}%)`,
-                  width: `${products.length * (100 / visibleCards)}%`,
-                }}
-              >
-                {products.map((product: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex-shrink-0 p-2"
-                    style={{
-                      width: isMobile ? fsm(210) : fs(350),
-                      height: isMobile ? fsm(301) : fs(496),
-                    }}
-                  >
-                    <ShopItem
-                      id={product.id}
-                      title={product.title}
-                      imageUrl={product.imageUrl}
-                      description={product.description}
-                      likes={product.likes}
-                      views={product.views}
-                      type={effectiveType === 'places' ? 'place' : 'shop'}
-                      near_station={product.near_station}
-                      address={product.address}
-                      map_embed={product.map_embed}
-                      other_images={product.other_images}
-                      opening_hours={product.opening_hours}
-                      category_id={product.category_id}
-                      category={product.category}
-                    />
+              <div ref={sliderRef} className={`flex gap-4 ${isTransitioning ? 'transition-transform duration-500 ease-in-out' : 'transition-none'}`} style={{ transform: `translateX(calc(-${(currentIndex + totalSlides) * (100 / visibleCards)}% - ${(currentIndex + totalSlides) * 1}rem))` }}>
+                {extendedProducts.map((product: any, index: number) => (
+                  <div key={`${product.id}-${index}`} className="flex-shrink-0" style={{ width: `calc(${100 / visibleCards}% - 1rem)`, minWidth: isMobile ? fsm(210) : fs(350) }}>
+                    <div className="h-full">
+                      <ShopItem id={product.id} title={product.title} imageUrl={product.imageUrl} description={product.description} likes={product.likes} views={product.views} type={effectiveType === 'places' ? 'place' : 'shop'} near_station={product.near_station} address={product.address} map_embed={product.map_embed} other_images={product.other_images} opening_hours={product.opening_hours} category_id={product.category_id} category={product.category} />
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
             <div className="flex justify-between px-4" style={{ height: isMobile ? fsm(106) : fs(76) }}>
-              <button
-                onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
-                className="text-4xl disabled:opacity-30"
-                disabled={currentIndex <= 0}
-              >
-                ←
-              </button>
-              <button
-                onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, products.length - visibleCards))}
-                className="text-4xl disabled:opacity-30"
-                disabled={currentIndex >= (products.length - 1) - visibleCards}
-              >
-                →
-              </button>
+              <button onClick={goToPrev} className="text-4xl hover:scale-110 transition-transform">Left Arrow</button>
+              <button onClick={goToNext} className="text-4xl hover:scale-110 transition-transform">Right Arrow</button>
             </div>
           </div>
         </div>
       ) : (
-        <div
-          className="text-center text-[#ED4548] font-cairo"
-          style={{
-            paddingTop: isMobile ? fsm(141) : fs(180),
-            paddingLeft: isMobile ? fsm(20) : fs(90),
-            paddingRight: isMobile ? fsm(20) : fs(90),
-            marginBottom: isMobile ? fsm(144) : fs(130),
-            fontSize: autoSize(16),
-          }}
-        >
+        <div className="text-center text-[#ED4548] font-cairo" style={{ paddingTop: isMobile ? fsm(141) : fs(180), paddingLeft: isMobile ? fsm(20) : fs(90), paddingRight: isMobile ? fsm(20) : fs(90), marginBottom: isMobile ? fsm(144) : fs(130), fontSize: autoSize(16) }}>
           No related shops available.
         </div>
       )}
+
       <Footer />
     </div>
   );
 }
 
 export function ErrorBoundary() {
-  return (
-    <div className="container mx-auto p-4 text-red-600">
-      An unexpected error occurred. Please try again later.
-    </div>
-  );
+  return <div className="container mx-auto p-4 text-red-600">An unexpected error occurred. Please try again later.</div>;
 }
-
-
-

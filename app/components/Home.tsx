@@ -148,8 +148,6 @@ export default function HomePage() {
       if (isVisible) {
         setIsLetsGoVisible(true);
         animationTriggered = true;
-
-        // যখন screen থেকে বের হবে তখন reset
         const resetObserver = new IntersectionObserver((entries) => {
           if (!entries[0].isIntersecting) {
             setIsLetsGoVisible(false);
