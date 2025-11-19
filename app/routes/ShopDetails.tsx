@@ -543,7 +543,7 @@ export default function ShopDetails() {
             </div>
           )}
 
-          <div className="flex-1 flex items-center justify-center relative bg-black rounded-lg overflow-hidden">
+          <div className="flex-1 flex items-center justify-center relative bg-white rounded-lg overflow-hidden">
             {allImages.length > 0 ? (
               (() => {
                 const mediaUrl = allImages[currentIndex % allImages.length];
