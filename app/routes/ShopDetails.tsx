@@ -8,7 +8,7 @@ import { useUniversalFluid } from '../hooks/useUniversalFluid';
 import { useIsMobile } from '../hooks/useIsMobile';
 import supabase from '~/supabase';
 import { MetaFunction } from "@remix-run/react";
-import { getCachedShops } from '~/utils/readCache';
+import localShopsData from '../../cache/shops.json';
 
 interface Shop {
   id: string;
@@ -190,7 +190,6 @@ export async function loader({ request }: { request: Request }) {
     return { type, menu: null, products: [], error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
-const localShopsData = await getCachedShops();
 const getInstagramMediaForShop = (shopName: string, address?: string): string[] => {
   if (!shopName || !localShopsData?.shops?.length) return [];
 
