@@ -430,6 +430,8 @@ export async function getInstagramVideos(): Promise<InstagramPost[]> {
     } catch { }
 
     const currentDate = DateTime.now().setZone('Asia/Tokyo');
+    const currentDateISO = currentDate.toISO(); // এই লাইন যোগ করো
+
     const cacheExpiryDate = cachedData?.lastUpdated
       ? DateTime.fromISO(cachedData.lastUpdated, { zone: 'Asia/Tokyo' }).plus({ days: 2 })
       : null;
@@ -442,6 +444,7 @@ export async function getInstagramVideos(): Promise<InstagramPost[]> {
     let posts: InstagramPost[] = [];
 
     if (shouldFetch) {
+
       if (!igUserId) {
         const igResponse = await fetch(
           `https://graph.facebook.com/v23.0/${pageId}?fields=instagram_business_account&access_token=${pageAccessToken}`
@@ -493,14 +496,10 @@ export async function getInstagramVideos(): Promise<InstagramPost[]> {
           source: 'instagram' as const,
         };
       });
-
-      // instagram_videos.json সেভ
       await fs.writeFile(
         INSTAGRAM_CACHE_FILE,
-        JSON.stringify({ posts, lastUpdated: currentDate }, null, 2)
+        JSON.stringify({ posts, lastUpdated: currentDateISO }, null, 2)
       );
-
-      // এখানেই ম্যাজিক — shops.json অটো তৈরি
       await createShopsJson(posts);
 
       console.log(`getInstagramVideos() → instagram_videos.json + shops.json দুটোই তৈরি! (${posts.length} পোস্ট)`);
@@ -511,7 +510,6 @@ export async function getInstagramVideos(): Promise<InstagramPost[]> {
     return posts;
   } catch (error) {
     console.error('Instagram fetch error:', error);
-    // ক্যাশ থেকে ফিরিয়ে দাও
     try {
       const cacheContent = await fs.readFile(INSTAGRAM_CACHE_FILE, 'utf-8');
       const cachedData = JSON.parse(cacheContent);
