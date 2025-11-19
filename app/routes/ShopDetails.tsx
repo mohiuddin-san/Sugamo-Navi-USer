@@ -553,14 +553,13 @@ export default function ShopDetails() {
                       maxHeight: isMobile ? fsm(401) : fs(500),
                        minHeight: isMobile ? fsm(401) : fs(540),
                     }}
-                    poster={shop.imageUrl}
                   />
                 ) : (
                   <img
                     src={mediaUrl}
                     alt={shop.title}
                     className="w-full h-full object-cover rounded-lg"
-                    style={{ maxHeight: isMobile ? fsm(401) : fs(540) }}
+                    style={{ height: isMobile ? fsm(401) : fs(540) }}
                     onError={(e) => (e.currentTarget.src = '/src/shop.png')}
                   />
                 );
@@ -570,7 +569,7 @@ export default function ShopDetails() {
                 src={shop.imageUrl}
                 alt={shop.title}
                 className="w-full h-full object-cover rounded-lg"
-                style={{ maxHeight: isMobile ? fsm(401) : fs(540) }}
+                style={{ height: isMobile ? fsm(401) : fs(540) }}
               />
             )}
             {/* {allImages.length > 1 && (
@@ -621,7 +620,7 @@ export default function ShopDetails() {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              <p className="text-[#313131] font-normal font-cairo leading-loose" style={{ marginTop: isMobile ? fsm(16) : fs(19), fontSize: autoSize(16), maxHeight: isMobile ? 'none' : fs(210), overflowY: 'auto', paddingRight: '4px' }} dangerouslySetInnerHTML={{ __html: shop.description }} />
+              <p className="text-[#313131] font-normal font-cairo leading-loose" style={{ marginTop: isMobile ? fsm(16) : fs(19), fontSize: autoSize(16), maxHeight: isMobile ? 'none' : fs(540), overflowY: 'auto', paddingRight: '4px' }} dangerouslySetInnerHTML={{ __html: shop.description }} />
             </div>
           </div>
         </div>
